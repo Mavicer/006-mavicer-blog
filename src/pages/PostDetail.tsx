@@ -115,10 +115,10 @@ export default function PostDetail() {
   return (
     <div className="main-content-container !pt-[140px]">
       <motion.div
-        className="main-content-body transition-fade-up flex flex-row flex-wrap justify-center"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="main-content-body flex flex-row flex-wrap justify-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
       >
         {toc.length > 1 && (
           <aside className="hidden lg:block w-[210px] ml-[38px] sticky top-[90px] self-start">

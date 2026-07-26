@@ -7,6 +7,8 @@ import About from "./pages/About";
 import Projects from "./pages/Projects";
 import Categories from "./pages/Categories";
 import Tags from "./pages/Tags";
+import Gallery from "./pages/Gallery";
+import GalleryAdmin from "./pages/GalleryAdmin";
 import PostDetail from "./pages/PostDetail";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -18,7 +20,7 @@ export default function App() {
   const location = useLocation();
   return (
     <Layout>
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<Home />} />
           <Route path="/archives" element={<Archives />} />
@@ -27,6 +29,8 @@ export default function App() {
           <Route path="/categories" element={<Categories />} />
           <Route path="/tags" element={<Tags />} />
           <Route path="/tags/:tag" element={<Tags />} />
+          <Route path="/gallery" element={<Gallery />} />
+          <Route path="/gallery/admin" element={<GalleryAdmin />} />
           <Route path="/categories/:cat" element={<Categories />} />
           <Route path="/posts/:slug" element={<PostDetail />} />
           <Route path="/login" element={<Login />} />

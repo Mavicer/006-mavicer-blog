@@ -27,18 +27,18 @@ export const NAV_ITEMS: NavItem[] = [
     icon: "fa-regular fa-user",
     submenus: [
       { label: "ME", path: "/about" },
-      { label: "GITHUB", path: "https://github.com/yourname", external: true },
+      { label: "GITHUB", path: "https://github.com/Mavicer", external: true },
     ],
   },
   { label: "PROJECTS", path: "/projects", icon: "fa-regular fa-code" },
+  { label: "展示", path: "/gallery", icon: "fa-regular fa-images" },
   { label: "分类", path: "/categories", icon: "fa-regular fa-folder" },
-  { label: "标签", path: "/tags", icon: "fa-regular fa-tags" },
 ];
 
 export const SIDEBAR_LINKS = [
   { label: "About", path: "/about", icon: "fa-regular fa-user" },
   { label: "Archives", path: "/archives", icon: "fa-regular fa-archive" },
   { label: "Projects", path: "/projects", icon: "fa-regular fa-code" },
+  { label: "Gallery", path: "/gallery", icon: "fa-regular fa-images" },
   { label: "Categories", path: "/categories", icon: "fa-regular fa-folder" },
-  { label: "Tags", path: "/tags", icon: "fa-regular fa-tags" },
 ];

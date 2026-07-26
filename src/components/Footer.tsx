@@ -9,7 +9,7 @@ export function Footer() {
   const { posts } = usePosts();
   const articleCount = posts.filter((p) => p.published !== false).length;
   return (
-    <footer className="footer mt-5 py-5 h-auto text-base text-third-text relative border-t-2 border-border-color">
+    <footer className="footer mt-5 py-5 h-auto text-base text-second-text relative border-t-2 border-border-color">
       <div className="info-container py-3 text-center">
         <div className="customize-info my-1">个人网站正在持续更新</div>
 

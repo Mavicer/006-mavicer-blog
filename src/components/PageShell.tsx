@@ -3,8 +3,10 @@ import { Sidebar } from "@/sections/Sidebar";
 import { usePosts } from "@/hooks/usePosts";
 
 /**
- * PageShell — shared layout for non-home pages: navbar-pushed content with
- * the left sidebar, matching Redefine's content pages.
+ * PageShell — shared layout for non-home pages.
+ * Uses a short, smooth fade-in (opacity only, no y-translate) so the
+ * transition feels alive without the "double flash" that comes from
+ * `mode="wait"` + y-displacement.
  */
 export function PageShell({
   children,
@@ -13,15 +15,15 @@ export function PageShell({
   children: React.ReactNode;
   showSidebar?: boolean;
 }) {
-  usePosts(); // ensure taxonomy is warmed for sidebar counts
+  usePosts();
   return (
     <div className="main-content-container flex flex-col justify-between min-h-dvh !pt-[140px]">
       <div className="main-content-header" />
       <motion.div
-        className="main-content-body transition-fade-up flex flex-row flex-wrap justify-center"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="main-content-body flex flex-row flex-wrap justify-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
       >
         {showSidebar && <Sidebar />}
         <div className="main-content">

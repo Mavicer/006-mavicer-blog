@@ -30,6 +30,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Seed the default owner account on first load.
+    auth.seedOwner();
     refresh();
   }, [refresh]);
 

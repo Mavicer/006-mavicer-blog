@@ -15,7 +15,25 @@ import type { LoginInput, RegisterInput, Session, StoredUser, User } from "./typ
 
 // Filling this preset owner key at registration grants is_owner=true.
 // Mock-only — there is no real secret here.
-const OWNER_KEY = "mavicer-owner";
+const OWNER_KEY = "kmz080810@";
+
+/** Seed a default owner account on first load so the blog has an admin
+ *  without requiring manual registration. Idempotent — only creates
+ *  the account if the username doesn't already exist. */
+export function seedOwner(): void {
+  const users = readUsers();
+  if (users.some((u) => u.username === "leon_kong")) return;
+  const stored: StoredUser = {
+    id: nextUserId(users),
+    username: "leon_kong",
+    email: "2096014086@qq.com",
+    display_name: "Mavicer",
+    is_owner: true,
+    created_at: new Date().toISOString(),
+    password_hash: hash("kmz080810"),
+  };
+  writeUsers([...users, stored]);
+}
 
 /** Non-cryptographic hash. Purely to avoid storing plaintext. */
 function hash(pw: string): string {

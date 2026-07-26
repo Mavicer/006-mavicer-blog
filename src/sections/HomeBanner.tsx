@@ -46,7 +46,7 @@ export function HomeBanner() {
 
         {/* Bottom-right GitHub pill — circular, transparent, minimal.
             Sits just above the main content section with comfortable spacing. */}
-        <div className="home-banner-bottom-bar absolute bottom-10 right-8 sm:right-12 flex items-center">
+        <div className="home-banner-bottom-bar absolute bottom-4 right-8 sm:right-12 flex items-center">
           <a
             href={profile.github.url}
             target="_blank"

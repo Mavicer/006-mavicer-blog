@@ -3,26 +3,33 @@
 
 export const site = {
   name: "Mavicer's Blog",
-  subtitle: "Create beyond the lines",
+  subtitle: "Humility brings us closest to greatness",
   author: "Mavicer",
   announcement: "记录 AI 开发、项目实践、CTF 与学习思考。",
-  footerStart: "2026/07/25 00:00:00",
+  footerStart: "2026/07/26 00:00:00",
   copyrightYear: 2026,
   about: {
-    name: "Mavicer",
+    name: "Leon Kong",
     role: "Undergraduate Student, Artificial Intelligence",
     school: "Nanjing University of Aeronautics and Astronautics",
     location: "Nanjing, China",
-    email: "your@email.com",
-    github: "https://github.com/yourname",
-    bio: `I am an undergraduate student in Artificial Intelligence at Nanjing
-University of Aeronautics and Astronautics. My interests lie in AI-native
-software development, full-stack systems, algorithms, CTF security, and learning.`,
+    email: "leonkong0810@gmail.com",
+    qq: "2096014086@qq.com",
+    wechat: "Ks2008810",
+    github: "https://github.com/Mavicer",
+    bio: `I am an AI undergraduate student and independent developer who enjoys building things with emerging technologies.
+
+My focus is on AI-native applications, full-stack development, and intelligent systems. I am fascinated by how large language models can reshape software creation, productivity, and human-computer interaction.
+
+I learn by building — from AI tools and web applications to experimental systems — continuously exploring new ways to turn ideas into reality`,
     profile: [
       "AI-native software development",
-      "Full-stack systems & engineering",
-      "Algorithms and data structures",
-      "CTF security",
+      "Large language models & AI agents",
+      "Full-stack engineering and modern web architecture",
+      "AI-powered products and developer tools",
+      "Algorithms and problem solving",
+      "Creative technology, photography & music production",
+      "Fitness, strength training and sports",
     ],
   },
 };

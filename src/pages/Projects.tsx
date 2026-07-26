@@ -1,56 +1,109 @@
+import { useEffect, useState } from "react";
 import { PageShell } from "@/components/PageShell";
 
-const PROJECTS = [
-  {
-    title: "Personal Blog",
-    desc: "React + FastAPI 全栈个人博客，复刻 Redefine 主题视觉。支持 Markdown、评论、点赞、收藏、在线人数统计与管理后台。",
-    tags: ["React", "TypeScript", "FastAPI", "Tailwind"],
-    link: "#",
-  },
-  {
-    title: "AI Tools",
-    desc: "对「AI + Web 工具」方向的长期探索。关注清晰的输入、稳定的处理流程、可解释的输出与顺滑的交互。",
-    tags: ["AI", "Full-stack"],
-    link: "#",
-  },
-  {
-    title: "CTF & Security",
-    desc: "CTF 训练养成的攻击者视角：输入是否可信、边界是否清晰、状态是否可控、异常是否被处理。",
-    tags: ["CTF", "Security"],
-    link: "#",
-  },
-];
+type Repo = {
+  name: string;
+  description: string | null;
+  html_url: string;
+  language: string | null;
+  stars: number;
+  forks: number;
+  topics: string[];
+  updated_at: string;
+};
 
 export default function Projects() {
+  const [repos, setRepos] = useState<Repo[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("https://api.github.com/users/Mavicer/repos?sort=updated&per_page=20")
+      .then((r) => r.json())
+      .then((data: any[]) => {
+        const list: Repo[] = (data || [])
+          .filter((r) => !r.fork)
+          .map((r) => ({
+            name: r.name,
+            description: r.description,
+            html_url: r.html_url,
+            language: r.language,
+            stars: r.stargazers_count || 0,
+            forks: r.forks_count || 0,
+            topics: r.topics || [],
+            updated_at: r.updated_at,
+          }))
+          .sort((a, b) => b.stars - a.stars || a.name.localeCompare(b.name));
+        setRepos(list);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
   return (
     <PageShell>
       <div className="article-content-container">
         <h1 className="text-4xl font-bold mb-2 text-first-text">Projects</h1>
-        <p className="text-third-text mb-8">Selected Works — 这里整理我希望长期展示的项目。</p>
+        <p className="text-third-text mb-8">
+          GitHub Repositories — 从 <a href="https://github.com/Mavicer" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">@Mavicer</a> 实时拉取。
+        </p>
 
-        <div className="flex flex-col gap-6">
-          {PROJECTS.map((p) => (
-            <article
-              key={p.title}
-              className="p-6 rounded-redefine shadow-redefine-flat hover:shadow-redefine-flat-hover transition-shadow border border-border"
-            >
-              <h2 className="text-2xl font-semibold mb-2 text-first-text">
-                {p.title}
-              </h2>
-              <p className="markdown-body mb-4">{p.desc}</p>
-              <div className="flex gap-2 flex-wrap">
-                {p.tags.map((t) => (
-                  <span
-                    key={t}
-                    className="px-3 py-1 rounded-full text-xs bg-third-background text-third-text border border-border"
-                  >
-                    {t}
+        {loading ? (
+          <p className="text-third-text py-10 text-center">正在加载项目列表...</p>
+        ) : repos.length === 0 ? (
+          <p className="text-third-text py-10 text-center">暂无公开仓库。</p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {repos.map((repo) => (
+              <a
+                key={repo.name}
+                href={repo.html_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block p-5 rounded-redefine shadow-redefine-flat hover:shadow-redefine-flat-hover transition-all border border-border hover:border-primary group"
+              >
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <h2 className="text-xl font-semibold text-first-text group-hover:text-primary transition-colors">
+                    {repo.name}
+                  </h2>
+                  {repo.language && (
+                    <span className="shrink-0 text-xs px-2.5 py-1 rounded-full bg-third-background text-third-text border border-border">
+                      {repo.language}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-third-text mb-3 leading-relaxed">
+                  {repo.description || "暂无描述"}
+                </p>
+                <div className="flex items-center gap-4 text-xs text-third-text">
+                  <span className="flex items-center gap-1">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                    {repo.stars}
                   </span>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
+                  <span className="flex items-center gap-1">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="6" cy="6" r="3" />
+                      <circle cx="6" cy="18" r="3" />
+                      <path d="M18 6a3 3 0 0 1 0 6H6" />
+                    </svg>
+                    {repo.forks}
+                  </span>
+                  <span>更新于 {repo.updated_at.slice(0, 10).replace(/-/g, "/")}</span>
+                </div>
+                {repo.topics.length > 0 && (
+                  <div className="flex gap-1.5 flex-wrap mt-3">
+                    {repo.topics.map((t) => (
+                      <span key={t} className="px-2 py-0.5 rounded-full text-[0.65rem] bg-third-background text-third-text border border-border">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </PageShell>
   );
