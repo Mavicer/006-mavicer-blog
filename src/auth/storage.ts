@@ -27,7 +27,15 @@ export function writeUsers(users: StoredUser[]): void {
 
 export function readSession(): Session | null {
   try {
-    return JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+    const s = JSON.parse(localStorage.getItem(SESSION_KEY) || "null") as Session | null;
+    if (!s) return null;
+    // Expiration check — frontend-only, not cryptographically secure.
+    // Production must validate the session token server-side.
+    if (s.expires_at && Date.now() > s.expires_at) {
+      localStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+    return s;
   } catch {
     return null;
   }

@@ -1,6 +1,7 @@
 import { marked } from "marked";
 import hljs from "./highlight";
 import katex from "katex";
+import DOMPurify from "dompurify";
 
 // Configure marked once.
 marked.setOptions({
@@ -41,18 +42,29 @@ renderer.code = ({ text, lang }: { text: string; lang?: string }) => {
 renderer.codespan = ({ text }: { text: string }) =>
   `<code>${text}</code>`;
 
+// Only allow http(s) and mailto URLs in links/images — blocks javascript:.
+const SAFE_URL = /^(https?:|mailto:|\/|#|data:image\/)/i;
+
 renderer.link = ({ href, title, tokens }) => {
   const text = (marked as any).Parser.parseInline(tokens);
-  const isExternal = /^https?:\/\//.test(href || "");
+  if (!href || !SAFE_URL.test(href)) {
+    return `<span>${text}</span>`;
+  }
+  const isExternal = /^https?:\/\//.test(href);
+  const safeHref = href.replace(/"/g, "&quot;");
+  const safeTitle = title ? ` title="${title.replace(/"/g, "&quot;")}"` : "";
   return `<a class="link" ${
     isExternal ? 'target="_blank" rel="noopener noreferrer"' : ""
-  } href="${href}"${title ? ` title="${title}"` : ""}>${text}</a>`;
+  } href="${safeHref}"${safeTitle}>${text}</a>`;
 };
 
-renderer.image = ({ href, title, text }) =>
-  `<img src="${href}" alt="${text || ""}" ${
-    title ? `title="${title}"` : ""
-  } loading="lazy" data-viewer />`;
+renderer.image = ({ href, title, text }) => {
+  if (!href || !SAFE_URL.test(href)) return "";
+  const safeHref = href.replace(/"/g, "&quot;");
+  const safeAlt = (text || "").replace(/"/g, "&quot;");
+  const safeTitle = title ? ` title="${title.replace(/"/g, "&quot;")}"` : "";
+  return `<img src="${safeHref}" alt="${safeAlt}" ${safeTitle} loading="lazy" data-viewer />`;
+};
 
 renderer.heading = ({ text, depth }) =>
   `<h${depth} id="${slugify(stripHtml(text))}">${text}</h${depth}>`;
@@ -106,10 +118,51 @@ function renderKatex(tex: string, display: boolean): string {
   }
 }
 
+// Sanitize HTML output to prevent XSS — strips <script>, on* event
+// handlers, javascript: URLs, and other injection vectors. This runs
+// AFTER KaTeX substitution so math output (which is already escaped
+// by KaTeX) survives intact.
+const PURIFY_CONFIG = {
+  ALLOWED_TAGS: [
+    "a", "b", "i", "em", "strong", "u", "s", "del", "mark", "small",
+    "sub", "sup", "br", "hr", "span", "div", "p", "blockquote", "pre",
+    "code", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li",
+    "table", "thead", "tbody", "tr", "th", "td", "img", "figure",
+    "figcaption", "details", "summary", "abbr", "cite", "q", "kbd",
+    "var", "samp", "time", "ruby", "rt", "rp", "bdi", "bdo", "wbr",
+    "input", "iframe", // KaTeX uses these; DOMPurify will strip dangerous attrs
+    "math", "semantics", "mrow", "mi", "mo", "mn", "msup", "msub",
+    "msubsup", "mfrac", "mtext", "mspace", "annotation", "menclose",
+    "mover", "munder", "munderover", "mtable", "mtr", "mtd",
+  ],
+  ALLOWED_ATTR: [
+    "href", "title", "src", "alt", "class", "id", "style",
+    "target", "rel", "loading", "data-viewer", "colspan", "rowspan",
+    "width", "height", "align", "valign", "type", "checked", "disabled",
+    "frameborder", "allow", "allowfullscreen", "encoding",
+    // KaTeX/MathML attributes
+    "xmlns", "mathvariant", "notation", "stretchy", "fence", "separator",
+    "accent", "accentunder", "columnalign", "rowalign", "columnspacing",
+    "rowspacing", "columnlines", "rowlines", "frame", "framespacing",
+    "equalrows", "equalcolumns", "side", "maxwidth", "close", "open",
+    "form", "lspace", "rspace", "movablelimits", "scriptlevel",
+    "displaystyle", "scriptminsize", "scriptsizemultiplier",
+    "bevelled", "denomalign", "numalign", "linethickness",
+    "selection", "notation", "dir", "href",
+  ],
+  ALLOW_DATA_ATTR: false,
+  FORBID_TAGS: ["script", "object", "embed", "form", "input[type=hidden]"],
+  FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur"],
+};
+
 export function renderMarkdown(markdown: string): string {
   const { text, blocks } = protectMath(markdown);
   let html = marked.parse(text) as string;
   html = html.replace(MATH_BLOCK, (_, i) => blocks[Number(i)] || "");
+  // Final XSS defense: sanitize all rendered HTML before it reaches
+  // dangerouslySetInnerHTML. This strips <script> tags, on* event
+  // handlers, javascript: URLs, and other injection vectors.
+  html = DOMPurify.sanitize(html, PURIFY_CONFIG);
   return html;
 }
 

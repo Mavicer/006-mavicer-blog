@@ -1,8 +1,0 @@
-components
-config
-data
-hooks
-lib
-pages
-sections
-styles

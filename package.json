@@ -10,6 +10,8 @@
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
+    "@types/dompurify": "^3.0.5",
+    "dompurify": "^3.4.12",
     "framer-motion": "^11.3.19",
     "highlight.js": "^11.10.0",
     "katex": "^0.16.11",

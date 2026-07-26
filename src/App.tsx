@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import Layout from "./components/Layout";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Archives from "./pages/Archives";
 import About from "./pages/About";
@@ -30,13 +31,13 @@ export default function App() {
           <Route path="/tags" element={<Tags />} />
           <Route path="/tags/:tag" element={<Tags />} />
           <Route path="/gallery" element={<Gallery />} />
-          <Route path="/gallery/admin" element={<GalleryAdmin />} />
+          <Route path="/gallery/admin" element={<ProtectedRoute requireOwner><GalleryAdmin /></ProtectedRoute>} />
           <Route path="/categories/:cat" element={<Categories />} />
           <Route path="/posts/:slug" element={<PostDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/account" element={<Account />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin" element={<ProtectedRoute requireOwner><Admin /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AnimatePresence>

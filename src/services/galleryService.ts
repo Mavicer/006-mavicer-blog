@@ -1,7 +1,23 @@
 // galleryService.ts — localStorage-backed gallery store for photos & videos.
-// Supports both URL-based items and file-upload items (stored as base64
-// data URLs in IndexedDB, with a pointer in localStorage).
-// Same pattern as articlesService.ts; swap for API calls when backend lands.
+//
+// ⚠️  SECURITY: Write operations include a frontend requireOwner() guard.
+//     This is UX-level protection only. Production auth must be server-side.
+
+import { currentUser } from "@/auth/auth";
+
+/** Frontend-only auth guard. Throws if the current user is not an owner. */
+function requireOwner(): void {
+  const u = currentUser();
+  if (!u || !u.is_owner) {
+    const err = new Error("需要管理员权限") as Error & { status: number };
+    err.status = 403;
+    throw err;
+  }
+}
+
+/** Max file sizes for direct-upload (dataURL stored in localStorage). */
+export const MAX_PHOTO_SIZE = 5 * 1024 * 1024;  // 5 MB
+export const MAX_VIDEO_SIZE = 20 * 1024 * 1024; // 20 MB
 
 export type GalleryType = "photo" | "video";
 
@@ -52,6 +68,7 @@ export function listGallery(): GalleryItem[] {
 }
 
 export function createGalleryItem(input: GalleryInput): GalleryItem {
+  requireOwner();
   const item: GalleryItem = {
     id: genId(),
     type: input.type,
@@ -68,6 +85,7 @@ export function createGalleryItem(input: GalleryInput): GalleryItem {
 }
 
 export function updateGalleryItem(id: string, input: GalleryInput): GalleryItem {
+  requireOwner();
   const items = read();
   const idx = items.findIndex((x) => x.id === id);
   if (idx < 0) throw new Error("展示项不存在");
@@ -87,6 +105,7 @@ export function updateGalleryItem(id: string, input: GalleryInput): GalleryItem 
 }
 
 export function deleteGalleryItem(id: string): void {
+  requireOwner();
   write(read().filter((x) => x.id !== id));
 }
 

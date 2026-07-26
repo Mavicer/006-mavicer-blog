@@ -82,7 +82,9 @@ export default function Admin() {
       setForm((f) => ({ ...emptyForm, sortOrder: form.sortOrder }));
     } catch (err: any) {
       setStatus(
-        err?.status === 409
+        err?.status === 403
+          ? "需要管理员权限。"
+          : err?.status === 409
           ? "文章地址已存在。"
           : `保存失败：${err?.message || "请检查输入"}`
       );
@@ -149,6 +151,7 @@ export default function Admin() {
             <span className="text-sm">标题</span>
             <input
               required
+              maxLength={200}
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               className="px-3 py-2 rounded-md border border-border bg-background font-normal"
@@ -157,6 +160,7 @@ export default function Admin() {
           <label className="flex flex-col gap-1 font-bold">
             <span className="text-sm">封面图 URL（可选）</span>
             <input
+              maxLength={2000}
               value={form.cover}
               onChange={(e) => setForm({ ...form, cover: e.target.value })}
               placeholder="https://..."
@@ -166,6 +170,7 @@ export default function Admin() {
           <label className="flex flex-col gap-1 font-bold">
             <span className="text-sm">摘要</span>
             <input
+              maxLength={500}
               value={form.excerpt}
               onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
               className="px-3 py-2 rounded-md border border-border bg-background font-normal"
@@ -234,6 +239,7 @@ export default function Admin() {
           ) : (
             <textarea
               required
+              maxLength={100000}
               value={form.body}
               onChange={(e) => setForm({ ...form, body: e.target.value })}
               placeholder="在这里写 Markdown..."

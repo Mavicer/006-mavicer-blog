@@ -30,15 +30,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Seed the default owner account on first load.
-    auth.seedOwner();
     refresh();
   }, [refresh]);
 
   const login = useCallback(async (username: string, password: string) => {
     setLoading(true);
     try {
-      const result = auth.login({ username, password });
+      const result = await auth.login({ username, password });
       auth.storeSession(result);
       setUser(result.user);
     } finally {
@@ -56,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }) => {
       setLoading(true);
       try {
-        const result = auth.register(payload);
+        const result = await auth.register(payload);
         auth.storeSession(result);
         setUser(result.user);
       } finally {

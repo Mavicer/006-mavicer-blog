@@ -1,6 +1,0 @@
-pyproject.toml
-src/mavicer_blog_backend.egg-info/PKG-INFO
-src/mavicer_blog_backend.egg-info/SOURCES.txt
-src/mavicer_blog_backend.egg-info/dependency_links.txt
-src/mavicer_blog_backend.egg-info/requires.txt
-src/mavicer_blog_backend.egg-info/top_level.txt

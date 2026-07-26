@@ -1,12 +1,24 @@
 // articlesService.ts — localStorage-backed article store for the mock CMS.
 //
-// Mirrors the Post shape used by usePosts.ts so static .md articles and
-// locally-created CMS articles merge seamlessly. Swap these functions for
-// FastAPI calls when the real backend lands; the React layer is unchanged.
+// ⚠️  SECURITY: Write operations include a frontend requireOwner() guard
+//     to prevent casual misuse. This is NOT real security — anyone with
+//     DevTools can bypass it. Production auth must be enforced server-side.
 
 import type { Post } from "@/hooks/usePosts";
+import { currentUser } from "@/auth/auth";
 
 const KEY = "MAVICER_ARTICLES";
+
+/** Frontend-only auth guard. Throws if the current user is not an owner.
+ *  This is UX-level protection, not real security. */
+function requireOwner(): void {
+  const u = currentUser();
+  if (!u || !u.is_owner) {
+    const err = new Error("需要管理员权限") as Error & { status: number };
+    err.status = 403;
+    throw err;
+  }
+}
 
 export type ArticleInput = {
   slug: string;
@@ -82,6 +94,7 @@ export function getArticle(slug: string): Article | undefined {
 }
 
 export function createArticle(input: ArticleInput): Article {
+  requireOwner();
   const articles = read();
   if (articles.some((a) => a.slug === input.slug)) {
     const err = new Error("文章地址已存在") as Error & { status: number };
@@ -108,6 +121,7 @@ export function createArticle(input: ArticleInput): Article {
 }
 
 export function updateArticle(slug: string, input: ArticleInput): Article {
+  requireOwner();
   const articles = read();
   const idx = articles.findIndex((a) => a.slug === slug);
   if (idx < 0) {
@@ -141,6 +155,7 @@ export function updateArticle(slug: string, input: ArticleInput): Article {
 }
 
 export function deleteArticle(slug: string): void {
+  requireOwner();
   write(read().filter((a) => a.slug !== slug));
 }
 

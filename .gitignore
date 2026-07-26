@@ -6,3 +6,8 @@ dist/
 .env.*
 .DS_Store
 *.log
+*.tsbuildinfo
+src/mavicer_blog_backend.egg-info/
+verify-*.cjs
+screenshot*.cjs
+阶段一成果报告.txt
