@@ -754,6 +754,7 @@ a:hover {
   }
   .markdown-body p {
     margin: 0 0 1rem;
+    text-indent: 2em;
   }
   .markdown-body a {
     color: var(--primary-color);

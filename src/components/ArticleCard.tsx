@@ -27,7 +27,10 @@ export function ArticleCard({ post }: { post: Post }) {
               &nbsp;
               <ul className="inline">
                 <li className="inline">
-                  <Link to={`/categories/${encodeURIComponent(post.category)}`}>
+                  <Link
+                    to={`/categories/${encodeURIComponent(post.category)}`}
+                    className={post.category === "经验分享" ? "font-semibold text-primary" : ""}
+                  >
                     {post.category}
                   </Link>
                   &nbsp;
