@@ -1,0 +1,15 @@
+/* highlight.js themes: github (light) / vs2015 (dark), matching original Redefine config.
+   Loaded via CDN at runtime in index.html, this file just provides a base. */
+
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 16px;
+  color: inherit;
+  background: transparent;
+}
+.hljs-comment,
+.hljs-quote {
+  color: #6a737d;
+  font-style: italic;
+}

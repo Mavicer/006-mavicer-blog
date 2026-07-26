@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: mavicer-blog-backend
+Version: 0.1.0
+Summary: FastAPI backend for Mavicer's Blog (1:1 with the original aleph-null.cc API)
+Requires-Python: >=3.10
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: uvicorn[standard]>=0.30.0
+Requires-Dist: sqlmodel>=0.0.21
+Requires-Dist: python-jose[cryptography]>=3.3.0
+Requires-Dist: passlib[bcrypt]>=1.7.4
+Requires-Dist: python-multipart>=0.0.9
+Requires-Dist: pydantic[email-validator]>=2.8.0

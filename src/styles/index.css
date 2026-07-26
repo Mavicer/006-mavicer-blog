@@ -1,0 +1,1109 @@
+@import "./fonts.css";
+@import "./highlight.css";
+@import "./katex.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Redefine theme design tokens (1:1 with aleph-null.cc)
+   ============================================================ */
+:root {
+  --background-color: #fff;
+  --background-color-transparent: rgba(255, 255, 255, 0.6);
+  --background-color-transparent-15: rgba(255, 255, 255, 0.15);
+  --background-color-transparent-40: rgba(255, 255, 255, 0.4);
+  --background-color-transparent-80: rgba(255, 255, 255, 0.8);
+  --second-background-color: #fafafa;
+  --third-background-color: #f7f7f7;
+  --third-background-color-transparent: rgba(241, 241, 241, 0.6);
+  --primary-color: #a31f34;
+  --first-text-color: #323739;
+  --second-text-color: #343a3c;
+  --third-text-color: #5c6669;
+  --fourth-text-color: #eaeced;
+  --default-text-color: #373d3f;
+  --invert-text-color: #bebec6;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --selection-color: #be243c;
+  --shadow-color-1: rgba(0, 0, 0, 0.08);
+  --shadow-color-2: rgba(0, 0, 0, 0.05);
+  --shadow-hover-color: rgba(0, 0, 0, 0.28);
+  --scrollbar-color: #c1c1c1;
+  --scrollbar-color-hover: #a1a1a1;
+  --scroll-bar-bg-color: #fafafa;
+  --link-color: #323739;
+  --home-banner-text-color: #fff;
+  --home-banner-icons-container-border-color: rgba(255, 255, 255, 0.35);
+  --home-banner-icons-container-background-color: rgba(255, 255, 255, 0.3);
+  --redefine-box-shadow: var(--shadow-color-2) 0px 6px 24px 0px,
+    var(--shadow-color-1) 0px 0px 0px 1px;
+  --redefine-box-shadow-hover: var(--shadow-color-2) 0px 6px 24px 0px,
+    var(--shadow-color-1) 0px 0px 0px 1px,
+    var(--shadow-color-1) 0px 0px 0px 1px inset;
+  --redefine-box-shadow-flat: var(--shadow-color-2) 0px 1px 4px 0px,
+    var(--shadow-color-1) 0px 0px 0px 1px;
+  --redefine-box-shadow-flat-hover: var(--shadow-color-2) 0px 1px 4px 0px,
+    var(--shadow-color-1) 0px 0px 0px 1px,
+    var(--shadow-color-1) 0px 0px 0px 1px inset;
+  --navbar-height: 64px;
+  --navbar-shrink-height: 50.4px;
+}
+
+.dark {
+  --background-color: #202124;
+  --background-color-transparent: rgba(32, 33, 36, 0.4);
+  --background-color-transparent-15: rgba(32, 33, 36, 0.15);
+  --background-color-transparent-40: rgba(32, 33, 36, 0.4);
+  --background-color-transparent-80: rgba(32, 33, 36, 0.8);
+  --second-background-color: #242529;
+  --third-background-color: #292b2f;
+  --third-background-color-transparent: rgba(32, 33, 36, 0.6);
+  --primary-color: #a31f34;
+  --first-text-color: #d2d2d7;
+  --second-text-color: #cbcbd1;
+  --third-text-color: #9595a2;
+  --fourth-text-color: #36363e;
+  --default-text-color: #bebec6;
+  --invert-text-color: #373d3f;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --selection-color: #be243c;
+  --shadow-color-1: rgba(255, 255, 255, 0.08);
+  --shadow-color-2: rgba(255, 255, 255, 0.05);
+  --shadow-hover-color: rgba(69, 69, 69,  0.28);
+  --scrollbar-color: #898989;
+  --scrollbar-color-hover: #a1a1a1;
+  --scroll-bar-bg-color: #2a2c30;
+  --link-color: #c5c5cc;
+  --home-banner-text-color: #d1d1b6;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  color: var(--default-text-color);
+  background: var(--background-color);
+  font-family: "Geist Variable", "Noto Sans SC", -apple-system, system-ui,
+    "Segoe UI", Roboto, Ubuntu, Cantarell, "PingFang SC", "Microsoft YaHei",
+    "Heiti SC", sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  /* Overscroll bounce: let the body rubber-band at the scroll limits
+     (the original site's feel) instead of the browser clamping hard. */
+  overscroll-behavior-y: auto;
+}
+
+/* iOS Safari needs this on html specifically for the bounce to engage,
+   and #root must not clamp overflow or the body bounce is hidden. */
+html {
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+#root {
+  min-height: 100%;
+}
+
+::selection {
+  background: var(--selection-color);
+  color: #fff;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scroll-bar-bg-color);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-color);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-color-hover);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+a:hover {
+  color: var(--primary-color);
+}
+
+/* ============================================================
+   Redefine component utilities (mirror original class semantics)
+   ============================================================ */
+@layer components {
+  .transition-fade {
+    transition: 0.4s;
+    opacity: 1;
+  }
+  .transition-fade-down {
+    transform: translateY(0);
+    opacity: 1;
+    transition: transform 0.4s ease, opacity 0.4s ease;
+  }
+  .transition-fade-up {
+    transform: translateY(0);
+    opacity: 1;
+    transition: transform 0.4s ease, opacity 0.4s ease;
+  }
+  .transition-navbar {
+    transition: max-width 0.3s ease, height 0.3s ease, padding 0.3s ease;
+  }
+
+  .home-banner-container {
+    font-family: "Chillax", "Geist Variable", sans-serif;
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 100vh;
+    overflow: hidden;
+    will-change: transform;
+  }
+  /* Hero text is vertically centred against the full viewport. The
+     content block is shifted upward so the optical centre sits above
+     the geometric middle — the navbar and the bottom GitHub pill both
+     pull the eye down, so we compensate with a negative margin-top. */
+  .home-banner-container .content {
+    min-height: 100vh;
+    padding-top: var(--navbar-height);
+    margin-top: -18vh;
+  }
+  /* GitHub pill — circular, transparent, anchored bottom-right. */
+  .home-banner-bottom-bar {
+    box-sizing: border-box;
+  }
+  @media (max-width: 768px) {
+    .home-banner-bottom-bar {
+      right: 1rem;
+      bottom: 1.5rem;
+    }
+  }
+  .home-banner-container .description {
+    font-size: 2.8rem;
+    line-height: 1.25;
+    color: var(--home-banner-text-color);
+    text-shadow: 0 8px 30px rgba(0, 0, 0, 0.38);
+    letter-spacing: 0.01em;
+    font-weight: 500;
+  }
+  .home-banner-container .description #subtitle {
+    font-size: 1.5rem;
+    font-weight: 400;
+    opacity: 0.92;
+    letter-spacing: 0.02em;
+  }
+
+  .home-banner-background {
+    transition: filter 0.3s ease;
+  }
+
+  .navbar-container {
+    font-family: "Chillax", "Geist Variable", sans-serif;
+    width: 100%;
+    height: var(--navbar-height);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+      120deg,
+      rgba(247, 135, 54, 0.208) 0%,
+      rgba(54, 125, 247, 0.208) 100%
+    );
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    padding-top: 2px;
+    box-shadow: var(--redefine-box-shadow);
+    position: sticky;
+    top: 0;
+    z-index: 1006;
+  }
+  .navbar-container.navbar-shrink {
+    height: var(--navbar-shrink-height);
+  }
+  .navbar-content {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    max-width: 1000px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1005;
+    transition: max-width 0.3s ease;
+  }
+  .navbar-content.has-home-banner {
+    max-width: 1200px;
+  }
+  .navbar-content.navbar-shrink {
+    max-width: 1000px;
+  }
+  .logo-title {
+    font-size: 1.7rem;
+    font-weight: 520;
+    line-height: 1;
+    color: var(--first-text-color);
+    transform: translateY(1px);
+  }
+  .navbar-list {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+  .navbar-item {
+    float: left;
+    position: relative;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--default-text-color);
+  }
+  .navbar-item > a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+  }
+  .navbar-item a.active {
+    color: var(--primary-color);
+    font-weight: 600;
+  }
+  .sub-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 140px;
+    background: var(--background-color);
+    box-shadow: var(--redefine-box-shadow);
+    border-radius: 12px;
+    padding: 8px 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: all 0.2s ease;
+    z-index: 1010;
+  }
+  .navbar-item:hover .sub-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  .sub-menu li a {
+    display: block;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    color: var(--second-text-color);
+  }
+
+  /* Mobile drawer (slides in from the right, covers full viewport). */
+  .navbar-drawer {
+    transition: transform 0.3s ease;
+  }
+  .drawer-navbar-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .drawer-navbar-item a,
+  .drawer-navbar-item > div > div > a,
+  .drawer-navbar-item > div > div > Link {
+    text-decoration: none;
+    color: inherit;
+  }
+  /* Window mask behind the drawer. */
+  .window-mask {
+    transition: opacity 0.2s ease;
+  }
+
+  .home-sidebar-container {
+    width: 240px;
+    height: auto;
+    margin: 0 38px;
+  }
+  .sticky-container {
+    position: sticky;
+    top: 70px;
+  }
+  .sidebar-links {
+    overflow: hidden;
+    padding: 15px;
+    border-radius: 18px;
+    box-sizing: border-box;
+    background: var(--background-color);
+    box-shadow: var(--redefine-box-shadow);
+  }
+  .sidebar-content {
+    padding: 20px;
+    border-radius: 18px;
+    box-sizing: border-box;
+    background: var(--background-color);
+    box-shadow: var(--redefine-box-shadow);
+    margin-top: 30px;
+  }
+  .site-info {
+    background: var(--second-background-color);
+    margin: -15px -15px 10px -15px;
+    border-radius: 18px 18px 0 0;
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .site-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--first-text-color);
+    text-align: center;
+  }
+  .announcement {
+    font-size: 0.9rem;
+    color: var(--third-text-color);
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 5px;
+  }
+  .sidebar-links .links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    color: var(--second-text-color);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+  }
+  .sidebar-links .links:hover {
+    color: var(--primary-color);
+    background: var(--third-background-color);
+  }
+
+  .home-article-item {
+    position: relative;
+    padding: 0;
+    border-radius: 18px;
+    box-sizing: border-box;
+    background: var(--background-color);
+    margin-bottom: 38px;
+    box-shadow: var(--redefine-box-shadow);
+    transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease,
+      border-color 0.2s ease, transform 0.2s linear;
+  }
+  .home-article-item:hover {
+    box-shadow: var(--redefine-box-shadow-hover);
+    transform: translateY(-2px);
+  }
+  .home-article-title {
+    position: relative;
+    font-weight: 600;
+    font-size: 1.4rem;
+    line-height: 1.5;
+    color: var(--second-text-color);
+    margin: 0;
+  }
+  .home-article-title a:hover {
+    color: var(--primary-color);
+  }
+  .home-article-content {
+    word-wrap: break-word;
+    text-align: justify;
+    color: var(--default-text-color);
+  }
+  .home-article-meta-info,
+  .home-article-meta-info-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.92rem;
+    color: var(--third-text-color);
+  }
+  .home-article-meta-info a:hover {
+    color: var(--primary-color);
+  }
+
+  .main-content-container {
+    padding-top: 70px;
+    position: relative;
+  }
+  .home-content-container {
+    margin-right: 38px;
+  }
+  .main-content {
+    font-size: 0.9em;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .right-side-tools-container {
+    position: fixed;
+    bottom: 8%;
+    right: 38px;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+    z-index: 1002;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .right-side-tools-container.hide {
+    opacity: 0;
+  }
+  .right-bottom-tools {
+    width: 42px;
+    height: 42px;
+    font-size: 1.3rem;
+    margin-bottom: 5px;
+    cursor: pointer;
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--redefine-box-shadow);
+    color: var(--default-text-color);
+    background: var(--background-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.2s ease;
+  }
+  .right-bottom-tools:hover {
+    color: var(--background-color);
+    background: var(--primary-color);
+    box-shadow: var(--redefine-box-shadow);
+  }
+  .right-bottom-tools:hover i {
+    color: var(--background-color);
+  }
+  /* Persistent text label to the LEFT of each tool button — always visible,
+     so every button's function is identifiable without hovering. Keeps the
+     minimal aesthetic: small, muted, single-line, sits left of the icon. */
+  .right-bottom-tools .tool-label {
+    position: absolute;
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--third-text-color);
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 2px 8px;
+    box-shadow: var(--redefine-box-shadow);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .right-bottom-tools:hover .tool-label {
+    opacity: 1;
+    transform: translateY(-50%) translateX(-2px);
+  }
+
+  /* Hidden tools panel — slides DOWN from the toggle button when expanded.
+     The toggle reads as a disclosure affordance (chevron up/down), so the
+     panel expands vertically rather than from the right. */
+  .hidden-tools-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.25s ease, opacity 0.2s ease;
+  }
+  .hidden-tools-list.show {
+    max-height: 280px; /* 5 buttons × ~52px */
+    opacity: 1;
+  }
+
+  /* Visible tools (scroll-to-top + toggle) */
+  .visible-tools-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Scroll-to-top button: hidden by default, shown via .show class.
+     Sits ABOVE the toggle so it never overlaps the account dock below. */
+  .side-tools-container
+    .visible-tools-list
+    .tool-scroll-to-top {
+    display: none;
+  }
+  .side-tools-container
+    .visible-tools-list
+    .tool-scroll-to-top.show {
+    display: flex;
+  }
+  /* percent badge shown by default; hidden on hover */
+  .side-tools-container
+    .visible-tools-list
+    .tool-scroll-to-top
+    .percent {
+    display: flex;
+    font-size: 1rem;
+  }
+  .side-tools-container
+    .visible-tools-list
+    .tool-scroll-to-top:hover
+    .percent {
+    display: none;
+  }
+  /* arrow-up hidden by default; shown on hover */
+  .side-tools-container
+    .visible-tools-list
+    .tool-scroll-to-top
+    .arrow-up {
+    display: none;
+  }
+  .side-tools-container
+    .visible-tools-list
+    .tool-scroll-to-top:hover
+    .arrow-up {
+    display: flex;
+  }
+
+  .paginator {
+    font-size: 1rem;
+    margin-top: 30px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+  }
+  .page-number,
+  .extend {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    padding: 0 12px;
+    background: var(--background-color);
+    box-shadow: var(--redefine-box-shadow);
+    color: var(--default-text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .page-number:hover,
+  .extend:hover {
+    color: var(--primary-color);
+    box-shadow: var(--redefine-box-shadow-hover);
+  }
+  .page-number.current {
+    background: var(--primary-color);
+    color: #fff;
+  }
+
+  .footer {
+    display: block;
+    position: relative;
+    width: 100%;
+    text-align: center;
+  }
+  .footer .info-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .footer .post-count {
+    display: inline-flex;
+    justify-content: center;
+  }
+  /* On small screens the flanking info blocks stack inline with the rest,
+     all centered. On large screens they go absolute to flank the footer. */
+  .footer .footer-side {
+    position: static;
+    transform: none;
+    text-align: center;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 1rem;
+  }
+  @media (min-width: 1024px) {
+    .footer .footer-powered {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      text-align: left;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+  }
+
+  /* Beating heart — CSS keyframes, no emoji font issues. */
+  .footer-heart {
+    color: #f54545;
+    display: inline-block;
+    animation: footer-heart-beat 0.6s ease-in-out infinite;
+    transform-origin: center;
+  }
+  @keyframes footer-heart-beat {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.25); }
+    50% { transform: scale(1); }
+    75% { transform: scale(1.15); }
+  }
+
+  .social-contacts {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+  }
+  .social-contact-item a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--home-banner-text-color);
+    transition: color 0.2s ease;
+  }
+  .social-contact-item a:hover {
+    color: var(--primary-color);
+  }
+
+  /* Article detail */
+  .article-content-container {
+    padding: 30px;
+    border-radius: 18px;
+    background: var(--background-color);
+    box-shadow: var(--redefine-box-shadow);
+  }
+  .article-title {
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--first-text-color);
+    margin: 0 0 0.6rem;
+  }
+  .article-meta-info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    font-size: 0.88rem;
+    color: var(--third-text-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+  .article-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Markdown body */
+  .markdown-body {
+    font-family: "Geist Variable", -apple-system, "PingFang SC",
+      "Microsoft YaHei", sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--default-text-color);
+    word-wrap: break-word;
+  }
+  .markdown-body h2,
+  .markdown-body h3,
+  .markdown-body h4 {
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--first-text-color);
+    position: relative;
+  }
+  .markdown-body h2 {
+    font-size: 1.5rem;
+    margin: 2.4rem 0 1rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .markdown-body h3 {
+    font-size: 1.25rem;
+    margin: 1.9rem 0 0.8rem;
+  }
+  .markdown-body h4 {
+    font-size: 1.1rem;
+    margin: 1.6rem 0 0.6rem;
+  }
+  .markdown-body p {
+    margin: 0 0 1rem;
+  }
+  .markdown-body a {
+    color: var(--primary-color);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+  .markdown-body a:hover {
+    border-bottom-color: var(--primary-color);
+  }
+  .markdown-body ul,
+  .markdown-body ol {
+    margin: 0 0 1rem;
+    padding-left: 1.5rem;
+  }
+  /* Restore list markers — Tailwind preflight strips them globally. */
+  .markdown-body ol {
+    list-style-type: decimal;
+  }
+  .markdown-body ul {
+    list-style-type: disc;
+  }
+  .markdown-body li {
+    margin: 0.3rem 0;
+  }
+  .markdown-body blockquote {
+    margin: 1rem 0;
+    padding: 0.5rem 1rem;
+    border-left: 3px solid var(--primary-color);
+    background: var(--third-background-color);
+    border-radius: 0 8px 8px 0;
+    color: var(--second-text-color);
+  }
+  .markdown-body code {
+    font-family: "Geist Mono", ui-monospace, monospace;
+    background: var(--third-background-color);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.875em;
+  }
+  .markdown-body pre {
+    margin: 1rem 0;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .markdown-body pre code {
+    display: block;
+    padding: 16px;
+    background: transparent;
+  }
+  .markdown-body img {
+    max-width: 100%;
+    border-radius: 14px;
+    display: block;
+    margin: 1rem auto;
+  }
+  .markdown-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+  }
+  .markdown-body th,
+  .markdown-body td {
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+  }
+  .markdown-body th {
+    background: var(--third-background-color);
+  }
+  .markdown-body hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 2rem 0;
+  }
+
+  /* Code block mac-style header */
+  .code-block {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--redefine-box-shadow-flat);
+    margin: 1.2rem 0;
+  }
+  .code-block-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: var(--second-background-color);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.8rem;
+    color: var(--third-text-color);
+  }
+  .code-block-header .mac-dots {
+    display: flex;
+    gap: 6px;
+    margin-right: 8px;
+  }
+  .code-block-header .mac-dots span {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* Tag cloud (tags page) */
+  .tagcloud {
+    margin: 6px 0 12px 0;
+    font-size: 3.2rem;
+    padding: 0;
+    line-height: 1;
+    font-weight: bold;
+    color: var(--second-text-color);
+  }
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    filter: blur(0) !important;
+    transition: filter 0.3s ease;
+  }
+  .tag-list a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--background-color);
+    box-shadow: var(--redefine-box-shadow-flat);
+    color: var(--second-text-color);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+  }
+  .tag-list a:hover {
+    color: var(--primary-color);
+    box-shadow: var(--redefine-box-shadow-flat-hover);
+    transform: translateY(-2px);
+  }
+
+  /* Archive timeline */
+  .archive-item {
+    margin-bottom: 2rem;
+  }
+  .archive-year {
+    font-weight: 700;
+    font-size: 1.875rem;
+  }
+  .archive-year-post-count {
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 999px;
+    background: var(--third-background-color);
+    padding: 2px 10px;
+    border: 1px solid var(--border-color);
+    color: var(--third-text-color);
+  }
+  .article-list .article-item {
+    position: relative;
+    padding: 10px 24px;
+    border-left: 2px solid var(--border-color);
+    transition: border-color 0.2s ease;
+  }
+  .article-list .article-item:hover {
+    border-left-color: var(--primary-color);
+  }
+
+  /* Search popup */
+  .search-pop-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(6px);
+    z-index: 1008;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 12vh;
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.2s ease;
+  }
+  .search-pop-overlay.active {
+    visibility: visible;
+    opacity: 1;
+  }
+  .search-popup {
+    width: min(640px, 92vw);
+    background: var(--background-color);
+    border-radius: 18px;
+    box-shadow: var(--redefine-box-shadow);
+    overflow: hidden;
+    transform: scale(0.96);
+    transition: transform 0.2s ease;
+  }
+  .search-pop-overlay.active .search-popup {
+    transform: scale(1);
+  }
+
+  /* Image viewer */
+  .image-viewer-container {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0);
+    visibility: hidden;
+    z-index: 1008;
+    padding: 6%;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+  }
+  .image-viewer-container.active {
+    visibility: visible;
+    background: rgba(0, 0, 0, 0.85);
+  }
+  .image-viewer-container img {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 8px;
+  }
+
+  /* Online / account docks */
+  .aleph-online {
+    margin-top: 2.4rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--background-color-transparent-80);
+    backdrop-filter: blur(10px);
+  }
+  .aleph-account-dock,
+  .aleph-reader-dock {
+    position: fixed;
+    bottom: 1rem;
+    z-index: 80;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 40px;
+    padding: 0 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--background-color-transparent-80);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(12px);
+    font-size: 0.9rem;
+    /* opacity/transform transitions so the inline style fade-in animates */
+    transition: opacity 0.4s ease, transform 0.4s ease,
+      border-color 0.2s ease, color 0.2s ease, font-weight 0.2s ease;
+  }
+  .aleph-account-dock {
+    right: 1rem;
+  }
+  .aleph-reader-dock {
+    left: 1rem;
+  }
+  .aleph-account-dock:hover,
+  .aleph-reader-dock:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    font-weight: 700;
+  }
+}
+
+/* Progress bar */
+.pjax-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background: linear-gradient(
+    45deg,
+    #f10006,
+    #ef5b00,
+    #e59c01,
+    #19ca05,
+    #00cab5,
+    #0264c8,
+    #c303c3
+  );
+  z-index: 1100;
+  transition: width 0.1s ease;
+}
+
+/* Scroll progress percent badge */
+.scroll-percent {
+  font-size: 0.7rem;
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile adjustments mirror Redefine */
+@media (max-width: 768px) {
+  .home-sidebar-container {
+    display: none;
+  }
+  .home-content-container {
+    margin-right: 0;
+  }
+  .right-side-tools-container {
+    right: 16px;
+  }
+  /* Docks: nudge inward on small screens so they don't kiss the edge. */
+  .aleph-account-dock {
+    right: 0.75rem;
+  }
+  .aleph-reader-dock {
+    left: 0.75rem;
+  }
+  /* Article cards: tighter padding on phones. */
+  .home-article-item {
+    margin-bottom: 24px;
+  }
+  .home-article-title {
+    font-size: 1.2rem;
+  }
+}
+
+/* ── Odometer (footer runtime counter) ────────────────────────────
+   Each <Odometer> renders a horizontal run of digit cells. Each digit
+   cell is a 1em-tall window over a vertical ribbon of "0".."9","0".
+   The ribbon is translated upward by N·1em to reveal digit N; on
+   change the translate animates, giving the rolling-digit effect of
+   the original site's odometer.js. */
+.odometer {
+  display: inline-flex;
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.odometer-digit {
+  display: inline-block;
+  height: 1em;
+  line-height: 1;
+  overflow: hidden;
+  vertical-align: top;
+}
+.odometer-ribbon {
+  display: block;
+  will-change: transform;
+}
+.odometer-cell {
+  display: block;
+  height: 1em;
+  line-height: 1;
+}

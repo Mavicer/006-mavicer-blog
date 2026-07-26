@@ -1,0 +1,29 @@
+/* Fonts: Chillax (display), Geist + Geist Mono (body/code).
+   Loaded from jsdelivr CDN to match the original site's font stack. */
+
+@font-face {
+  font-family: "Chillax-Variable";
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/fontshare/fonts@latest/chillax/Chillax-Variable.woff2")
+      format("woff2");
+}
+
+@font-face {
+  font-family: "Geist Variable";
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/Geist-Variable.woff2")
+      format("woff2");
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-mono/GeistMono-Variable.woff2")
+      format("woff2");
+}

@@ -1,0 +1,3 @@
+/* KaTeX styles. The CSS is loaded via CDN link in index.html for the font assets.
+   This file is a placeholder import so Tailwind's @import resolves. */
+@import "katex/dist/katex.min.css";
