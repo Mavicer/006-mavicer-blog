@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { Sidebar } from "@/sections/Sidebar";
-import { MobileProfileCard } from "@/components/MobileProfileCard";
 import { usePosts } from "@/hooks/usePosts";
 
 /**
@@ -27,11 +26,8 @@ export function PageShell({
         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
       >
         {showSidebar && <Sidebar />}
-        <div className="main-content w-full md:w-auto">
-          <div className="home-content-container">
-            {showSidebar && <MobileProfileCard />}
-            {children}
-          </div>
+        <div className="main-content">
+          <div className="home-content-container">{children}</div>
         </div>
       </motion.div>
     </div>
