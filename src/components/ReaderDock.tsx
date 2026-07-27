@@ -1,115 +1,52 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
 
 /**
- * Floating "online readers" dock (bottom-left).
+ * Floating visitors dock (bottom-left).
  *
- * Since there's no backend, we simulate online-counting purely on the
- * client side using localStorage + BroadcastChannel:
+ * Reads the busuanzi site_uv value (total unique visitors, cross-device)
+ * which is loaded as a third-party script in index.html. Falls back to
+ * "—" if the script hasn't populated the value yet.
  *
- * - Each tab generates a unique client ID and writes a heartbeat
- *   (timestamp) to localStorage every 15s.
- * - We read all heartbeats, filter to those seen in the last 45s
- *   (3 missed heartbeats = offline), and count unique clients.
- * - Cross-tab sync via BroadcastChannel + storage events.
+ * The previous "online readers" count used localStorage heartbeats which
+ * are per-device only — 3 devices would each show 1. busuanzi tracks
+ * globally and works cross-device.
  *
- * This is approximate (same-machine tabs share localStorage) but
- * gives a non-zero count that reflects real activity. When a real
- * backend lands, replace this with pingOnline().
+ * When a real backend lands, replace this with a WebSocket-based
+ * presence system for true real-time online count.
  */
 
-const HEARTBEAT_KEY = "MAVICER_ONLINE_HEARTBEATS";
-const HEARTBEAT_INTERVAL = 15_000; // 15s
-const OFFLINE_THRESHOLD = 45_000; // 45s = 3 missed beats
-
-type Heartbeats = Record<string, number>; // clientId → timestamp
-
-function readHeartbeats(): Heartbeats {
-  try {
-    return JSON.parse(localStorage.getItem(HEARTBEAT_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function writeHeartbeats(hb: Heartbeats): void {
-  localStorage.setItem(HEARTBEAT_KEY, JSON.stringify(hb));
-}
-
-function getClientId(): string {
-  const key = "MAVICER_ONLINE_CLIENT_ID";
-  let v = localStorage.getItem(key);
-  if (!v) {
-    v = `client-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    localStorage.setItem(key, v);
-  }
-  return v;
-}
-
-function countOnline(): number {
-  const hb = readHeartbeats();
-  const now = Date.now();
-  let count = 0;
-  for (const [id, ts] of Object.entries(hb)) {
-    if (now - ts < OFFLINE_THRESHOLD) {
-      count++;
-    } else {
-      // Clean up stale entries
-      delete hb[id];
-    }
-  }
-  // Write back cleaned version
-  if (Object.keys(hb).length > 0) writeHeartbeats(hb);
-  return count;
-}
-
 export function ReaderDock() {
-  const { pathname } = useLocation();
   const [count, setCount] = useState<number | null>(null);
-  const clientId = getClientId();
 
   useEffect(() => {
-    let bc: BroadcastChannel | null = null;
-    try {
-      bc = new BroadcastChannel("mavicer-online");
-    } catch {
-      // BroadcastChannel not supported (older browsers) — fall back
-      // to storage events only.
-    }
+    let attempts = 0;
+    const maxAttempts = 20; // 20 × 500ms = 10s max wait
 
-    const beat = () => {
-      const hb = readHeartbeats();
-      hb[clientId] = Date.now();
-      writeHeartbeats(hb);
-      setCount(countOnline());
-      bc?.postMessage({ type: "beat" });
+    const check = () => {
+      const el = document.getElementById("busuanzi_value_site_uv");
+      if (el && el.textContent) {
+        const n = parseInt(el.textContent, 10);
+        if (!isNaN(n) && n > 0) {
+          setCount(n);
+          return;
+        }
+      }
+      attempts++;
+      if (attempts < maxAttempts) {
+        setTimeout(check, 500);
+      }
     };
 
-    // Initial beat + count
-    beat();
+    check();
 
-    const interval = setInterval(beat, HEARTBEAT_INTERVAL);
-
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === HEARTBEAT_KEY) setCount(countOnline());
+    // Also re-check when busuanzi fires its custom event
+    const onBusuanzi = () => {
+      setTimeout(check, 100);
     };
-    const onBC = () => setCount(countOnline());
+    document.addEventListener("busuanzi:value", onBusuanzi);
 
-    window.addEventListener("storage", onStorage);
-    bc?.addEventListener("message", onBC);
-
-    // Cleanup on unmount: remove our heartbeat
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("storage", onStorage);
-      bc?.removeEventListener("message", onBC);
-      bc?.close();
-      const hb = readHeartbeats();
-      delete hb[clientId];
-      writeHeartbeats(hb);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientId, pathname]);
+    return () => document.removeEventListener("busuanzi:value", onBusuanzi);
+  }, []);
 
   return (
     <div
@@ -121,7 +58,7 @@ export function ReaderDock() {
       }}
     >
       <i className="fa-regular fa-eye" />
-      <span>{count === null ? "在线 — 人" : `在线 ${count} 人`}</span>
+      <span>{count === null ? "访问 — 人" : `访问 ${count} 人`}</span>
     </div>
   );
 }
