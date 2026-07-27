@@ -28,8 +28,10 @@ export function PageShell({
       >
         {showSidebar && <Sidebar />}
         <div className="main-content w-full md:w-auto">
-          <MobileProfileCard />
-          <div className="home-content-container">{children}</div>
+          <div className="home-content-container">
+            {showSidebar && <MobileProfileCard />}
+            {children}
+          </div>
         </div>
       </motion.div>
     </div>

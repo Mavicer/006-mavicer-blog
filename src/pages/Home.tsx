@@ -21,8 +21,8 @@ export default function Home() {
         >
           <Sidebar />
           <div className="main-content w-full md:w-auto">
-            <MobileProfileCard />
             <div className="home-content-container">
+              <MobileProfileCard />
               {loading ? (
                 <p className="text-center py-10 text-third-text">正在读取文章列表</p>
               ) : posts.length === 0 ? (
