@@ -1136,6 +1136,8 @@ a:hover {
   }
   .mobile-profile-card {
     display: block;
+    width: 100%;
+    box-sizing: border-box;
     padding: 1rem;
     border-radius: 20px;
     background: rgba(255, 255, 255, 0.5);
