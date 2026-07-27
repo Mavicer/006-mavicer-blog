@@ -937,22 +937,21 @@ a:hover {
     filter: blur(0) !important;
     transition: filter 0.3s ease;
   }
-  .tag-list a {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 14px;
-    border-radius: 999px;
-    background: var(--background-color);
-    box-shadow: var(--redefine-box-shadow-flat);
-    color: var(--second-text-color);
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
+  /* Article card tags: plain text links, no pill/background */
+  .home-article-tag .tag-list a {
+    display: inline;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--third-text-color);
+    font-size: inherit;
+    transition: color 0.2s ease;
   }
-  .tag-list a:hover {
+  .home-article-tag .tag-list a:hover {
     color: var(--primary-color);
-    box-shadow: var(--redefine-box-shadow-flat-hover);
-    transform: translateY(-2px);
+    box-shadow: none;
+    transform: none;
   }
 
   /* Archive timeline */
