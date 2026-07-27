@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { NAV_ITEMS, type NavItem } from "@/config/nav";
 import { site } from "@/config/site";
@@ -8,10 +8,50 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
   const shrink = useNavbarShrink(40);
   const { pathname } = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [dragX, setDragX] = useState(0); // live drag offset in px
   const isHome = pathname === "/";
 
   const isActive = (item: NavItem) =>
     item.path ? pathname === item.path : false;
+
+  // ── Edge-swipe-to-close (iOS-style back gesture) ──────────────
+  // When the drawer is open, touching near the left edge and swiping
+  // right drags the drawer closed. Releasing past 40% width = close.
+  const touchStartX = useRef(0);
+  const isDragging = useRef(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
+
+  const onTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (!drawerOpen) return;
+      const x = e.touches[0].clientX;
+      // Only start edge-swipe if touch begins in the left 40px edge zone
+      if (x > 40) return;
+      touchStartX.current = x;
+      isDragging.current = true;
+    },
+    [drawerOpen]
+  );
+
+  const onTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isDragging.current) return;
+      const delta = e.touches[0].clientX - touchStartX.current;
+      if (delta > 0) setDragX(delta); // only allow rightward drag
+    },
+    []
+  );
+
+  const onTouchEnd = useCallback(() => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    const screenWidth = window.innerWidth;
+    // If dragged past 30% of screen width, close the drawer
+    if (dragX > screenWidth * 0.3) {
+      setDrawerOpen(false);
+    }
+    setDragX(0);
+  }, [dragX]);
 
   return (
     <>
@@ -112,11 +152,34 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
         </div>
       </div>
 
+      {/* Edge-swipe capture zone — only active when drawer is open,
+          sits on top of everything to catch the left-edge gesture. */}
+      {drawerOpen && (
+        <div
+          className="fixed top-0 left-0 w-[40px] h-dvh z-[1008] md:hidden"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        />
+      )}
+
       {/* Mobile drawer */}
       <div
+        ref={drawerRef}
         className={`navbar-drawer fixed top-0 left-0 w-full h-dvh bg-background flex flex-col justify-between transition-transform duration-300 z-[1007] ${
           drawerOpen ? "translate-x-0" : "translate-x-full"
         }`}
+        style={
+          isDragging.current && dragX > 0
+            ? {
+                transform: `translateX(${dragX}px)`,
+                transition: "none",
+              }
+            : undefined
+        }
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
         <ul className="drawer-navbar-list flex flex-col px-4 justify-center items-start pt-20">
           {NAV_ITEMS.map((item) =>
