@@ -94,7 +94,7 @@ body {
   padding: 0;
   overflow-x: hidden;
   color: var(--default-text-color);
-  background: transparent;
+  background: var(--background-color);
   font-family: "Geist Variable", "Noto Sans SC", -apple-system, system-ui,
     "Segoe UI", Roboto, Ubuntu, Cantarell, "PingFang SC", "Microsoft YaHei",
     "Heiti SC", sans-serif;
@@ -496,7 +496,6 @@ a:hover {
   .main-content-container {
     padding-top: 70px;
     position: relative;
-    background: transparent;
   }
   .home-content-container {
     margin-right: 38px;
