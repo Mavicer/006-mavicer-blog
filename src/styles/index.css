@@ -1117,10 +1117,30 @@ a:hover {
   }
 }
 
+/* Mobile profile card — shown only on <768px, replaces hidden Sidebar */
+.mobile-profile-card {
+  display: none; /* hidden by default, shown in mobile media query */
+}
+
 /* Mobile adjustments mirror Redefine */
 @media (max-width: 768px) {
   .home-sidebar-container {
     display: none;
+  }
+  .mobile-profile-card {
+    display: block;
+    padding: 1rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+  }
+  .dark .mobile-profile-card {
+    background: rgba(40, 42, 48, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   }
   .home-content-container {
     margin-right: 0;

@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { HomeBanner } from "@/sections/HomeBanner";
 import { Sidebar } from "@/sections/Sidebar";
+import { MobileProfileCard } from "@/components/MobileProfileCard";
 import { ArticleCard } from "@/components/ArticleCard";
 import { usePosts } from "@/hooks/usePosts";
 
@@ -19,6 +20,7 @@ export default function Home() {
           transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
         >
           <Sidebar />
+          <MobileProfileCard />
 
           <div className="main-content">
             <div className="home-content-container">
