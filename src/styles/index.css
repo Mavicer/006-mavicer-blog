@@ -92,6 +92,7 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
   color: var(--default-text-color);
   background: var(--background-color);
   font-family: "Geist Variable", "Noto Sans SC", -apple-system, system-ui,
@@ -251,6 +252,8 @@ a:hover {
     align-items: center;
     z-index: 1005;
     transition: max-width 0.3s ease;
+    padding-left: 16px;
+    padding-right: 16px;
   }
   .navbar-content.has-home-banner {
     max-width: 1200px;
@@ -1097,6 +1100,8 @@ a:hover {
   }
   .home-content-container {
     margin-right: 0;
+    padding-left: 16px;
+    padding-right: 16px;
   }
   .right-side-tools-container {
     right: 16px;
@@ -1111,9 +1116,95 @@ a:hover {
   /* Article cards: tighter padding on phones. */
   .home-article-item {
     margin-bottom: 24px;
+    border-radius: 20px;
   }
   .home-article-title {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
+  }
+  .home-article-item > div {
+    padding-left: 1.25rem !important;
+    padding-right: 1.25rem !important;
+    padding-top: 1.25rem !important;
+    padding-bottom: 1.25rem !important;
+  }
+  /* Meta info: allow wrapping, prevent vertical stacking of tags */
+  .home-article-meta-info {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .home-article-meta-info-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .home-article-category,
+  .home-article-tag {
+    white-space: nowrap;
+  }
+
+  /* Navbar: more compact on phones */
+  .navbar-content {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .logo-title {
+    font-size: 1.3rem;
+  }
+
+  /* Hero: smaller text on small screens */
+  .home-banner-container .description {
+    font-size: 2rem;
+    line-height: 1.3;
+  }
+  .home-banner-container .description #subtitle {
+    font-size: 1.1rem;
+  }
+  .home-banner-bottom-bar {
+    right: 1rem !important;
+    bottom: 1.5rem !important;
+  }
+
+  /* Article detail: full-width on mobile */
+  .article-content-container {
+    border-radius: 20px;
+    padding: 1.25rem;
+  }
+  .article-title {
+    font-size: 1.5rem;
+  }
+
+  /* PageShell content: add side padding */
+  .main-content-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .home-content-container {
+    width: 100%;
+  }
+
+  /* Sidebar links: more compact */
+  .sidebar-links {
+    padding: 12px;
+  }
+
+  /* Footer: reduce font size */
+  .footer {
+    font-size: 0.85rem;
+  }
+  .footer .footer-powered,
+  .footer .footer-runtime {
+    font-size: 0.8rem;
+  }
+
+  /* Images: prevent overflow */
+  .markdown-body img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Post detail TOC: hidden on mobile (not enough space) */
+  aside[class*="hidden lg:block"] {
+    display: none !important;
   }
 }
 
