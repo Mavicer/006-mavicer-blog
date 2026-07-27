@@ -20,9 +20,8 @@ export default function Home() {
           transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
         >
           <Sidebar />
-          <MobileProfileCard />
-
-          <div className="main-content">
+          <div className="main-content w-full md:w-auto">
+            <MobileProfileCard />
             <div className="home-content-container">
               {loading ? (
                 <p className="text-center py-10 text-third-text">正在读取文章列表</p>

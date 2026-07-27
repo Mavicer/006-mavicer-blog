@@ -27,8 +27,8 @@ export function PageShell({
         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
       >
         {showSidebar && <Sidebar />}
-        {showSidebar && <MobileProfileCard />}
-        <div className="main-content">
+        <div className="main-content w-full md:w-auto">
+          <MobileProfileCard />
           <div className="home-content-container">{children}</div>
         </div>
       </motion.div>

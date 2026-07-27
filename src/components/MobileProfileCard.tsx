@@ -13,7 +13,7 @@ export function MobileProfileCard() {
   const { posts, categories } = usePosts();
 
   return (
-    <div className="mobile-profile-card md:hidden mb-6">
+    <div className="mobile-profile-card mb-6">
       <div className="flex items-center gap-4">
         <img
           src="/images/avatar.jpg"
