@@ -757,16 +757,8 @@ a:hover {
   .article-content-container {
     padding: 30px;
     border-radius: 24px;
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
-  }
-  .dark .article-content-container {
-    background: rgba(40, 42, 48, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    background: var(--background-color);
+    box-shadow: var(--redefine-box-shadow);
   }
   .article-title {
     font-size: 1.9rem;
