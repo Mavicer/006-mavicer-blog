@@ -17,7 +17,7 @@ export function PageShell({
 }) {
   usePosts();
   return (
-    <div className="main-content-container flex flex-col min-h-dvh !pt-[140px]">
+    <div className="main-content-container flex flex-col min-h-dvh !pt-[100px]">
       <div className="main-content-header" />
       <motion.div
         className="main-content-body flex flex-row flex-wrap justify-center"
