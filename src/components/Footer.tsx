@@ -3,14 +3,11 @@ import { site } from "@/config/site";
 import { useRuntime } from "@/hooks/useScroll";
 import { usePosts } from "@/hooks/usePosts";
 import { Odometer } from "@/components/Odometer";
-import { useVisitorStats } from "@/hooks/useVisitorStats";
 
 export function Footer() {
   const runtime = useRuntime(site.footerStart);
   const { posts } = usePosts();
   const articleCount = posts.filter((p) => p.published !== false).length;
-  const { uv, pv } = useVisitorStats();
-
   return (
     <footer className="footer mt-5 py-5 h-auto text-base text-second-text relative border-t-2 border-border-color">
       <div className="info-container py-3 text-center">
@@ -36,18 +33,6 @@ export function Footer() {
           分钟{" "}
           <Odometer value={String(runtime.s).padStart(2, "0")} />{" "}
           秒
-        </div>
-
-        {/* Visitor stats — real server-side data from Cloudflare Worker */}
-        <div className="footer-side footer-pv text-center">
-          <span className="lg:block">
-            <span className="text-sm">访问人数</span>{" "}
-            <span>{uv === null ? "--" : uv}</span>
-          </span>
-          <span className="lg:block">
-            <span className="text-sm">总访问量</span>{" "}
-            <span>{pv === null ? "--" : pv}</span>
-          </span>
         </div>
 
         <div className="footer-side footer-powered text-center lg:absolute lg:left-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-left">
