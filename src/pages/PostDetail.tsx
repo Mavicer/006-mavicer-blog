@@ -8,6 +8,10 @@ import { renderMarkdown, extractToc, type TocItem } from "@/lib/markdown";
 import { useImageViewer } from "@/components/ImageViewer";
 import { ArticleInteractions } from "@/components/ArticleInteractions";
 
+// Posts that have a bilingual version — the `-zh` suffix file is loaded
+// when the user switches to Chinese.
+const BILINGUAL_SLUGS = ["python-to-ai-journey"];
+
 export default function PostDetail() {
   const { slug = "" } = useParams();
   const viewer = useImageViewer();
@@ -15,6 +19,22 @@ export default function PostDetail() {
   const [activeId, setActiveId] = useState<string>("");
   const [post, setPost] = useState<Post | null>(getPost(slug) || null);
   const [loading, setLoading] = useState(!getPost(slug));
+  const [lang, setLang] = useState<"en" | "zh">("en");
+  const [zhBody, setZhBody] = useState<string>("");
+
+  const isBilingual = BILINGUAL_SLUGS.includes(slug);
+
+  // Load Chinese version on demand
+  useEffect(() => {
+    if (!isBilingual || lang !== "zh") return;
+    let cancelled = false;
+    import(`../data/posts/${slug}-zh.md?raw`)
+      .then((mod) => {
+        if (!cancelled) setZhBody(mod.default);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [slug, lang, isBilingual]);
 
   useEffect(() => {
     let active = true;
@@ -56,13 +76,14 @@ export default function PostDetail() {
     };
   }, [slug]);
 
+  const activeBody = lang === "zh" && zhBody ? zhBody : post?.body || "";
   const html = useMemo(
-    () => (post ? renderMarkdown(post.body) : ""),
-    [post]
+    () => renderMarkdown(activeBody),
+    [activeBody]
   );
   const toc = useMemo<TocItem[]>(
-    () => (post ? extractToc(post.body) : []),
-    [post]
+    () => extractToc(activeBody),
+    [activeBody]
   );
 
   useEffect(() => {
@@ -168,6 +189,32 @@ export default function PostDetail() {
                   </span>
                 ))}
               </div>
+
+              {/* Language switcher — only for bilingual posts */}
+              {isBilingual && (
+                <div className="flex items-center gap-1 mb-6 pb-4 border-b border-border">
+                  <button
+                    onClick={() => setLang("en")}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                      lang === "en"
+                        ? "text-primary border border-primary"
+                        : "text-third-text border border-transparent hover:text-second-text"
+                    }`}
+                  >
+                    English
+                  </button>
+                  <button
+                    onClick={() => setLang("zh")}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                      lang === "zh"
+                        ? "text-primary border border-primary"
+                        : "text-third-text border border-transparent hover:text-second-text"
+                    }`}
+                  >
+                    中文
+                  </button>
+                </div>
+              )}
 
               <div
                 className="markdown-body"
