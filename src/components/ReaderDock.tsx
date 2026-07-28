@@ -2,8 +2,8 @@ import { useVisitorStats } from "@/hooks/useVisitorStats";
 
 /**
  * Floating visitors dock (bottom-left).
- * Shares the same useVisitorStats hook as Footer — no duplicate
- * busuanzi element IDs. Shows UV (unique visitors) + base offset.
+ * Uses the shared useVisitorStats hook (Cloudflare Worker API).
+ * Shows UV (unique visitors in 24h).
  */
 export function ReaderDock() {
   const { uv } = useVisitorStats();
@@ -18,7 +18,7 @@ export function ReaderDock() {
       }}
     >
       <i className="fa-regular fa-eye" />
-      <span>访问 {uv} 人</span>
+      <span>访问 {uv === null ? "--" : uv} 人</span>
     </div>
   );
 }

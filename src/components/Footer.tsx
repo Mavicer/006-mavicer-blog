@@ -38,24 +38,15 @@ export function Footer() {
           秒
         </div>
 
-        {/* Hidden busuanzi target spans — busuanzi script fills these
-            with real UV/PV values from its server. useVisitorStats reads
-            them and adds the base offset. */}
-        <span id="busuanzi_value_site_uv" style={{ display: "none" }} />
-        <span id="busuanzi_value_site_pv" style={{ display: "none" }} />
-
-        {/* Visitor stats — UV (unique visitors) + PV (page views)
-            UV: per-device unique, never double-counts
-            PV: increments on every page open
-            Base offsets: UV starts at 20, PV starts at 120 */}
+        {/* Visitor stats — real server-side data from Cloudflare Worker */}
         <div className="footer-side footer-pv text-center">
           <span className="lg:block">
             <span className="text-sm">访问人数</span>{" "}
-            <span>{uv}</span>
+            <span>{uv === null ? "--" : uv}</span>
           </span>
           <span className="lg:block">
             <span className="text-sm">总访问量</span>{" "}
-            <span>{pv}</span>
+            <span>{pv === null ? "--" : pv}</span>
           </span>
         </div>
 
