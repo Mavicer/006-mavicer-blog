@@ -710,6 +710,15 @@ a:hover {
     gap: 0.25rem 1rem;
   }
   @media (min-width: 1024px) {
+    .footer .footer-pv {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      text-align: right;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
     .footer .footer-powered {
       position: absolute;
       left: 20px;
