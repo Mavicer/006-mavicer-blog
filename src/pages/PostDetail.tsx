@@ -28,7 +28,7 @@ export default function PostDetail() {
   useEffect(() => {
     if (!isBilingual || lang !== "zh") return;
     let cancelled = false;
-    import(`../data/posts/${slug}-zh.md?raw`)
+    import(`../data/bilingual/${slug}-zh.md?raw`)
       .then((mod) => {
         if (!cancelled) setZhBody(mod.default);
       })
