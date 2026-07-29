@@ -5,7 +5,7 @@ export const site = {
   name: "Mavicer's Blog",
   subtitle: "Humility brings us closest to greatness",
   author: "Mavicer",
-  announcement: "记录 AI 开发、项目实践、CTF 与学习思考。",
+  announcement: "记录 AI 开发、项目实践与学习思考。",
   footerStart: "2026/07/26 00:00:00",
   copyrightYear: 2026,
   about: {
