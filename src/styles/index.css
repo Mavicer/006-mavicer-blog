@@ -452,6 +452,7 @@ a:hover {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
     transition: transform 0.3s ease, box-shadow 0.3s ease,
       background 0.3s ease, border-color 0.3s ease;
+    will-change: transform;
   }
   .home-article-item:hover {
     transform: translateY(-3px);
@@ -848,6 +849,7 @@ a:hover {
   /* Language switch transition — fade + blur, 200ms */
   .lang-transition {
     transition: opacity 0.2s ease, filter 0.2s ease;
+    will-change: opacity, filter;
   }
   .markdown-body a {
     color: var(--primary-color);

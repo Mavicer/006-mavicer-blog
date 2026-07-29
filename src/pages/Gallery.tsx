@@ -60,14 +60,16 @@ export default function Gallery() {
                 }}
               >
                 {/* Thumbnail */}
-                <div className="relative overflow-hidden">
+                <div className="relative overflow-hidden aspect-[4/3]">
                   <img
                     src={item.type === "photo" ? item.url : item.cover || ""}
                     alt={item.title}
                     loading="lazy"
-                    className="w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    width={400}
+                    height={300}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
+                      (e.target as HTMLImageElement).style.opacity = "0";
                     }}
                   />
                   {item.type === "video" && (

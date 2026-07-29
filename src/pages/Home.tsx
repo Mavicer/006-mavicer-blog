@@ -17,7 +17,7 @@ export default function Home() {
           className="main-content-body flex flex-row flex-wrap justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
         >
           <Sidebar />
           <div className="main-content w-full md:w-auto">

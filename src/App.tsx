@@ -21,7 +21,7 @@ export default function App() {
   const location = useLocation();
   return (
     <Layout>
-      <AnimatePresence mode="popLayout">
+      <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<Home />} />
           <Route path="/archives" element={<Archives />} />

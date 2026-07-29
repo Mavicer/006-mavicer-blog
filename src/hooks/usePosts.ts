@@ -117,7 +117,7 @@ export function usePosts() {
       posts: p,
       categories: taxonomy(p, "category"),
       tags: taxonomy(p, "tags"),
-      loading: true,
+      loading: false,
     };
   });
 
