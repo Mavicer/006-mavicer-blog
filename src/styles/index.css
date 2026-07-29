@@ -95,6 +95,9 @@ body {
   overflow-x: hidden;
   color: var(--default-text-color);
   background: var(--background-color);
+  /* Allow home page fixed background to show through body.
+     Other pages set their own opaque bg via .main-content-container. */
+  background-attachment: fixed;
   font-family: "Geist Variable", "Noto Sans SC", -apple-system, system-ui,
     "Segoe UI", Roboto, Ubuntu, Cantarell, "PingFang SC", "Microsoft YaHei",
     "Heiti SC", sans-serif;
@@ -525,9 +528,12 @@ a:hover {
     position: relative;
   }
   /* Home page: transparent background so the fixed hero background
-     shows through, enabling the scroll-triggered blur effect. */
+     shows through, enabling the scroll-triggered blur effect.
+     z-index: 1 to stay above the fixed bg (zIndex: 0) but let it
+     show through because background is transparent. */
   .home-main-content {
-    background: transparent;
+    background: transparent !important;
+    z-index: 1;
   }
   .home-content-container {
     margin-right: 38px;
