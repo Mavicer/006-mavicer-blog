@@ -529,13 +529,11 @@ a:hover {
   }
   /* Home page: transparent background so the fixed hero background
      shows through, enabling the scroll-triggered blur effect.
-     NO z-index here — z-index:1 + position:relative creates a stacking
-     context, which isolates backdrop-filter on child cards from sampling
-     the sibling fixed hero background. Without z-index, position:relative
-     alone does NOT create a stacking context, so card backdrop-filter
-     can "see through" to the hero background image. */
+     z-index: 1 to stay above the fixed bg (zIndex: 0) but let it
+     show through because background is transparent. */
   .home-main-content {
     background: transparent !important;
+    z-index: 1;
   }
   .home-content-container {
     margin-right: 38px;
