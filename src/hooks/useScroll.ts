@@ -77,10 +77,27 @@ export function useScrollToTop(threshold = 200) {
 }
 
 /**
- * useScrollToController — scrolls to top on route change (replaces Swup scroll reset).
+ * useScrollReset — scrolls to top on route change (replaces Swup scroll reset).
+ * Also prevents browser from restoring scroll position on page reload.
  */
 export function useScrollReset() {
   const { pathname } = useLocation();
+
+  // On mount: prevent browser scroll restoration on reload.
+  useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    window.scrollTo(0, 0);
+    return () => {
+      // Restore default when leaving the app (not strictly necessary).
+      if ("scrollRestoration" in window.history) {
+        window.history.scrollRestoration = "auto";
+      }
+    };
+  }, []);
+
+  // On route change: scroll to top.
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [pathname]);

@@ -844,6 +844,11 @@ a:hover {
     margin: 0 0 1rem;
     text-indent: 2em;
   }
+
+  /* Language switch transition — fade + blur, 200ms */
+  .lang-transition {
+    transition: opacity 0.2s ease, filter 0.2s ease;
+  }
   .markdown-body a {
     color: var(--primary-color);
     text-decoration: none;

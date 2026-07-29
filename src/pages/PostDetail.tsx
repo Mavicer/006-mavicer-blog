@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { getPost, isOnlinePost } from "@/hooks/usePosts";
@@ -8,8 +8,6 @@ import { renderMarkdown, extractToc, type TocItem } from "@/lib/markdown";
 import { useImageViewer } from "@/components/ImageViewer";
 import { ArticleInteractions } from "@/components/ArticleInteractions";
 
-// Posts that have a bilingual version — the `-zh` suffix file is loaded
-// when the user switches to Chinese.
 const BILINGUAL_SLUGS = ["python-to-ai-journey"];
 
 export default function PostDetail() {
@@ -21,10 +19,10 @@ export default function PostDetail() {
   const [loading, setLoading] = useState(!getPost(slug));
   const [lang, setLang] = useState<"en" | "zh">("en");
   const [zhBody, setZhBody] = useState<string>("");
+  const [contentVisible, setContentVisible] = useState(true);
 
   const isBilingual = BILINGUAL_SLUGS.includes(slug);
 
-  // Load Chinese version on demand
   useEffect(() => {
     if (!isBilingual || lang !== "zh") return;
     let cancelled = false;
@@ -85,6 +83,19 @@ export default function PostDetail() {
     () => extractToc(activeBody),
     [activeBody]
   );
+
+  // Language switch with fade transition — avoids hard content swap.
+  const switchLang = useCallback((newLang: "en" | "zh") => {
+    if (newLang === lang) return;
+    setContentVisible(false);
+    setTimeout(() => {
+      setLang(newLang);
+      // Re-enable after a tick so the new content renders, then fade in.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setContentVisible(true));
+      });
+    }, 200);
+  }, [lang]);
 
   useEffect(() => {
     const root = bodyRef.current;
@@ -194,7 +205,7 @@ export default function PostDetail() {
               {isBilingual && (
                 <div className="flex items-center gap-1 mb-6 pb-4 border-b border-border">
                   <button
-                    onClick={() => setLang("en")}
+                    onClick={() => switchLang("en")}
                     className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                       lang === "en"
                         ? "text-primary border border-primary"
@@ -204,7 +215,7 @@ export default function PostDetail() {
                     English
                   </button>
                   <button
-                    onClick={() => setLang("zh")}
+                    onClick={() => switchLang("zh")}
                     className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                       lang === "zh"
                         ? "text-primary border border-primary"
@@ -217,8 +228,12 @@ export default function PostDetail() {
               )}
 
               <div
-                className="markdown-body"
+                className="markdown-body lang-transition"
                 ref={bodyRef}
+                style={{
+                  opacity: contentVisible ? 1 : 0,
+                  filter: contentVisible ? "none" : "blur(4px)",
+                }}
                 dangerouslySetInnerHTML={{ __html: html }}
               />
 
