@@ -11,28 +11,32 @@ export const LAYOUT = {
   stickyTop: 70,
 };
 
+export type NavIcon = "home" | "archive" | "user" | "code" | "folder" | "camera" | "search";
+
 export type NavItem = {
   label: string;
   path?: string;
-  icon: string; // fa class
+  icon: string; // legacy fa class (mobile drawer)
+  svg: NavIcon; // inline SVG icon (desktop navbar)
   external?: boolean;
   submenus?: { label: string; path: string; external?: boolean }[];
 };
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: "首页", path: "/", icon: "fa-regular fa-house" },
-  { label: "归档", path: "/archives", icon: "fa-regular fa-archive" },
+  { label: "首页", path: "/", icon: "fa-regular fa-house", svg: "home" },
+  { label: "归档", path: "/archives", icon: "fa-regular fa-archive", svg: "archive" },
   {
     label: "关于",
     icon: "fa-regular fa-user",
+    svg: "user",
     submenus: [
       { label: "ME", path: "/about" },
       { label: "GITHUB", path: "https://github.com/Mavicer", external: true },
     ],
   },
-  { label: "PROJECTS", path: "/projects", icon: "fa-regular fa-code" },
-  { label: "展示", path: "/gallery", icon: "fa-regular fa-images" },
-  { label: "分类", path: "/categories", icon: "fa-regular fa-folder" },
+  { label: "PROJECTS", path: "/projects", icon: "fa-regular fa-code", svg: "code" },
+  { label: "展示", path: "/gallery", icon: "fa-regular fa-images", svg: "camera" },
+  { label: "分类", path: "/categories", icon: "fa-regular fa-folder", svg: "folder" },
 ];
 
 export const SIDEBAR_LINKS = [

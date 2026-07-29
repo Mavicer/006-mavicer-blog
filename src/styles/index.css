@@ -270,7 +270,7 @@ a:hover {
   }
   .navbar-list {
     display: flex;
-    gap: 24px;
+    gap: 28px;
     align-items: center;
   }
   .navbar-item {
@@ -281,15 +281,41 @@ a:hover {
     cursor: pointer;
     color: var(--default-text-color);
   }
-  .navbar-item > a {
+  .navbar-link {
     display: flex;
     align-items: center;
     gap: 6px;
     padding: 4px 0;
+    color: #374151;
+    transition: color 0.2s ease;
   }
-  .navbar-item a.active {
+  .dark .navbar-link {
+    color: var(--default-text-color);
+  }
+  .navbar-link:hover,
+  .navbar-link.active {
     color: var(--primary-color);
-    font-weight: 600;
+  }
+  .navbar-link svg {
+    flex-shrink: 0;
+    opacity: 0.8;
+  }
+  .navbar-link:hover svg,
+  .navbar-link.active svg {
+    opacity: 1;
+  }
+  .navbar-link-dropdown {
+    cursor: pointer;
+  }
+  .navbar-search {
+    color: #374151;
+    transition: color 0.2s ease;
+  }
+  .dark .navbar-search {
+    color: var(--default-text-color);
+  }
+  .navbar-search:hover {
+    color: var(--primary-color);
   }
   .sub-menu {
     position: absolute;
