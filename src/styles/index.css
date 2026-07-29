@@ -92,7 +92,13 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  /* `clip` (not `hidden`) so the perpendicular axis stays `visible` and the
+     viewport — not <body> — remains the scroll container. `hidden` forces
+     overflow-y to compute to `auto`, which pins body to viewport height via
+     `height:100%` above and makes body the scroller; then window.scrollY is
+     always 0 and the home-banner scroll-blur / navbar-shrink / progress bar
+     / back-to-top hooks never fire. */
+  overflow-x: clip;
   color: var(--default-text-color);
   background: var(--background-color);
   /* Allow home page fixed background to show through body.
