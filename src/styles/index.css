@@ -524,6 +524,11 @@ a:hover {
     padding-top: 70px;
     position: relative;
   }
+  /* Home page: transparent background so the fixed hero background
+     shows through, enabling the scroll-triggered blur effect. */
+  .home-main-content {
+    background: transparent;
+  }
   .home-content-container {
     margin-right: 38px;
   }

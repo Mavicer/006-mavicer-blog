@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <>
       <HomeBanner />
-      <div className="main-content-container flex flex-col justify-between min-h-dvh">
+      <div className="main-content-container home-main-content flex flex-col justify-between min-h-dvh">
         <div className="main-content-header" />
         <motion.div
           className="main-content-body flex flex-row flex-wrap justify-center"
