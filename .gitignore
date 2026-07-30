@@ -1,13 +1,30 @@
-node_modules/
-dist/
-.vite/
-*.local
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Backend Python
+**/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/*.egg-info/
+
+# Database
+backend/*.db
+
+# Environment
 .env
 .env.*
+
+# macOS
 .DS_Store
+
+# Logs / build cache
 *.log
 *.tsbuildinfo
-src/mavicer_blog_backend.egg-info/
+
+# Misc scripts
 verify-*.cjs
 screenshot*.cjs
 阶段一成果报告.txt
+
