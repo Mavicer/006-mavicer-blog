@@ -926,11 +926,17 @@ a:hover {
     width: 100%;
     border-collapse: collapse;
     margin: 1rem 0;
+    /* Fixed layout keeps columns from blowing out the container on narrow
+       screens; long cell content wraps instead of forcing horizontal overflow. */
+    table-layout: fixed;
+    word-break: break-word;
   }
   .markdown-body th,
   .markdown-body td {
     border: 1px solid var(--border-color);
     padding: 8px 12px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
   .markdown-body th {
     background: var(--third-background-color);
@@ -1390,6 +1396,16 @@ a:hover {
     font-size: 1.3rem;
   }
 
+  /* Markdown tables: fit iPhone-width without horizontal overflow.
+     Shrink padding so 3 columns + wrapping content stay inside the
+     article container. The fixed-layout + word-break on the base rule
+     handles wrapping; this just tightens spacing. */
+  .markdown-body th,
+  .markdown-body td {
+    padding: 6px 8px;
+    font-size: 0.85rem;
+  }
+
   /* Hero: smaller text on small screens */
   .home-banner-container .description {
     font-size: 2rem;
@@ -1405,8 +1421,7 @@ a:hover {
 
   /* Article detail: full-width on mobile */
   .article-content-container {
-    border-radius: 20px;
-    padding: 1.25rem;
+    border-radius: 20px;    padding: 1.25rem;
   }
   .article-title {
     font-size: 1.5rem;
