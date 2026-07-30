@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { PageShell } from "@/components/PageShell";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -65,9 +65,7 @@ export default function Login() {
             >
               <i className="fa-regular fa-right-to-bracket" /> 登录
             </button>
-            <Link to="/register" className="text-third-text hover:text-primary text-sm">
-              没有账号，去注册
-            </Link>          </div>
+          </div>
         </form>
       </div>
     </PageShell>

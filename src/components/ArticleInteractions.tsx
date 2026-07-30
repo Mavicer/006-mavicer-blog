@@ -6,12 +6,18 @@ import type { Comment, Interaction } from "@/lib/api";
 /**
  * ArticleInteractions — the comments / like / favorite block mounted below
  * article bodies. Mirrors the original site's .aleph-online widget.
+ *
+ * Anonymous-first: any visitor can like, favorite, and comment without
+ * logging in. A nickname field defaults to "访客". Interactions are keyed
+ * by a stable browser client_id (UX only). Only the owner can delete
+ * comments.
  */
 export function ArticleInteractions({ slug }: { slug: string }) {
   const { user } = useAuth();
   const [interaction, setInteraction] = useState<Interaction | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [draft, setDraft] = useState("");
+  const [nick, setNick] = useState("");
   const [status, setStatus] = useState("正在连接在线互动");
 
   const refresh = useCallback(async () => {
@@ -33,37 +39,29 @@ export function ArticleInteractions({ slug }: { slug: string }) {
   }, [refresh]);
 
   const onLike = async () => {
-    if (!user) {
-      window.location.hash = `/login`;
-      return;
-    }
-    if (interaction?.liked) {
-      setInteraction(await api.unlike(slug));
-    } else {
+    try {
       setInteraction(await api.like(slug));
+    } catch {
+      setStatus("操作失败，请稍后再试");
     }
   };
 
   const onFavorite = async () => {
-    if (!user) {
-      window.location.hash = `/login`;
-      return;
-    }
-    if (interaction?.favorited) {
-      setInteraction(await api.unfavorite(slug));
-    } else {
+    try {
       setInteraction(await api.favorite(slug));
+    } catch {
+      setStatus("操作失败，请稍后再试");
     }
   };
 
   const onComment = async () => {
-    if (!user || !draft.trim()) return;
+    if (!draft.trim()) return;
     try {
-      await api.createComment(slug, draft.trim());
+      await api.createComment(slug, draft.trim(), nick.trim() || undefined);
       setDraft("");
       refresh();
-    } catch {
-      setStatus("评论发布失败");
+    } catch (e: any) {
+      setStatus(e?.message || "评论发布失败");
     }
   };
 
@@ -102,56 +100,52 @@ export function ArticleInteractions({ slug }: { slug: string }) {
 
       <div className="aleph-online__auth">
         <span className="aleph-online__user">
-          {user ? user.display_name || user.username : "访客模式"}
+          {user?.is_owner ? "管理员模式" : "访客模式"}
         </span>
       </div>
 
       <div className="aleph-online__comments">
         {comments.length === 0 ? (
-          <p className="aleph-online__empty">暂无评论</p>
+          <p className="aleph-online__empty">暂无评论，来抢沙发吧</p>
         ) : (
-          comments.map((c) => {
-            const canDelete =
-              user && (user.is_owner || user.id === c.user.id);
-            return (
-              <div key={c.id} className="aleph-online__comment">
-                <div className="aleph-online__comment-meta">
-                  <strong>{c.user.display_name}</strong>
-                  <time>{new Date(c.created_at).toLocaleString()}</time>
-                </div>
-                <div className="aleph-online__comment-body">{c.body}</div>
-                {canDelete && (
-                  <button type="button" onClick={() => onDeleteComment(c.id)}>
+          comments.map((c) => (
+            <div key={c.id} className="aleph-online__comment">
+              <div className="aleph-online__comment-meta">
+                <strong>{c.author_name}</strong>
+                <time>{new Date(c.created_at).toLocaleString()}</time>
+                {user?.is_owner && (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteComment(c.id)}
+                    className="aleph-online__del"
+                  >
                     <i className="fa-regular fa-trash-can" /> 删除
                   </button>
                 )}
               </div>
-            );
-          })
+              <div className="aleph-online__comment-body">{c.body}</div>
+            </div>
+          ))
         )}
       </div>
 
       <div className="aleph-online__composer">
-        {user ? (
-          <>
-            <textarea
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="写下评论"
-              className="w-full"
-            />
-            <button type="button" onClick={onComment}>
-              <i className="fa-regular fa-paper-plane" /> 发布评论
-            </button>
-          </>
-        ) : (
-          <p className="aleph-online__empty">
-            <a href="#/login" className="text-primary hover:underline">
-              登录
-            </a>
-            后可以发布评论、点赞和收藏。
-          </p>
-        )}
+        <input
+          value={nick}
+          onChange={(e) => setNick(e.target.value)}
+          placeholder="昵称（可选，默认访客）"
+          maxLength={60}
+          className="aleph-online__nick w-full"
+        />
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="写下评论"
+          className="w-full"
+        />
+        <button type="button" onClick={onComment} disabled={!draft.trim()}>
+          <i className="fa-regular fa-paper-plane" /> 发布评论
+        </button>
       </div>
     </section>
   );

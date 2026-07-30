@@ -14,9 +14,9 @@ export type Comment = {
   id: number;
   post_slug: string;
   body: string;
+  author_name: string;
   created_at: string;
   updated_at: string;
-  user: User;
 };
 
 export type Interaction = {
@@ -111,19 +111,7 @@ export async function uploadImage(file: File): Promise<{ url: string; filename: 
   return res.json();
 }
 
-// ---- Auth ----
-export async function register(payload: {
-  username: string;
-  password: string;
-  display_name?: string;
-  owner_key?: string;
-}) {
-  return request<{ access_token: string; token_type: string; user: User }>(
-    "/auth/register",
-    { method: "POST", body: JSON.stringify(payload) }
-  );
-}
-
+// ---- Auth ---- (public registration removed; only owner login remains)
 export async function login(payload: { username: string; password: string }) {
   return request<{ access_token: string; token_type: string; user: User }>(
     "/auth/login",
@@ -145,6 +133,23 @@ export function logout() {
   localStorage.removeItem(USER_KEY);
 }
 
+// ---- Stable anonymous browser identifier (UX only, not security) ----
+function onlineClientId(): string {
+  const key = "MAVICER_ONLINE_CLIENT_ID";
+  let v: string = localStorage.getItem(key) || "";
+  if (!v) {
+    v =
+      (window.crypto as any)?.randomUUID?.() ||
+      `client-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem(key, v);
+  }
+  return v;
+}
+
+export function clientId(): string {
+  return onlineClientId();
+}
+
 // ---- Posts ----
 export async function listPosts(): Promise<Post[]> {
   return request("/posts");
@@ -156,36 +161,40 @@ export async function searchPosts(q: string): Promise<Post[]> {
   return request(`/search?q=${encodeURIComponent(q)}`);
 }
 
-// ---- Comments / Interactions ----
+// ---- Comments / Interactions ---- (anonymous, browser-identified)
 export async function listComments(slug: string): Promise<Comment[]> {
   return request(`/posts/${slug}/comments`);
 }
-export async function createComment(slug: string, body: string): Promise<Comment> {
+export async function createComment(
+  slug: string,
+  body: string,
+  authorName?: string
+): Promise<Comment> {
   return request(`/posts/${slug}/comments`, {
     method: "POST",
-    body: JSON.stringify({ body }),
+    body: JSON.stringify({ body, author_name: authorName || null }),
   });
 }
 export async function deleteComment(slug: string, id: number) {
   return request(`/posts/${slug}/comments/${id}`, { method: "DELETE" });
 }
 export async function getInteractions(slug: string): Promise<Interaction> {
-  return request(`/posts/${slug}/interactions`);
+  return request(`/posts/${slug}/interactions?client_id=${encodeURIComponent(clientId())}`);
 }
 export async function like(slug: string): Promise<Interaction> {
-  return request(`/posts/${slug}/like`, { method: "POST" });
-}
-export async function unlike(slug: string): Promise<Interaction> {
-  return request(`/posts/${slug}/like`, { method: "DELETE" });
+  return request(`/posts/${slug}/like`, {
+    method: "POST",
+    body: JSON.stringify({ client_id: clientId() }),
+  });
 }
 export async function favorite(slug: string): Promise<Interaction> {
-  return request(`/posts/${slug}/favorite`, { method: "POST" });
-}
-export async function unfavorite(slug: string): Promise<Interaction> {
-  return request(`/posts/${slug}/favorite`, { method: "DELETE" });
+  return request(`/posts/${slug}/favorite`, {
+    method: "POST",
+    body: JSON.stringify({ client_id: clientId() }),
+  });
 }
 export async function myFavorites(): Promise<Post[]> {
-  return request("/me/favorites");
+  return request(`/me/favorites?client_id=${encodeURIComponent(clientId())}`);
 }
 
 // ---- Admin ----
@@ -233,23 +242,11 @@ export async function trackPageView(path: string, postSlug?: string) {
 }
 
 // ---- Online readers ----
-function onlineClientId(): string {
-  const key = "MAVICER_ONLINE_CLIENT_ID";
-  let v: string = localStorage.getItem(key) || "";
-  if (!v) {
-    v =
-      (window.crypto as any)?.randomUUID?.() ||
-      `client-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    localStorage.setItem(key, v);
-  }
-  return v;
-}
-
 export async function pingOnline(path: string, postSlug?: string): Promise<number> {
   const r = await request<{ online_readers: number }>("/online/ping", {
     method: "POST",
     body: JSON.stringify({
-      client_id: onlineClientId(),
+      client_id: clientId(),
       path: path.slice(0, 300),
       post_slug: postSlug || null,
     }),

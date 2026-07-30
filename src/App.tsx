@@ -13,7 +13,6 @@ import GalleryAdmin from "./pages/GalleryAdmin";
 import PostDetail from "./pages/PostDetail";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
 import Account from "./pages/Account";
 import Admin from "./pages/Admin";
 
@@ -35,7 +34,6 @@ export default function App() {
           <Route path="/categories/:cat" element={<Categories />} />
           <Route path="/posts/:slug" element={<PostDetail />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/account" element={<Account />} />
           <Route path="/admin" element={<ProtectedRoute requireOwner><Admin /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />

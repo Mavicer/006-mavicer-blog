@@ -6,13 +6,6 @@ type AuthCtx = {
   user: User | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
-  register: (payload: {
-    username: string;
-    email: string;
-    password: string;
-    display_name?: string;
-    owner_key?: string;
-  }) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
 };
@@ -44,41 +37,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const register = useCallback(
-    async (payload: {
-      username: string;
-      email: string;
-      password: string;
-      display_name?: string;
-      owner_key?: string;
-    }) => {
-      setLoading(true);
-      try {
-        // Backend UserCreate has no email field; the email collected in the
-        // form is cosmetic for now. Only username/password/display_name/owner_key
-        // are sent to /auth/register.
-        const result = await api.register({
-          username: payload.username,
-          password: payload.password,
-          display_name: payload.display_name,
-          owner_key: payload.owner_key,
-        });
-        api.storeSession(result);
-        setUser(result.user);
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
-
   const logout = useCallback(() => {
     api.logout();
     setUser(null);
   }, []);
 
   return (
-    <Ctx.Provider value={{ user, loading, login, register, logout, refresh }}>
+    <Ctx.Provider value={{ user, loading, login, logout, refresh }}>
       {children}
     </Ctx.Provider>
   );
