@@ -3,7 +3,7 @@
 // ⚠️  SECURITY: Write operations include a frontend requireOwner() guard.
 //     This is UX-level protection only. Production auth must be server-side.
 
-import { currentUser } from "@/auth/auth";
+import { currentUser } from "@/lib/api";
 
 /** Frontend-only auth guard. Throws if the current user is not an owner. */
 function requireOwner(): void {

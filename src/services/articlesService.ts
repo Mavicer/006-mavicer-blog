@@ -5,7 +5,7 @@
 //     DevTools can bypass it. Production auth must be enforced server-side.
 
 import type { Post } from "@/hooks/usePosts";
-import { currentUser } from "@/auth/auth";
+import { currentUser } from "@/lib/api";
 
 const KEY = "MAVICER_ARTICLES";
 
