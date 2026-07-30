@@ -1,0 +1,15 @@
+name = "mavicer-blog"
+compatibility_date = "2024-09-25"
+pages_build_output_dir = "dist"
+
+# D1 database binding. Create the database first:
+#   npx wrangler d1 create mavicer-blog
+# then paste the returned database_id below (and add the same binding in the
+# Cloudflare Pages dashboard under Settings → Functions → D1 bindings).
+[[d1_databases]]
+binding = "DB"
+database_name = "mavicer-blog"
+database_id = "41f273ee-85f7-464a-bc0e-5ad04b64455b"
+
+# Phase 2+ will add env vars here (JWT_SECRET, ADMIN_USERNAME, ADMIN_PASSWORD)
+# for owner login. Phase 1 (public interactions) needs only the D1 binding.
