@@ -19,12 +19,12 @@ export function ArticleCard({ post }: { post: Post }) {
 
   return (
     <li className="home-article-item">
-      <div className="flex flex-col gap-5 px-7 pb-7 pt-7">
+      <Link to={`/posts/${post.slug}`} className="flex flex-col gap-5 px-7 pb-7 pt-7 no-underline text-inherit">
         <h3 className="home-article-title">
-          <Link to={`/posts/${post.slug}`}>{post.title}</Link>
+          <span>{post.title}</span>
         </h3>
 
-        <div className="home-article-content markdown-body">{post.excerpt}</div>
+        <p className="home-article-content markdown-body">{post.excerpt}</p>
 
         <div className="home-article-meta-info-container">
           <div className="home-article-meta-info">
@@ -36,12 +36,9 @@ export function ArticleCard({ post }: { post: Post }) {
             <span className="home-article-category whitespace-nowrap">
               <i className="fa-solid fa-folder" />
               &nbsp;
-              <Link
-                to={`/categories/${encodeURIComponent(post.category)}`}
-                className={post.category === "经验分享" ? "font-semibold text-primary" : ""}
-              >
+              <span className={post.category === "经验分享" ? "font-semibold text-primary" : ""}>
                 {post.category}
-              </Link>
+              </span>
             </span>
             {post.tags.length > 0 && (
               <span className="home-article-tag whitespace-nowrap">
@@ -51,13 +48,16 @@ export function ArticleCard({ post }: { post: Post }) {
                   {visibleTags.map((tag, i) => (
                     <span key={tag} className="tag-item">
                       {i > 0 && <span className="tag-sep">|</span>}
-                      <Link to={`/tags/${encodeURIComponent(tag)}`}>{tag}</Link>
+                      {tag}
                     </span>
                   ))}
                   {hiddenCount > 0 && (
                     <button
                       className="tag-more cursor-pointer text-third-text hover:text-primary transition-colors"
-                      onClick={() => setTagsExpanded(true)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setTagsExpanded(true);
+                      }}
                     >
                       <span className="tag-sep">|</span>+{hiddenCount}
                     </button>
@@ -65,7 +65,10 @@ export function ArticleCard({ post }: { post: Post }) {
                   {tagsExpanded && post.tags.length > MOBILE_TAG_LIMIT && (
                     <button
                       className="tag-more cursor-pointer text-third-text hover:text-primary transition-colors"
-                      onClick={() => setTagsExpanded(false)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setTagsExpanded(false);
+                      }}
                     >
                       <span className="tag-sep">|</span>收起
                     </button>
@@ -74,14 +77,14 @@ export function ArticleCard({ post }: { post: Post }) {
               </span>
             )}
           </div>
-          <Link to={`/posts/${post.slug}`} className="whitespace-nowrap">
+          <span className="whitespace-nowrap">
             阅读全文
             <span className="seo-reader-text sr-only">{post.title}</span>
             &nbsp;
             <i className="fa-solid fa-angle-right" />
-          </Link>
+          </span>
         </div>
-      </div>
+      </Link>
     </li>
   );
 }
