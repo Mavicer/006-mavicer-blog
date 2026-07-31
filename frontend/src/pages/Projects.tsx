@@ -32,7 +32,12 @@ export default function Projects() {
             topics: r.topics || [],
             updated_at: r.updated_at,
           }))
-          .sort((a, b) => b.stars - a.stars || a.name.localeCompare(b.name));
+          .sort((a, b) => {
+          // Sort by leading number prefix (e.g. "003-xxx" → 3), descending.
+          const numA = parseInt(a.name.match(/^(\d+)/)?.[1] || "0", 10);
+          const numB = parseInt(b.name.match(/^(\d+)/)?.[1] || "0", 10);
+          return numB - numA;
+        });
         setRepos(list);
         setLoading(false);
       })
