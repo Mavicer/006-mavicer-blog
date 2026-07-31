@@ -3,22 +3,30 @@ import { Outlet, useLocation } from "react-router-dom";
 
 /**
  * useScrollProgress — top progress bar width + back-to-top percentage.
+ * Uses requestAnimationFrame to throttle scroll-driven state updates.
  */
 export function useScrollProgress() {
   const [progress, setProgress] = useState(0);
   const [percent, setPercent] = useState(0);
   useEffect(() => {
+    let raf = 0;
     const onScroll = () => {
-      const el = document.documentElement;
-      const scrollTop = el.scrollTop || document.body.scrollTop;
-      const scrollHeight = el.scrollHeight - el.clientHeight;
-      const ratio = scrollHeight > 0 ? scrollTop / scrollHeight : 0;
-      setProgress(Math.min(1, ratio));
-      setPercent(Math.min(100, Math.round(ratio * 100)));
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const el = document.documentElement;
+        const scrollTop = el.scrollTop || document.body.scrollTop;
+        const scrollHeight = el.scrollHeight - el.clientHeight;
+        const ratio = scrollHeight > 0 ? scrollTop / scrollHeight : 0;
+        setProgress(Math.min(1, ratio));
+        setPercent(Math.min(100, Math.round(ratio * 100)));
+      });
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
   }, []);
   return { progress, percent };
 }
@@ -28,50 +36,74 @@ export function useScrollProgress() {
  * user scrolls down from the hero, mirroring the original Redefine theme's
  * updateHomeBannerBlur() logic. The blur amount is 0 until the user has scrolled
  * past ~half the viewport height, then snaps to maxBlur. Returns the blur px.
+ * Uses requestAnimationFrame to throttle.
  */
 export function useHomeBannerBlur(maxBlur = 15) {
   const [blur, setBlur] = useState(0);
   useEffect(() => {
+    let raf = 0;
     const trigger = window.innerHeight * 0.5;
     const onScroll = () => {
-      const y = window.scrollY || window.pageYOffset;
-      setBlur(y >= trigger ? maxBlur : 0);
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const y = window.scrollY || window.pageYOffset;
+        setBlur(y >= trigger ? maxBlur : 0);
+      });
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
   }, [maxBlur]);
   return blur;
 }
 
 /**
  * useNavbarShrink — true when scrolled past threshold (mirrors Redefine navbar-shrink).
+ * Uses requestAnimationFrame to throttle.
  */
 export function useNavbarShrink(threshold = 40) {
   const [shrink, setShrink] = useState(false);
   useEffect(() => {
+    let raf = 0;
     const onScroll = () => {
-      setShrink((document.documentElement.scrollTop || document.body.scrollTop) > threshold);
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        setShrink((document.documentElement.scrollTop || document.body.scrollTop) > threshold);
+      });
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
   }, [threshold]);
   return shrink;
 }
 
 /**
  * useScrollToTop — returns true when the button should be visible.
+ * Uses requestAnimationFrame to throttle.
  */
 export function useScrollToTop(threshold = 200) {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
+    let raf = 0;
     const onScroll = () => {
-      setVisible((document.documentElement.scrollTop || document.body.scrollTop) > threshold);
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        setVisible((document.documentElement.scrollTop || document.body.scrollTop) > threshold);
+      });
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
   }, [threshold]);
   return visible;
 }

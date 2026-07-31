@@ -36,12 +36,9 @@ export function ArticleInteractions({ slug }: { slug: string }) {
 
   const refresh = useCallback(async () => {
     try {
-      const [inter, list] = await Promise.all([
-        api.getInteractions(slug),
-        api.listComments(slug),
-      ]);
-      setInteraction(inter);
-      setComments(Array.isArray(list) ? list : []);
+      const data = await api.getDetails(slug);
+      setInteraction(data.interactions);
+      setComments(Array.isArray(data.comments) ? data.comments : []);
       setStatus("在线互动已连接");
     } catch {
       setStatus("在线互动暂不可用");

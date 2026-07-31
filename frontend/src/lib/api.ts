@@ -201,6 +201,13 @@ export async function deleteComment(slug: string, id: number) {
 export async function getInteractions(slug: string): Promise<Interaction> {
   return request(`/posts/${slug}/interactions?client_id=${encodeURIComponent(clientId())}`);
 }
+/** Combined endpoint: interactions + comments in one request. */
+export async function getDetails(slug: string): Promise<{
+  interactions: Interaction;
+  comments: Comment[];
+}> {
+  return request(`/posts/${slug}/details?client_id=${encodeURIComponent(clientId())}`);
+}
 export async function like(slug: string): Promise<Interaction> {
   return request(`/posts/${slug}/like`, {
     method: "POST",

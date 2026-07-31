@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS comment (
   post_slug TEXT NOT NULL,
   body TEXT NOT NULL,
   author_name TEXT NOT NULL DEFAULT '访客',
+  client_id TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT '',
   updated_at TEXT NOT NULL DEFAULT ''
 );
@@ -41,4 +42,4 @@ CREATE TABLE IF NOT EXISTS favorite (
 -- Indexes that match the access patterns in interactions/comments.
 CREATE INDEX IF NOT EXISTS idx_like_slug_client ON "like"(post_slug, client_id);
 CREATE INDEX IF NOT EXISTS idx_fav_slug_client ON favorite(post_slug, client_id);
-CREATE INDEX IF NOT EXISTS idx_comment_slug ON comment(post_slug);
+CREATE INDEX IF NOT EXISTS idx_comment_slug_time ON comment(post_slug, created_at DESC);
