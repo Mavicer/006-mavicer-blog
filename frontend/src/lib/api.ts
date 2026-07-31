@@ -72,32 +72,44 @@ async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const res = await fetch(`${apiBase()}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeaders(),
-      ...(options.headers || {}),
-    },
-  });
-  if (!res.ok) {
-    let detail = `HTTP ${res.status}`;
-    try {
-      const body = await res.json();
-      detail = body?.detail
-        ? Array.isArray(body.detail)
-          ? body.detail.map((d: any) => d.msg || d.message || JSON.stringify(d)).join("；")
-          : String(body.detail)
-        : detail;
-    } catch {
-      /* keep status */
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(`${apiBase()}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(),
+        ...(options.headers || {}),
+      },
+    });
+    if (!res.ok) {
+      let detail = `HTTP ${res.status}`;
+      try {
+        const body = await res.json();
+        detail = body?.detail
+          ? Array.isArray(body.detail)
+            ? body.detail.map((d: any) => d.msg || d.message || JSON.stringify(d)).join("；")
+            : String(body.detail)
+          : detail;
+      } catch {
+        /* keep status */
+      }
+      const err = new Error(detail) as Error & { status: number };
+      err.status = res.status;
+      throw err;
     }
-    const err = new Error(detail) as Error & { status: number };
-    err.status = res.status;
-    throw err;
+    if (res.status === 204) return undefined as T;
+    return res.json();
+  } catch (e: any) {
+    if (e?.name === "AbortError") {
+      throw new Error("请求超时，请稍后重试");
+    }
+    throw e;
+  } finally {
+    clearTimeout(timeout);
   }
-  if (res.status === 204) return undefined as T;
-  return res.json();
 }
 
 export async function uploadImage(file: File): Promise<{ url: string; filename: string }> {

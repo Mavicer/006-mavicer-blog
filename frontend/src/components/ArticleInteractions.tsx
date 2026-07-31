@@ -49,7 +49,7 @@ export function ArticleInteractions({ slug }: { slug: string }) {
         api.listComments(slug),
       ]);
       setInteraction(inter);
-      setComments(list);
+      setComments(Array.isArray(list) ? list : []);
       setStatus("在线互动已连接");
     } catch {
       setStatus("在线互动暂不可用");

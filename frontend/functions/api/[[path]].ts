@@ -1,7 +1,7 @@
 /**
  * Cloudflare Pages Function — public blog interaction API.
  *
- * Phase 1+2: the anonymous comment / like / favorite / post-read flow,
+ * Phase 1+2: anonymous comment / like / favorite / post-read flow,
  * plus comment self-deletion keyed by browser client_id.
  *
  * Routes (mounted under /api by Pages):
@@ -14,9 +14,7 @@
  *   POST   /posts/:slug/like                body: { client_id }
  *   POST   /posts/:slug/favorite            body: { client_id }
  *
- * D1 binding: env.DB. Response shape mirrors the FastAPI backend so the
- * frontend (lib/api.ts) needs zero changes: errors return { detail } and
- * the same status codes (403 / 404 / 422 / 409) it already parses.
+ * D1 binding: env.DB.
  */
 
 interface Env {
@@ -37,30 +35,28 @@ let migrated = false;
 
 export const onRequest: PagesFunction<Env> = async (ctx) => {
   const url = new URL(ctx.request.url);
-  const path = url.pathname.replace(/^\/api\/?/, ""); // strip "/api"
+  const path = url.pathname.replace(/^\/api\/?/, "");
   const method = ctx.request.method;
 
-  if (ctx.request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: CORS });
-  }
-
-  // Run schema migration once per isolate (idempotent).
+  // Run schema migration once per isolate (idempotent, never blocks requests).
   if (!migrated) {
-    await migrateCommentTable(ctx);
+    try {
+      await migrateCommentTable(ctx);
+    } catch {
+      // Migration failure must NOT block requests — old comments simply
+      // lack client_id, which only affects self-deletion, not reading.
+    }
     migrated = true;
   }
 
   try {
-    // GET /posts
     if (path === "posts" && method === "GET") {
       return await listPosts(ctx);
     }
-    // GET /posts/:slug
     const single = path.match(/^posts\/([^/]+)$/);
     if (single && method === "GET") {
       return await getPost(ctx, decodeURIComponent(single[1]));
     }
-    // GET/POST /posts/:slug/comments
     const cmts = path.match(/^posts\/([^/]+)\/comments$/);
     if (cmts && method === "GET") {
       const cid = url.searchParams.get("client_id") || "";
@@ -69,23 +65,19 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     if (cmts && method === "POST") {
       return await createComment(ctx, decodeURIComponent(cmts[1]));
     }
-    // DELETE /posts/:slug/comments/:id
     const del = path.match(/^posts\/([^/]+)\/comments\/(\d+)$/);
     if (del && method === "DELETE") {
       return await deleteComment(ctx, decodeURIComponent(del[1]), Number(del[2]));
     }
-    // GET /posts/:slug/interactions
     const inter = path.match(/^posts\/([^/]+)\/interactions$/);
     if (inter && method === "GET") {
       const clientId = url.searchParams.get("client_id") || "";
       return await getInteractions(ctx, decodeURIComponent(inter[1]), clientId);
     }
-    // POST /posts/:slug/like
     const like = path.match(/^posts\/([^/]+)\/like$/);
     if (like && method === "POST") {
       return await toggleInteraction(ctx, decodeURIComponent(like[1]), "like");
     }
-    // POST /posts/:slug/favorite
     const fav = path.match(/^posts\/([^/]+)\/favorite$/);
     if (fav && method === "POST") {
       return await toggleInteraction(ctx, decodeURIComponent(fav[1]), "favorite");
@@ -127,8 +119,8 @@ function tagsList(s: string | null | undefined): string[] {
 }
 
 /**
- * Add client_id column to the comment table if missing (idempotent).
- * Old comments get the default empty string and are only deletable by owner.
+ * Add client_id column + indexes if missing (idempotent).
+ * Wrapped in try/catch by caller — never blocks requests.
  */
 async function migrateCommentTable(ctx: PagesFunction<Env>): Promise<void> {
   const { results } = await ctx.env.DB.prepare(`PRAGMA table_info(comment)`).all<{
@@ -136,8 +128,26 @@ async function migrateCommentTable(ctx: PagesFunction<Env>): Promise<void> {
   }>();
   const hasCol = results.some((r) => r.name === "client_id");
   if (!hasCol) {
-    await ctx.env.DB.prepare(`ALTER TABLE comment ADD COLUMN client_id TEXT NOT NULL DEFAULT ''`).run();
+    try {
+      await ctx.env.DB.prepare(
+        `ALTER TABLE comment ADD COLUMN client_id TEXT NOT NULL DEFAULT ''`
+      ).run();
+    } catch {
+      // "duplicate column name" — another isolate beat us to it. Safe to ignore.
+    }
   }
+  // Ensure indexes exist (idempotent, no-op if already present).
+  await ctx.env.DB.batch([
+    ctx.env.DB.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_comment_slug ON comment(post_slug)`
+    ),
+    ctx.env.DB.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_like_slug_client ON "like"(post_slug, client_id)`
+    ),
+    ctx.env.DB.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_fav_slug_client ON favorite(post_slug, client_id)`
+    ),
+  ]);
 }
 
 // ── endpoints ────────────────────────────────────────────────────────
@@ -174,8 +184,9 @@ function postDetail(p: PostRow) {
 }
 
 async function listPosts(ctx: PagesFunction<Env>): Promise<Response> {
+  // Exclude body — list page only needs metadata.
   const { results } = await ctx.env.DB.prepare(
-    `SELECT * FROM post WHERE published = 1 ORDER BY sort_order ASC, date DESC`
+    `SELECT slug, title, date, excerpt, source, category, tags, published, sort_order, created_at, updated_at FROM post WHERE published = 1 ORDER BY sort_order ASC, date DESC`
   ).all<PostRow>();
   return json(results.map(postOut));
 }
@@ -225,7 +236,6 @@ async function listComments(
 
 async function createComment(ctx: PagesFunction<Env>, slug: string): Promise<Response> {
   const payload = await readBody(ctx.request);
-  // post must exist
   const p = await ctx.env.DB.prepare(`SELECT slug FROM post WHERE slug = ?`)
     .bind(slug)
     .first();
@@ -274,8 +284,6 @@ async function deleteComment(
     .first<{ client_id: string }>();
 
   if (!c) return jsonError(404, "评论不存在");
-
-  // Only the original author (matching client_id) may delete their own comment.
   if (!clientId || c.client_id !== clientId) {
     return jsonError(403, "无权删除这条评论");
   }
@@ -286,44 +294,41 @@ async function deleteComment(
   return json({ ok: true });
 }
 
+/**
+ * Single-query interactions lookup.
+ * Combines 5 separate D1 round-trips into 1 using subqueries.
+ */
 async function getInteractions(
   ctx: PagesFunction<Env>,
   slug: string,
   clientId: string
 ): Promise<Response> {
-  if (!(await postExists(ctx, slug))) return jsonError(404, "文章不存在");
+  const row = await ctx.env.DB.prepare(
+    `SELECT
+       (SELECT COUNT(*) FROM "like" WHERE post_slug = ?) AS likes,
+       (SELECT COUNT(*) FROM favorite WHERE post_slug = ?) AS favorites,
+       EXISTS(SELECT 1 FROM post WHERE slug = ?) AS exists_val,
+       ? != '' AND EXISTS(SELECT 1 FROM "like" WHERE post_slug = ? AND client_id = ?) AS liked,
+       ? != '' AND EXISTS(SELECT 1 FROM favorite WHERE post_slug = ? AND client_id = ?) AS favorited
+    `
+  )
+    .bind(slug, slug, slug, clientId, slug, clientId, clientId, slug, clientId)
+    .first<{
+      likes: number;
+      favorites: number;
+      exists_val: number;
+      liked: number;
+      favorited: number;
+    }>();
 
-  const likes = await ctx.env.DB.prepare(
-    `SELECT COUNT(*) AS c FROM "like" WHERE post_slug = ?`
-  )
-    .bind(slug)
-    .first<{ c: number }>();
-  const favorites = await ctx.env.DB.prepare(
-    `SELECT COUNT(*) AS c FROM favorite WHERE post_slug = ?`
-  )
-    .bind(slug)
-    .first<{ c: number }>();
-  const liked = clientId
-    ? await ctx.env.DB.prepare(
-        `SELECT id FROM "like" WHERE post_slug = ? AND client_id = ?`
-      )
-        .bind(slug, clientId)
-        .first()
-    : null;
-  const favorited = clientId
-    ? await ctx.env.DB.prepare(
-        `SELECT id FROM favorite WHERE post_slug = ? AND client_id = ?`
-      )
-        .bind(slug, clientId)
-        .first()
-    : null;
+  if (!row || !row.exists_val) return jsonError(404, "文章不存在");
 
   return json({
     post_slug: slug,
-    likes: likes?.c ?? 0,
-    favorites: favorites?.c ?? 0,
-    liked: !!liked,
-    favorited: !!favorited,
+    likes: row.likes ?? 0,
+    favorites: row.favorites ?? 0,
+    liked: !!row.liked,
+    favorited: !!row.favorited,
   });
 }
 
@@ -336,19 +341,25 @@ async function toggleInteraction(
   const clientId = (payload.client_id || "").toString().trim();
   if (!clientId) return jsonError(422, "client_id 不能为空");
 
-  if (!(await postExists(ctx, slug))) return jsonError(404, "文章不存在");
-
+  // Check post exists + check existing interaction in 1 query.
   const existing = await ctx.env.DB.prepare(
-    `SELECT id FROM ${table === "like" ? '"like"' : "favorite"} WHERE post_slug = ? AND client_id = ?`
+    `SELECT
+       (SELECT 1 FROM post WHERE slug = ?) AS post_exists,
+       (SELECT id FROM ${table === "like" ? '"like"' : "favorite"} WHERE post_slug = ? AND client_id = ?) AS existing_id
+    `
   )
-    .bind(slug, clientId)
-    .first();
+    .bind(slug, slug, clientId)
+    .first<{ post_exists: number; existing_id: number | null }>();
 
-  if (existing) {
+  if (!existing || !existing.post_exists) {
+    return jsonError(404, "文章不存在");
+  }
+
+  if (existing.existing_id) {
     await ctx.env.DB.prepare(
       `DELETE FROM ${table === "like" ? '"like"' : "favorite"} WHERE id = ?`
     )
-      .bind(existing.id)
+      .bind(existing.existing_id)
       .run();
   } else {
     await ctx.env.DB.prepare(
@@ -358,12 +369,6 @@ async function toggleInteraction(
       .run();
   }
 
+  // Return updated interactions (single query via getInteractions).
   return getInteractions(ctx, slug, clientId);
-}
-
-async function postExists(ctx: PagesFunction<Env>, slug: string): Promise<boolean> {
-  const p = await ctx.env.DB.prepare(`SELECT slug FROM post WHERE slug = ?`)
-    .bind(slug)
-    .first();
-  return !!p;
 }
