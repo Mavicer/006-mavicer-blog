@@ -1200,7 +1200,7 @@ a:hover {
     bottom: 0.6rem;
     border: none;
     background: transparent;
-    color: var(--third-text-color);
+    color: var(--second-text-color);
     cursor: pointer;
     font-size: 0.8rem;
     padding: 2px 4px;
