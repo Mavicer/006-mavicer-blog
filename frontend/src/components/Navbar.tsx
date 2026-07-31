@@ -137,6 +137,7 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
                                     href={sub.path}
                                     target="_blank"
                                     rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
                                   >
                                     {sub.label}
                                   </a>
