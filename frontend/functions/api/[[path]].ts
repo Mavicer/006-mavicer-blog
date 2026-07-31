@@ -1,23 +1,22 @@
 /**
  * Cloudflare Pages Function — public blog interaction API.
  *
- * Phase 1 only: the 7 unauthenticated endpoints needed for the anonymous
- * comment / like / favorite / post-read flow that ArticleInteractions.tsx
- * calls. Owner-only endpoints (login, admin CMS, comment delete, uploads,
- * analytics, online) are intentionally NOT implemented here yet.
+ * Phase 1+2: the anonymous comment / like / favorite / post-read flow,
+ * plus comment self-deletion keyed by browser client_id.
  *
  * Routes (mounted under /api by Pages):
  *   GET    /posts
  *   GET    /posts/:slug
- *   GET    /posts/:slug/comments
- *   POST   /posts/:slug/comments            body: { body, author_name? }
+ *   GET    /posts/:slug/comments?client_id=
+ *   POST   /posts/:slug/comments            body: { body, author_name?, client_id }
+ *   DELETE /posts/:slug/comments/:id         body: { client_id }
  *   GET    /posts/:slug/interactions?client_id=
  *   POST   /posts/:slug/like                body: { client_id }
  *   POST   /posts/:slug/favorite            body: { client_id }
  *
  * D1 binding: env.DB. Response shape mirrors the FastAPI backend so the
  * frontend (lib/api.ts) needs zero changes: errors return { detail } and
- * the same status codes (404 / 422 / 409) it already parses.
+ * the same status codes (403 / 404 / 422 / 409) it already parses.
  */
 
 interface Env {
@@ -34,6 +33,8 @@ const CORS = {
 export const onRequestOptions: PagesFunction<Env> = async () =>
   new Response(null, { status: 204, headers: CORS });
 
+let migrated = false;
+
 export const onRequest: PagesFunction<Env> = async (ctx) => {
   const url = new URL(ctx.request.url);
   const path = url.pathname.replace(/^\/api\/?/, ""); // strip "/api"
@@ -41,6 +42,12 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
   if (ctx.request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS });
+  }
+
+  // Run schema migration once per isolate (idempotent).
+  if (!migrated) {
+    await migrateCommentTable(ctx);
+    migrated = true;
   }
 
   try {
@@ -53,13 +60,19 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     if (single && method === "GET") {
       return await getPost(ctx, decodeURIComponent(single[1]));
     }
-    // GET /posts/:slug/comments
+    // GET/POST /posts/:slug/comments
     const cmts = path.match(/^posts\/([^/]+)\/comments$/);
     if (cmts && method === "GET") {
-      return await listComments(ctx, decodeURIComponent(cmts[1]));
+      const cid = url.searchParams.get("client_id") || "";
+      return await listComments(ctx, decodeURIComponent(cmts[1]), cid);
     }
     if (cmts && method === "POST") {
       return await createComment(ctx, decodeURIComponent(cmts[1]));
+    }
+    // DELETE /posts/:slug/comments/:id
+    const del = path.match(/^posts\/([^/]+)\/comments\/(\d+)$/);
+    if (del && method === "DELETE") {
+      return await deleteComment(ctx, decodeURIComponent(del[1]), Number(del[2]));
     }
     // GET /posts/:slug/interactions
     const inter = path.match(/^posts\/([^/]+)\/interactions$/);
@@ -111,6 +124,20 @@ function tagsList(s: string | null | undefined): string[] {
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
+}
+
+/**
+ * Add client_id column to the comment table if missing (idempotent).
+ * Old comments get the default empty string and are only deletable by owner.
+ */
+async function migrateCommentTable(ctx: PagesFunction<Env>): Promise<void> {
+  const { results } = await ctx.env.DB.prepare(`PRAGMA table_info(comment)`).all<{
+    name: string;
+  }>();
+  const hasCol = results.some((r) => r.name === "client_id");
+  if (!hasCol) {
+    await ctx.env.DB.prepare(`ALTER TABLE comment ADD COLUMN client_id TEXT NOT NULL DEFAULT ''`).run();
+  }
 }
 
 // ── endpoints ────────────────────────────────────────────────────────
@@ -166,11 +193,12 @@ interface CommentRow {
   post_slug: string;
   body: string;
   author_name: string;
+  client_id: string;
   created_at: string;
   updated_at: string;
 }
 
-function commentOut(c: CommentRow) {
+function commentOut(c: CommentRow, requestingClientId: string) {
   return {
     id: c.id,
     post_slug: c.post_slug,
@@ -178,16 +206,21 @@ function commentOut(c: CommentRow) {
     author_name: c.author_name,
     created_at: c.created_at,
     updated_at: c.updated_at,
+    is_own: !!requestingClientId && c.client_id === requestingClientId,
   };
 }
 
-async function listComments(ctx: PagesFunction<Env>, slug: string): Promise<Response> {
+async function listComments(
+  ctx: PagesFunction<Env>,
+  slug: string,
+  requestingClientId: string
+): Promise<Response> {
   const { results } = await ctx.env.DB.prepare(
     `SELECT * FROM comment WHERE post_slug = ? ORDER BY created_at DESC`
   )
     .bind(slug)
     .all<CommentRow>();
-  return json(results.map(commentOut));
+  return json(results.map((c) => commentOut(c, requestingClientId)));
 }
 
 async function createComment(ctx: PagesFunction<Env>, slug: string): Promise<Response> {
@@ -202,12 +235,13 @@ async function createComment(ctx: PagesFunction<Env>, slug: string): Promise<Res
   if (!body) return jsonError(422, "评论不能为空");
 
   const author = ((payload.author_name || "").toString().trim() || "访客").slice(0, 60);
+  const clientId = (payload.client_id || "").toString().trim().slice(0, 120);
   const now = new Date().toISOString();
 
   const result = await ctx.env.DB.prepare(
-    `INSERT INTO comment (post_slug, body, author_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
+    `INSERT INTO comment (post_slug, body, author_name, client_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`
   )
-    .bind(slug, body, author, now, now)
+    .bind(slug, body, author, clientId, now, now)
     .run();
   const id = result.meta?.last_row_id as number;
 
@@ -219,9 +253,37 @@ async function createComment(ctx: PagesFunction<Env>, slug: string): Promise<Res
       author_name: author,
       created_at: now,
       updated_at: now,
+      is_own: true,
     },
     201
   );
+}
+
+async function deleteComment(
+  ctx: PagesFunction<Env>,
+  slug: string,
+  commentId: number
+): Promise<Response> {
+  const payload = await readBody(ctx.request);
+  const clientId = (payload.client_id || "").toString().trim();
+
+  const c = await ctx.env.DB.prepare(
+    `SELECT client_id FROM comment WHERE id = ? AND post_slug = ?`
+  )
+    .bind(commentId, slug)
+    .first<{ client_id: string }>();
+
+  if (!c) return jsonError(404, "评论不存在");
+
+  // Only the original author (matching client_id) may delete their own comment.
+  if (!clientId || c.client_id !== clientId) {
+    return jsonError(403, "无权删除这条评论");
+  }
+
+  await ctx.env.DB.prepare(`DELETE FROM comment WHERE id = ?`)
+    .bind(commentId)
+    .run();
+  return json({ ok: true });
 }
 
 async function getInteractions(

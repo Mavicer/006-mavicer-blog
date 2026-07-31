@@ -17,6 +17,7 @@ export type Comment = {
   author_name: string;
   created_at: string;
   updated_at: string;
+  is_own: boolean;
 };
 
 export type Interaction = {
@@ -163,7 +164,7 @@ export async function searchPosts(q: string): Promise<Post[]> {
 
 // ---- Comments / Interactions ---- (anonymous, browser-identified)
 export async function listComments(slug: string): Promise<Comment[]> {
-  return request(`/posts/${slug}/comments`);
+  return request(`/posts/${slug}/comments?client_id=${encodeURIComponent(clientId())}`);
 }
 export async function createComment(
   slug: string,
@@ -172,11 +173,18 @@ export async function createComment(
 ): Promise<Comment> {
   return request(`/posts/${slug}/comments`, {
     method: "POST",
-    body: JSON.stringify({ body, author_name: authorName || null }),
+    body: JSON.stringify({
+      body,
+      author_name: authorName || null,
+      client_id: clientId(),
+    }),
   });
 }
 export async function deleteComment(slug: string, id: number) {
-  return request(`/posts/${slug}/comments/${id}`, { method: "DELETE" });
+  return request(`/posts/${slug}/comments/${id}`, {
+    method: "DELETE",
+    body: JSON.stringify({ client_id: clientId() }),
+  });
 }
 export async function getInteractions(slug: string): Promise<Interaction> {
   return request(`/posts/${slug}/interactions?client_id=${encodeURIComponent(clientId())}`);

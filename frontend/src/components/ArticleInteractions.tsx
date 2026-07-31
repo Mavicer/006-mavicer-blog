@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import * as api from "@/lib/api";
 import type { Comment, Interaction } from "@/lib/api";
@@ -9,8 +9,9 @@ import type { Comment, Interaction } from "@/lib/api";
  *
  * Anonymous-first: any visitor can like, favorite, and comment without
  * logging in. A nickname field defaults to "访客". Interactions are keyed
- * by a stable browser client_id (UX only). Only the owner can delete
- * comments.
+ * by a stable browser client_id (UX only). Visitors can long-press (or
+ * right-click) their OWN comments to delete them; the owner sees a delete
+ * button on every comment.
  */
 export function ArticleInteractions({ slug }: { slug: string }) {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ export function ArticleInteractions({ slug }: { slug: string }) {
   const [draft, setDraft] = useState("");
   const [nick, setNick] = useState("");
   const [status, setStatus] = useState("正在连接在线互动");
+  const longPressTimer = useRef<number | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -74,6 +76,26 @@ export function ArticleInteractions({ slug }: { slug: string }) {
     }
   };
 
+  // Long-press (mobile) / context menu (desktop) to delete your own comment.
+  const startLongPress = (id: number) => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = window.setTimeout(() => {
+      if (window.confirm("删除这条评论？")) onDeleteComment(id);
+    }, 500);
+  };
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+  // Prevent the browser's native context menu so our confirm dialog is the
+  // only action on right-click for own comments.
+  const onOwnContextMenu = (e: React.MouseEvent, id: number) => {
+    e.preventDefault();
+    if (window.confirm("删除这条评论？")) onDeleteComment(id);
+  };
+
   return (
     <section className="aleph-online">
       <div className="aleph-online__bar">
@@ -108,24 +130,41 @@ export function ArticleInteractions({ slug }: { slug: string }) {
         {comments.length === 0 ? (
           <p className="aleph-online__empty">暂无评论，来抢沙发吧</p>
         ) : (
-          comments.map((c) => (
-            <div key={c.id} className="aleph-online__comment">
-              <div className="aleph-online__comment-meta">
-                <strong>{c.author_name}</strong>
-                <time>{new Date(c.created_at).toLocaleString()}</time>
-                {user?.is_owner && (
-                  <button
-                    type="button"
-                    onClick={() => onDeleteComment(c.id)}
-                    className="aleph-online__del"
-                  >
-                    <i className="fa-regular fa-trash-can" /> 删除
-                  </button>
-                )}
+          comments.map((c) => {
+            const canDelete = c.is_own || user?.is_owner;
+            const longPressHandlers = c.is_own
+              ? {
+                  onTouchStart: () => startLongPress(c.id),
+                  onTouchEnd: cancelLongPress,
+                  onTouchMove: cancelLongPress,
+                  onContextMenu: (e: React.MouseEvent) =>
+                    onOwnContextMenu(e, c.id),
+                }
+              : {};
+            return (
+              <div
+                key={c.id}
+                className={`aleph-online__comment${c.is_own ? " is-own" : ""}`}
+                {...longPressHandlers}
+              >
+                <div className="aleph-online__comment-meta">
+                  <strong>{c.author_name}</strong>
+                  {c.is_own && <span className="aleph-online__own-tag">我</span>}
+                  <time>{new Date(c.created_at).toLocaleString()}</time>
+                  {user?.is_owner && (
+                    <button
+                      type="button"
+                      onClick={() => onDeleteComment(c.id)}
+                      className="aleph-online__del"
+                    >
+                      <i className="fa-regular fa-trash-can" /> 删除
+                    </button>
+                  )}
+                </div>
+                <div className="aleph-online__comment-body">{c.body}</div>
               </div>
-              <div className="aleph-online__comment-body">{c.body}</div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

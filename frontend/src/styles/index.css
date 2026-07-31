@@ -577,11 +577,13 @@ a:hover {
     font-size: 1.3rem;
     margin-bottom: 5px;
     cursor: pointer;
-    border: none;
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     box-shadow: var(--redefine-box-shadow);
     color: var(--default-text-color);
-    background: var(--background-color);
+    background: var(--background-color-transparent-80);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -640,6 +642,7 @@ a:hover {
   .hidden-tools-list.show {
     max-height: 280px; /* 5 buttons × ~52px */
     opacity: 1;
+    overflow: visible; /* expanded: don't clip button borders / backdrop-filter */
   }
 
   /* Visible tools (scroll-to-top + toggle) */
@@ -1188,6 +1191,20 @@ a:hover {
   }
   .aleph-online__del:hover {
     color: var(--primary-color);
+  }
+  /* "我" badge for the visitor's own comments — subtle marker so they know
+     they can long-press / right-click to delete. */
+  .aleph-online__own-tag {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--background-color);
+    background: var(--primary-color);
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 2px;
+  }
+  .aleph-online__comment.is-own {
+    border-left: 2px solid var(--primary-color);
   }
   .aleph-online__comment-body {
     font-size: 0.9rem;
