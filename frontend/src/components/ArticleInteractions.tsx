@@ -34,14 +34,6 @@ export function ArticleInteractions({ slug }: { slug: string }) {
     y: number;
   } | null>(null);
 
-  // Detect touch device once.
-  const [isTouch] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      (window.matchMedia?.("(hover: none)")?.matches ||
-        "ontouchstart" in window)
-  );
-
   const refresh = useCallback(async () => {
     try {
       const [inter, list] = await Promise.all([
@@ -160,8 +152,8 @@ export function ArticleInteractions({ slug }: { slug: string }) {
           <p className="aleph-online__empty">暂无评论，来抢沙发吧</p>
         ) : (
           comments.map((c) => {
-            // Mobile: long-press handlers for own comments.
-            const touchHandlers = c.is_own && isTouch
+            // Long-press handlers for own comments (mobile).
+            const touchHandlers = c.is_own
               ? {
                   onTouchStart: (e: React.TouchEvent) => startLongPress(c.id, e),
                   onTouchEnd: cancelLongPress,
@@ -181,7 +173,7 @@ export function ArticleInteractions({ slug }: { slug: string }) {
                 </div>
                 <div className="aleph-online__comment-body">{c.body}</div>
                 {/* Desktop: small trash icon for own comments */}
-                {c.is_own && !isTouch && (
+                {c.is_own && (
                   <button
                     type="button"
                     onClick={() => setConfirmId(c.id)}
