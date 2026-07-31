@@ -21,6 +21,12 @@ export function ArticleInteractions({ slug }: { slug: string }) {
   const [nick, setNick] = useState("");
   const [status, setStatus] = useState("正在连接在线互动");
   const longPressTimer = useRef<number | null>(null);
+  // Position of the floating "删除" popover, shown after long-press / right-click.
+  const [deleteMenu, setDeleteMenu] = useState<{
+    commentId: number;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -76,11 +82,27 @@ export function ArticleInteractions({ slug }: { slug: string }) {
     }
   };
 
-  // Long-press (mobile) / context menu (desktop) to delete your own comment.
-  const startLongPress = (id: number) => {
+  // Long-press (mobile) / context menu (desktop) to show a small floating
+  // "删除" button at the press position. Clicking it deletes; clicking
+  // elsewhere dismisses it.
+  const showDeleteMenu = (id: number, x: number, y: number) => {
+    setDeleteMenu({ commentId: id, x, y });
+  };
+  const dismissDeleteMenu = () => setDeleteMenu(null);
+
+  const confirmDelete = async () => {
+    if (!deleteMenu) return;
+    await onDeleteComment(deleteMenu.commentId);
+    dismissDeleteMenu();
+  };
+
+  const startLongPress = (id: number, e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    const x = touch.clientX;
+    const y = touch.clientY;
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     longPressTimer.current = window.setTimeout(() => {
-      if (window.confirm("删除这条评论？")) onDeleteComment(id);
+      showDeleteMenu(id, x, y);
     }, 500);
   };
   const cancelLongPress = () => {
@@ -89,11 +111,9 @@ export function ArticleInteractions({ slug }: { slug: string }) {
       longPressTimer.current = null;
     }
   };
-  // Prevent the browser's native context menu so our confirm dialog is the
-  // only action on right-click for own comments.
   const onOwnContextMenu = (e: React.MouseEvent, id: number) => {
     e.preventDefault();
-    if (window.confirm("删除这条评论？")) onDeleteComment(id);
+    showDeleteMenu(id, e.clientX, e.clientY);
   };
 
   return (
@@ -131,10 +151,9 @@ export function ArticleInteractions({ slug }: { slug: string }) {
           <p className="aleph-online__empty">暂无评论，来抢沙发吧</p>
         ) : (
           comments.map((c) => {
-            const canDelete = c.is_own || user?.is_owner;
             const longPressHandlers = c.is_own
               ? {
-                  onTouchStart: () => startLongPress(c.id),
+                  onTouchStart: (e: React.TouchEvent) => startLongPress(c.id, e),
                   onTouchEnd: cancelLongPress,
                   onTouchMove: cancelLongPress,
                   onContextMenu: (e: React.MouseEvent) =>
@@ -186,6 +205,25 @@ export function ArticleInteractions({ slug }: { slug: string }) {
           <i className="fa-regular fa-paper-plane" /> 发布评论
         </button>
       </div>
+
+      {/* Floating "删除" popover — appears at the long-press / right-click
+          position. Click the button to delete; click anywhere else to dismiss. */}
+      {deleteMenu && (
+        <>
+          <div
+            className="aleph-online__menu-backdrop"
+            onClick={dismissDeleteMenu}
+          />
+          <button
+            type="button"
+            className="aleph-online__menu-btn"
+            style={{ left: deleteMenu.x, top: deleteMenu.y }}
+            onClick={confirmDelete}
+          >
+            <i className="fa-regular fa-trash-can" /> 删除
+          </button>
+        </>
+      )}
     </section>
   );
 }

@@ -1206,6 +1206,36 @@ a:hover {
   .aleph-online__comment.is-own {
     border-left: 2px solid var(--primary-color);
   }
+
+  /* Floating delete popover — shown at long-press / right-click position.
+     Click the button to delete; click the transparent backdrop to dismiss. */
+  .aleph-online__menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1099;
+  }
+  .aleph-online__menu-btn {
+    position: fixed;
+    z-index: 1100;
+    transform: translate(-50%, -50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #fff;
+    background: var(--primary-color);
+    border: none;
+    border-radius: 8px;
+    box-shadow: var(--redefine-box-shadow);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s ease;
+  }
+  .aleph-online__menu-btn:hover {
+    opacity: 0.9;
+  }
   .aleph-online__comment-body {
     font-size: 0.9rem;
     color: var(--first-text-color);
