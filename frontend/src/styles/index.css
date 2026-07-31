@@ -1192,6 +1192,23 @@ a:hover {
   .aleph-online__del:hover {
     color: var(--primary-color);
   }
+  /* Desktop: small trash icon on own comments (icon-only, bottom-right) */
+  .aleph-online__del-icon {
+    position: absolute;
+    right: 0.6rem;
+    bottom: 0.6rem;
+    border: none;
+    background: transparent;
+    color: var(--third-text-color);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .aleph-online__del-icon:hover {
+    color: var(--primary-color);
+  }
   /* "我" badge for the visitor's own comments — subtle marker so they know
      they can long-press / right-click to delete. */
   .aleph-online__own-tag {
@@ -1235,6 +1252,67 @@ a:hover {
   }
   .aleph-online__menu-btn:hover {
     opacity: 0.9;
+  }
+
+  /* ── Desktop confirm dialog (custom, replaces window.confirm) ── */
+  .aleph-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: aleph-fade-in 0.15s ease;
+  }
+  .aleph-confirm-card {
+    background: var(--background-color-transparent-80);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: var(--redefine-box-shadow);
+    max-width: 320px;
+    text-align: center;
+  }
+  .aleph-confirm-card p {
+    margin: 0 0 1.2rem;
+    color: var(--first-text-color);
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  .aleph-confirm-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+  }
+  .aleph-confirm-cancel,
+  .aleph-confirm-ok {
+    padding: 0.45rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.15s ease;
+  }
+  .aleph-confirm-cancel {
+    background: var(--third-background-color);
+    color: var(--second-text-color);
+    border: 1px solid var(--border-color);
+  }
+  .aleph-confirm-ok {
+    background: var(--primary-color);
+    color: #fff;
+  }
+  .aleph-confirm-cancel:hover,
+  .aleph-confirm-ok:hover {
+    opacity: 0.85;
+  }
+  @keyframes aleph-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
   .aleph-online__comment-body {
     font-size: 0.9rem;

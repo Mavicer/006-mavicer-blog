@@ -9,9 +9,11 @@ import type { Comment, Interaction } from "@/lib/api";
  *
  * Anonymous-first: any visitor can like, favorite, and comment without
  * logging in. A nickname field defaults to "访客". Interactions are keyed
- * by a stable browser client_id (UX only). Visitors can long-press (or
- * right-click) their OWN comments to delete them; the owner sees a delete
- * button on every comment.
+ * by a stable browser client_id (UX only). Visitors can delete their OWN
+ * comments:
+ *   - Desktop: a trash icon on their comment → custom confirm dialog
+ *   - Mobile:  long-press → floating delete button at finger position
+ * The owner sees a delete button on every comment.
  */
 export function ArticleInteractions({ slug }: { slug: string }) {
   const { user } = useAuth();
@@ -21,12 +23,24 @@ export function ArticleInteractions({ slug }: { slug: string }) {
   const [nick, setNick] = useState("");
   const [status, setStatus] = useState("正在连接在线互动");
   const longPressTimer = useRef<number | null>(null);
-  // Position of the floating "删除" popover, shown after long-press / right-click.
+
+  // Desktop: which comment's confirm dialog is open.
+  const [confirmId, setConfirmId] = useState<number | null>(null);
+
+  // Mobile: floating delete button position.
   const [deleteMenu, setDeleteMenu] = useState<{
     commentId: number;
     x: number;
     y: number;
   } | null>(null);
+
+  // Detect touch device once.
+  const [isTouch] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      (window.matchMedia?.("(hover: none)")?.matches ||
+        "ontouchstart" in window)
+  );
 
   const refresh = useCallback(async () => {
     try {
@@ -82,27 +96,14 @@ export function ArticleInteractions({ slug }: { slug: string }) {
     }
   };
 
-  // Long-press (mobile) / context menu (desktop) to show a small floating
-  // "删除" button at the press position. Clicking it deletes; clicking
-  // elsewhere dismisses it.
-  const showDeleteMenu = (id: number, x: number, y: number) => {
-    setDeleteMenu({ commentId: id, x, y });
-  };
-  const dismissDeleteMenu = () => setDeleteMenu(null);
-
-  const confirmDelete = async () => {
-    if (!deleteMenu) return;
-    await onDeleteComment(deleteMenu.commentId);
-    dismissDeleteMenu();
-  };
-
+  // ── Mobile long-press ──────────────────────────────────────────────
   const startLongPress = (id: number, e: React.TouchEvent) => {
     const touch = e.touches[0];
     const x = touch.clientX;
     const y = touch.clientY;
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     longPressTimer.current = window.setTimeout(() => {
-      showDeleteMenu(id, x, y);
+      setDeleteMenu({ commentId: id, x, y });
     }, 500);
   };
   const cancelLongPress = () => {
@@ -111,9 +112,17 @@ export function ArticleInteractions({ slug }: { slug: string }) {
       longPressTimer.current = null;
     }
   };
-  const onOwnContextMenu = (e: React.MouseEvent, id: number) => {
-    e.preventDefault();
-    showDeleteMenu(id, e.clientX, e.clientY);
+  const confirmMobileDelete = async () => {
+    if (!deleteMenu) return;
+    await onDeleteComment(deleteMenu.commentId);
+    setDeleteMenu(null);
+  };
+
+  // ── Desktop confirm ────────────────────────────────────────────────
+  const handleDesktopDelete = async () => {
+    if (confirmId === null) return;
+    await onDeleteComment(confirmId);
+    setConfirmId(null);
   };
 
   return (
@@ -151,36 +160,47 @@ export function ArticleInteractions({ slug }: { slug: string }) {
           <p className="aleph-online__empty">暂无评论，来抢沙发吧</p>
         ) : (
           comments.map((c) => {
-            const longPressHandlers = c.is_own
+            // Mobile: long-press handlers for own comments.
+            const touchHandlers = c.is_own && isTouch
               ? {
                   onTouchStart: (e: React.TouchEvent) => startLongPress(c.id, e),
                   onTouchEnd: cancelLongPress,
                   onTouchMove: cancelLongPress,
-                  onContextMenu: (e: React.MouseEvent) =>
-                    onOwnContextMenu(e, c.id),
                 }
               : {};
             return (
               <div
                 key={c.id}
                 className={`aleph-online__comment${c.is_own ? " is-own" : ""}`}
-                {...longPressHandlers}
+                {...touchHandlers}
               >
                 <div className="aleph-online__comment-meta">
                   <strong>{c.author_name}</strong>
                   {c.is_own && <span className="aleph-online__own-tag">我</span>}
                   <time>{new Date(c.created_at).toLocaleString()}</time>
-                  {user?.is_owner && (
-                    <button
-                      type="button"
-                      onClick={() => onDeleteComment(c.id)}
-                      className="aleph-online__del"
-                    >
-                      <i className="fa-regular fa-trash-can" /> 删除
-                    </button>
-                  )}
                 </div>
                 <div className="aleph-online__comment-body">{c.body}</div>
+                {/* Desktop: small trash icon for own comments */}
+                {c.is_own && !isTouch && (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmId(c.id)}
+                    className="aleph-online__del-icon"
+                    aria-label="删除评论"
+                  >
+                    <i className="fa-regular fa-trash-can" />
+                  </button>
+                )}
+                {/* Owner: delete button on all comments */}
+                {user?.is_owner && (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteComment(c.id)}
+                    className="aleph-online__del"
+                  >
+                    <i className="fa-regular fa-trash-can" /> 删除
+                  </button>
+                )}
               </div>
             );
           })
@@ -206,19 +226,49 @@ export function ArticleInteractions({ slug }: { slug: string }) {
         </button>
       </div>
 
-      {/* Floating "删除" popover — appears at the long-press / right-click
-          position. Click the button to delete; click anywhere else to dismiss. */}
+      {/* ── Desktop: custom confirm dialog ── */}
+      {confirmId !== null && (
+        <div
+          className="aleph-confirm-overlay"
+          onClick={() => setConfirmId(null)}
+        >
+          <div
+            className="aleph-confirm-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p>确定删除这条评论？</p>
+            <div className="aleph-confirm-actions">
+              <button
+                type="button"
+                className="aleph-confirm-cancel"
+                onClick={() => setConfirmId(null)}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="aleph-confirm-ok"
+                onClick={handleDesktopDelete}
+              >
+                删除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Mobile: floating delete button at finger position ── */}
       {deleteMenu && (
         <>
           <div
             className="aleph-online__menu-backdrop"
-            onClick={dismissDeleteMenu}
+            onClick={() => setDeleteMenu(null)}
           />
           <button
             type="button"
             className="aleph-online__menu-btn"
             style={{ left: deleteMenu.x, top: deleteMenu.y }}
-            onClick={confirmDelete}
+            onClick={confirmMobileDelete}
           >
             <i className="fa-regular fa-trash-can" /> 删除
           </button>
