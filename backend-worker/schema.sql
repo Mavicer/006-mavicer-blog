@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS comment (
   post_slug TEXT NOT NULL,
   body TEXT NOT NULL,
   author_name TEXT NOT NULL DEFAULT '访客',
+  client_id TEXT NOT NULL DEFAULT '',   -- matches runtime migrateCommentTable in [[path]].ts
   created_at TEXT NOT NULL DEFAULT '',
   updated_at TEXT NOT NULL DEFAULT ''
 );

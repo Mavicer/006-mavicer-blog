@@ -260,16 +260,3 @@ export async function trackPageView(path: string, postSlug?: string) {
     /* never block on analytics */
   }
 }
-
-// ---- Online readers ----
-export async function pingOnline(path: string, postSlug?: string): Promise<number> {
-  const r = await request<{ online_readers: number }>("/online/ping", {
-    method: "POST",
-    body: JSON.stringify({
-      client_id: clientId(),
-      path: path.slice(0, 300),
-      post_slug: postSlug || null,
-    }),
-  });
-  return r.online_readers;
-}
