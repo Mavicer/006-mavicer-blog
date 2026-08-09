@@ -506,27 +506,40 @@ a:hover {
   .home-article-meta-info a:hover {
     color: var(--primary-color);
   }
-  /* Inline tag list on article cards: no pill styling, just text with separators */
-  .home-article-tag .tag-list {
-    display: inline;
-    flex-wrap: nowrap;
-    gap: 0;
+  /* Shared pill style for article tags + profile tags (DRY). */
+  .tag-pill {
+    display: inline-flex;
+    align-items: center;
+    transition: color 0.2s ease, border-color 0.2s ease;
   }
-  .home-article-tag .tag-item {
-    display: inline;
-    white-space: nowrap;
+  .tag-pill:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
   }
-  .home-article-tag .tag-sep {
-    margin: 0 4px;
-    color: var(--fourth-text-color);
+  /* Article card: icon-to-text gap inside meta items */
+  .meta-item,
+  .home-article-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
   }
-  .home-article-tag .tag-more {
-    display: inline;
-    background: none;
-    border: none;
+  /* Article card: 阅读全文 link hover */
+  .home-article-readmore:hover {
+    color: var(--primary-color);
+  }
+  /* SEO reader text: visually hidden but available to screen readers.
+     Absolutely positioned so it never participates in the flex row and
+     can never push the arrow onto its own line. */
+  .seo-reader-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
     padding: 0;
-    font-size: inherit;
-    font-weight: inherit;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .main-content-container {
@@ -995,23 +1008,6 @@ a:hover {
     filter: blur(0) !important;
     transition: filter 0.3s ease;
   }
-  /* Article card tags: plain text links, no pill/background */
-  .home-article-tag .tag-list a {
-    display: inline;
-    padding: 0;
-    border-radius: 0;
-    background: none;
-    box-shadow: none;
-    color: var(--third-text-color);
-    font-size: inherit;
-    transition: color 0.2s ease;
-  }
-  .home-article-tag .tag-list a:hover {
-    color: var(--primary-color);
-    box-shadow: none;
-    transform: none;
-  }
-
   /* Archive timeline */
   .archive-item {
     margin-bottom: 2rem;
@@ -1498,18 +1494,20 @@ a:hover {
     padding-top: 1.25rem !important;
     padding-bottom: 1.25rem !important;
   }
-  /* Meta info: allow wrapping, prevent vertical stacking of tags */
+  /* Meta info: allow wrapping so date/category and 阅读全文 sit on one row
+     when they fit, wrap gracefully on narrow widths. Tags live in their
+     own row below (separate .home-article-tags element), so we must NOT
+     switch the container to column direction — that would drop 阅读全文
+     below the date. */
   .home-article-meta-info {
     flex-wrap: wrap;
     gap: 0.5rem;
   }
   .home-article-meta-info-container {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
   }
-  .home-article-category,
-  .home-article-tag {
+  .home-article-category {
     white-space: nowrap;
   }
 

@@ -3,6 +3,7 @@ import { SIDEBAR_LINKS } from "@/config/nav";
 import { site } from "@/config/site";
 import { profile } from "@/data/profile";
 import { usePosts } from "@/hooks/usePosts";
+import { ICONS } from "@/components/icons";
 
 export function Sidebar() {
   const { posts, categories } = usePosts();
@@ -14,12 +15,15 @@ export function Sidebar() {
             <div className="site-name">{site.name}</div>
             <div className="announcement">{site.announcement}</div>
           </div>
-          {SIDEBAR_LINKS.map((l) => (
-            <Link key={l.path} className="links" to={l.path}>
-              <i className={`${l.icon} icon-space`} />
-              <span className="link-name">{l.label}</span>
-            </Link>
-          ))}
+          {SIDEBAR_LINKS.map((l) => {
+            const Icon = ICONS[l.svg];
+            return (
+              <Link key={l.path} className="links" to={l.path}>
+                <Icon />
+                <span className="link-name">{l.label}</span>
+              </Link>
+            );
+          })}
         </div>
 
         <div className="sidebar-content">

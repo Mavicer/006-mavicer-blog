@@ -11,7 +11,15 @@ export const LAYOUT = {
   stickyTop: 70,
 };
 
-export type NavIcon = "home" | "archive" | "user" | "code" | "folder" | "camera" | "search";
+export type NavIcon =
+  | "home"
+  | "archive"
+  | "user"
+  | "code"
+  | "folder"
+  | "camera"
+  | "search"
+  | "calendar";
 
 export type NavItem = {
   label: string;
@@ -39,10 +47,17 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "分类", path: "/categories", icon: "fa-regular fa-folder", svg: "folder" },
 ];
 
-export const SIDEBAR_LINKS = [
-  { label: "About", path: "/about", icon: "fa-regular fa-user" },
-  { label: "Archives", path: "/archives", icon: "fa-regular fa-archive" },
-  { label: "Projects", path: "/projects", icon: "fa-regular fa-code" },
-  { label: "Gallery", path: "/gallery", icon: "fa-regular fa-images" },
-  { label: "Categories", path: "/categories", icon: "fa-regular fa-folder" },
+export type SidebarLink = {
+  label: string;
+  path: string;
+  icon: string; // legacy fa class (mobile drawer)
+  svg: NavIcon; // inline SVG icon (desktop sidebar)
+};
+
+export const SIDEBAR_LINKS: SidebarLink[] = [
+  { label: "About", path: "/about", icon: "fa-regular fa-user", svg: "user" },
+  { label: "Archives", path: "/archives", icon: "fa-regular fa-archive", svg: "archive" },
+  { label: "Projects", path: "/projects", icon: "fa-regular fa-code", svg: "code" },
+  { label: "Gallery", path: "/gallery", icon: "fa-regular fa-images", svg: "camera" },
+  { label: "Categories", path: "/categories", icon: "fa-regular fa-folder", svg: "folder" },
 ];

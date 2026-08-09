@@ -2,7 +2,7 @@
 -- Run AFTER schema.sql. Idempotent via INSERT OR IGNORE.
 
 -- finding-direction
-INSERT OR IGNORE INTO post (slug, title, date, excerpt, source, category, tags, body, published, sort_order, created_at, updated_at) VALUES ('finding-direction', '在不确定的夏天，寻找自己的方向', '2026-07-27', '高中结束了，新的世界正在展开。在期待与迷茫之间，我试着写下现在的自己。', 'online', '随笔', '成长,AI,大学,思考,随笔', '
+INSERT OR IGNORE INTO post (slug, title, date, excerpt, source, category, tags, body, published, sort_order, created_at, updated_at) VALUES ('finding-direction', '在不确定的夏天，寻找自己的方向', '2026-07-27', '高中结束了，新的世界正在展开。在期待与迷茫之间，我试着写下现在的自己。', 'online', '随笔', '成长,AI,大学', '
 2026 年的夏天，我站在人生一个陌生的入口。
 
 高中结束了，那个曾经被成绩、排名、考试填满的世界逐渐远去，而新的世界正在展开：大学的课程、国际化环境，优秀的同学，以及一个完全未知的未来。
@@ -39,7 +39,7 @@ INSERT OR IGNORE INTO post (slug, title, date, excerpt, source, category, tags, 
 ', 1, 60, '2026-07-30T00:00:00Z', '2026-07-30T00:00:00Z');
 
 -- industry-cycle
-INSERT OR IGNORE INTO post (slug, title, date, excerpt, source, category, tags, body, published, sort_order, created_at, updated_at) VALUES ('industry-cycle', '从高考志愿看产业周期', '2026-07-29', '为什么一个行业最容易被所有人看好的时候，往往也是竞争开始加剧的时候？狂热与崩盘之间，普通考生还能抓住什么？', 'online', '思考', 'AI,高考志愿,资本周期,计算机,投资', '
+INSERT OR IGNORE INTO post (slug, title, date, excerpt, source, category, tags, body, published, sort_order, created_at, updated_at) VALUES ('industry-cycle', '从高考志愿看产业周期', '2026-07-29', '为什么一个行业最容易被所有人看好的时候，往往也是竞争开始加剧的时候？狂热与崩盘之间，普通考生还能抓住什么？', 'online', '思考', 'AI,高考志愿,资本周期', '
 这篇文章的灵感，来自近几年高考志愿中的一个非常明显的现象：越来越多的热门工科专业，正在经历疯狂涨分。人工智能、计算机科学与技术、电子信息、自动化、集成电路——这些曾经只属于少数人的专业，如今正在成为无数高分考生争夺的目标。很多高校的计算机相关专业录取分数线，甚至已经超过学校的一些传统王牌专业。
 
 在志愿填报现场，家长讨论最多的话题也从过去的"哪个专业稳定？"变成"AI是不是未来？""计算机还能不能吃十年红利？""现在学人工智能，会不会错过最后一班车？"
@@ -98,7 +98,7 @@ AI 不会消失，就像计算机没有消失一样。但 AI 行业的红利，�
 ', 1, 65, '2026-07-30T00:00:00Z', '2026-07-30T00:00:00Z');
 
 -- python-to-ai-journey
-INSERT OR IGNORE INTO post (slug, title, date, excerpt, source, category, tags, body, published, sort_order, created_at, updated_at) VALUES ('python-to-ai-journey', 'A Journey from Python Beginner to AI-Native Software Development', '2026-07-28', 'From my first encounter with Python to independently developing several websites — experiences, failures, and lessons learned during the past month.', 'online', '经验分享', 'Python,AI,Agent,Web开发,成长', '
+INSERT OR IGNORE INTO post (slug, title, date, excerpt, source, category, tags, body, published, sort_order, created_at, updated_at) VALUES ('python-to-ai-journey', 'A Journey from Python Beginner to AI-Native Software Development', '2026-07-28', 'From my first encounter with Python to independently developing several websites — experiences, failures, and lessons learned during the past month.', 'online', '经验分享', 'Python,AI,Agent', '
 My personal website is finally online. However, when I opened it, I suddenly realized that it still looked a little empty. So why not write a few more articles and fill it with some personal stories? Haha.
 
 This also gives me a perfect opportunity to summarize my experiences, failures, and lessons learned during the past month — from my first encounter with Python to independently developing several websites, including my own personal blog.
@@ -336,7 +336,7 @@ In the rapidly developing AI era, I want to become someone who not only uses too
 ', 1, 55, '2026-07-30T00:00:00Z', '2026-07-30T00:00:00Z');
 
 -- vpn-guide
-INSERT OR IGNORE INTO post (slug, title, date, excerpt, source, category, tags, body, published, sort_order, created_at, updated_at) VALUES ('vpn-guide', '翻墙教程：不同操作系统，该如何以最少的成本部署稳定的VPN', '2026-07-26', '详细整理了 iOS、Android、Mac/Windows 不同操作系统下以最少成本部署稳定 VPN 的完整方案。', 'online', '经验分享', 'VPN,iOS,Android,Mac,Windows,Clash,教程', '
+INSERT OR IGNORE INTO post (slug, title, date, excerpt, source, category, tags, body, published, sort_order, created_at, updated_at) VALUES ('vpn-guide', '翻墙教程：不同操作系统，该如何以最少的成本部署稳定的VPN', '2026-07-26', '详细整理了 iOS、Android、Mac/Windows 不同操作系统下以最少成本部署稳定 VPN 的完整方案。', 'online', '经验分享', 'VPN,教程,Clash', '
 在最最最伟大且帅气的 wzh 学长的指导下，我在高三第一次接触到了 VPN，并被 Gemini Pro 强大的多模态识别能力与 ChatGPT 领先时代的推理分析能力所震撼。AI 时代，如何快速接触到最新一代的大模型并将其为己所用已经成为了一种不可或缺的能力。然而，受限于国内互联网的保护，我们往往无法直接访问 OpenAI，Google 等国外网站，因此，本文详细整理了自己已知的不同系统的翻墙方式，希望能帮到大家，如有疏漏或有更优方案，欢迎补充与讨论！
 
 ## for iOS

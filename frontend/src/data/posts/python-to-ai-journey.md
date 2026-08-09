@@ -2,7 +2,7 @@
 title: "A Journey from Python Beginner to AI-Native Software Development"
 date: "2026-07-28"
 category: "经验分享"
-tags: ["Python", "AI", "Agent", "Web开发", "成长"]
+tags: ["Python", "AI", "Agent"]
 excerpt: "From my first encounter with Python to independently developing several websites — experiences, failures, and lessons learned during the past month."
 published: true
 sort_order: 55

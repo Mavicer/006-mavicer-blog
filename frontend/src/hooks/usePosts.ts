@@ -7,6 +7,9 @@ export type Post = {
   date: string; // ISO
   excerpt: string;
   category: string;
+  // Tag convention: 2–4 tags per article. Avoid over-generalization — a
+  // tag should identify the post's core topic, not enumerate every entity
+  // mentioned (e.g. a VPN guide uses [VPN, 教程, Clash], not every OS).
   tags: string[];
   body: string; // markdown
   published: boolean;

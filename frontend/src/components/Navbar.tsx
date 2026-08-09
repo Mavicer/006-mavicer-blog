@@ -1,48 +1,9 @@
 import { useState, useRef, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { NAV_ITEMS, type NavItem, type NavIcon } from "@/config/nav";
+import { NAV_ITEMS, type NavItem } from "@/config/nav";
 import { site } from "@/config/site";
 import { useNavbarShrink } from "@/hooks/useScroll";
-
-// ── Inline SVG icons (22px, stroke-based, minimal) ─────────────
-const ICONS: Record<NavIcon, React.FC> = {
-  home: () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 12l9-9 9 9" /><path d="M5 10v10h14V10" />
-    </svg>
-  ),
-  archive: () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="4" rx="1" /><path d="M5 8v12h14V8" /><path d="M10 12h4" />
-    </svg>
-  ),
-  user: () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
-    </svg>
-  ),
-  code: () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 6l-6 6 6 6" /><path d="M16 6l6 6-6 6" />
-    </svg>
-  ),
-  folder: () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
-    </svg>
-  ),
-  camera: () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 7h3l2-2h8l2 2h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" />
-      <circle cx="12" cy="13" r="3.5" />
-    </svg>
-  ),
-  search: () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.5-4.5" />
-    </svg>
-  ),
-};
+import { ICONS } from "@/components/icons";
 
 export function Navbar({ onSearch }: { onSearch: () => void }) {
   const shrink = useNavbarShrink(40);
@@ -158,7 +119,7 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
                 className="navbar-item navbar-search cursor-pointer"
                 onClick={onSearch}
               >
-                {ICONS.search({} as any)}
+                {ICONS.search({})}
               </li>
             </ul>
           </div>

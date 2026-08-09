@@ -2,7 +2,7 @@
 title: "在不确定的夏天，寻找自己的方向"
 date: "2026-07-27"
 category: "随笔"
-tags: ["成长", "AI", "大学", "思考", "随笔"]
+tags: ["成长", "AI", "大学"]
 excerpt: "高中结束了，新的世界正在展开。在期待与迷茫之间，我试着写下现在的自己。"
 published: true
 sort_order: 60

@@ -2,7 +2,7 @@
 title: "翻墙教程：不同操作系统，该如何以最少的成本部署稳定的VPN"
 date: "2026-07-26"
 category: "经验分享"
-tags: ["VPN", "iOS", "Android", "Mac", "Windows", "Clash", "教程"]
+tags: ["VPN", "教程", "Clash"]
 excerpt: "详细整理了 iOS、Android、Mac/Windows 不同操作系统下以最少成本部署稳定 VPN 的完整方案。"
 published: true
 sort_order: 50
