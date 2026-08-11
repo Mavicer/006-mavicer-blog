@@ -26,9 +26,9 @@ export function MobileProfileCard() {
             <span className="text-base font-semibold text-first-text truncate">
               {site.author}
             </span>
-            <Link to="/about" className="text-xs text-third-text hover:text-primary transition-colors">
+            <Link to="/about" className="inline-flex items-center gap-1 text-xs text-third-text hover:text-primary transition-colors">
               关于
-              <i className="fa-solid fa-chevron-right fa-xs ml-1 align-middle" />
+              <i className="fa-solid fa-chevron-right fa-xs" />
             </Link>
           </div>
           <div className="flex gap-4 mt-0.5">
