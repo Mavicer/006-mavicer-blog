@@ -44,7 +44,7 @@ export function Sidebar() {
               className="label text-center text-xs text-third-text mt-1 hover:text-primary transition-colors"
             >
               关于
-              <i className="fa-solid fa-chevron-right fa-2xs ml-0.5 align-middle" />
+              <i className="fa-solid fa-chevron-right fa-xs ml-1 align-middle" />
             </Link>
           </div>
           <div className="statistics flex justify-around my-2.5">
