@@ -39,9 +39,12 @@ export function Sidebar() {
             <div className="name text-center text-lg font-semibold text-first-text">
               {site.author}
             </div>
-            <div className="label text-center text-xs text-third-text mt-1">
-              Lv1
-            </div>
+            <Link
+              to="/about"
+              className="label text-center text-xs text-third-text mt-1 hover:text-primary transition-colors"
+            >
+              关于我
+            </Link>
           </div>
           <div className="statistics flex justify-around my-2.5">
             <Link
