@@ -20,26 +20,26 @@ export default function About() {
         {/* Contact links */}
         <div className="flex flex-col gap-2.5 mb-10 text-sm">
           <span className="flex items-center gap-2.5">
-            <i className="fa-solid fa-envelope text-primary w-5 text-center" />
+            <i className="fa-solid fa-envelope text-third-text w-5 text-center" />
             <span className="text-third-text">Google：</span>
             <a href={`mailto:${a.email}`} className="hover:text-primary transition-colors">
               {a.email}
             </a>
           </span>
           <span className="flex items-center gap-2.5">
-            <i className="fa-solid fa-comment text-primary w-5 text-center" />
+            <i className="fa-solid fa-comment text-third-text w-5 text-center" />
             <span className="text-third-text">QQ：</span>
             <a href={`mailto:${a.qq}`} className="hover:text-primary transition-colors">
               {a.qq}
             </a>
           </span>
           <span className="flex items-center gap-2.5">
-            <i className="fa-brands fa-weixin text-primary w-5 text-center" />
+            <i className="fa-brands fa-weixin text-third-text w-5 text-center" />
             <span className="text-third-text">WeChat：</span>
             <span className="text-second-text">{a.wechat}</span>
           </span>
           <span className="flex items-center gap-2.5">
-            <i className="fa-brands fa-github text-primary w-5 text-center" />
+            <i className="fa-brands fa-github text-third-text w-5 text-center" />
             <span className="text-third-text">GitHub：</span>
             <a href={a.github} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
               {a.github.replace("https://", "")}
