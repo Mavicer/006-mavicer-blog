@@ -17,7 +17,7 @@ sort_order: 50
 这里为大家提供两种方案备选：
 
 1. 前往 [https://www.id601.com](https://www.id601.com) 该网站售卖各式各样的 Apple ID，亲测质量很高，但是部分商品价格过高，建议购买私人独享账号（一定一定要已经购买了小火箭（shadowrocket）的账号，不然后面还要再买）
-2. 前往 [https://account.apple.com](https://account.apple.com) 右上角折叠的小三角符号，点开创建新 Apple ID，填写个人信息，国家美国，电话可以留国内 +86 的，但是此方案有一个前提——必须拥有一个自己的谷歌账号，如果没有，建议找已有 VPN 的同学帮忙先注册一个或者返回方案一。
+2. 前往 [https://account.apple.com](https://account.apple.com) 右上角折叠的小三角符号，点开创建新 Apple ID，填写个人信息，国家美国，地区俄勒冈州（免税州，不用绑银行卡），电话可以留国内 +86 的，但是此方案有一个前提——必须拥有一个自己的谷歌账号，如果没有，建议找已有 VPN 的同学帮忙先注册一个或者返回方案一。
 
 ### 二、下载小火箭（shadowrocket）
 
