@@ -833,6 +833,9 @@ a:hover {
     gap: 14px;
     font-size: 0.88rem;
     color: var(--third-text-color);
+    border-top: 1px solid var(--border-color);
+    padding-top: 16px;
+    margin-top: 8px;
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 16px;
     margin-bottom: 24px;
@@ -961,6 +964,34 @@ a:hover {
     border: none;
     border-top: 1px solid var(--border-color);
     margin: 2rem 0;
+  }
+  /* Example boxes — 「」blocks from the source. Light gray bg + smaller,
+     darker-gray text so illustrative examples stay subordinate to the
+     article body and don't dominate the reading flow. */
+  .markdown-body .example-box {
+    background: var(--third-background-color);
+    border-left: 3px solid var(--border-color);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+    font-size: 0.9em;
+    color: var(--third-text-color);
+    line-height: 1.7;
+  }
+  .markdown-body .example-box p {
+    text-indent: 0;
+    margin: 0 0 0.6rem;
+  }
+  .markdown-body .example-box p:last-child {
+    margin-bottom: 0;
+  }
+  /* Reading-time banner — small gray note sitting just above the meta-info
+     divider line, not inside the markdown body. */
+  .reading-time-banner {
+    font-size: 0.8rem;
+    color: var(--third-text-color);
+    margin: 0 0 12px;
+    line-height: 1;
   }
 
   /* Code block mac-style header */

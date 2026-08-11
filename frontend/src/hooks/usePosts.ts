@@ -15,6 +15,7 @@ export type Post = {
   published: boolean;
   sortOrder: number;
   source?: string;
+  readingTime?: string; // optional word-count banner, e.g. "全文约4000字，阅读时长8分钟"
 };
 
 type Term = { name: string; count: number };
@@ -79,6 +80,7 @@ function loadStaticPosts(): Post[] {
       published: data.published !== false,
       sortOrder: Number(data.sort_order ?? order),
       source: "static",
+      readingTime: data.reading_time as string | undefined,
     });
     order += 10;
   }

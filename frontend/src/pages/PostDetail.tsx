@@ -178,6 +178,15 @@ export default function PostDetail() {
           <div className="home-content-container">
             <article className="article-content-container">
               <h1 className="article-title">{post.title}</h1>
+
+              {/* Reading-time banner — small gray note above the meta-info
+                  divider line. Only posts that declare reading_time show it. */}
+              {post.readingTime && (
+                <div className="reading-time-banner">
+                  {post.readingTime}
+                </div>
+              )}
+
               <div className="article-meta-info">
                 <span className="article-meta-item">
                   <i className="fa-regular fa-user" />
