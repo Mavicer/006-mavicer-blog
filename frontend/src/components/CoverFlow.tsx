@@ -12,47 +12,53 @@ import type { GalleryEntry } from "@/data/gallery";
 /**
  * CoverFlow — iPod-style 3D album carousel.
  *
- * Cards live on the surface of a vertical CYLINDER (radius R). Each card sits at
- * angle θ = offset · STEP on the cylinder's front arc, where `offset = i − pos`
- * and `pos` is a CONTINUOUS position value (not just the snapped index). The
- * card's screen x, depth z, and rotation are all coupled functions of θ:
+ * Cards arrange in 3D space around a centered "spotlight" card. The three
+ * transform axes — horizontal x, depth z, and rotateY — are each INDEPENDENT
+ * tunable functions of the card's offset from center, NOT coupled on a single
+ * shared angle (the cylinder approach couples them via one θ, which forces deep
+ * z to co-occur with wide x and pushes side cards off-screen — that was the bug).
  *
- *   x       = R · sin(θ)        // arcs outward along the cylinder
- *   z       = R · (cos(θ) − 1)  // front of cylinder at z=0, sides recede along the arc
- *   rotateY = θ                 // faces radially outward from the cylinder axis
+ *   x       = offset · SPACING          // linear horizontal spacing (world px)
+ *   z       = −|offset|·Z_STEP           // side cards retreat in depth (negative = farther)
+ *   rotateY = sign(offset)·min(|offset|,2)·ANGLE   // turn to face center; capped at 84°
  *
- * Because all three are functions of the same θ, when `pos` changes they move
- * TOGETHER along the arc — the cylinder rolls, cards don't independently retreat.
- * Apparent size shrink on side cards comes from `perspective` acting on their z
- * (geometric, continuous), not from discrete scale jumps.
+ * Apparent size shrink on side cards comes from `perspective` (P=1000) acting
+ * on their z: z=−130 → ~13% smaller, z=−260 → ~23% smaller. rotateY further
+ * foreshortens their apparent width (cos 42° ≈ 0.74). Together they read as
+ * genuine depth layering, not a 2D pile-up. The centered card (z=0, rotateY=0)
+ * stays full-size and frontmost; its higher zIndex covers the near edge of the
+ * receding side cards (~30px overlap) — that overlap is intentional Cover Flow
+ * layering, distinct from the flat same-plane stacking that broke the prior version.
  *
- * `pos` is a MotionValue driven live by the pan gesture (cylinder rolls with the
- * finger); on release it springs to the nearest integer and commits to `index`.
+ * `pos` is a CONTINUOUS MotionValue (card units; integer = a card centered).
+ * It is driven live by the pan gesture so cards flow with the finger ("flipping
+ * through a record collection"), then springs to the nearest integer on release.
  *
  * DOM is three layers:
  *   outer  (overflow-hidden — clips side cards at the stage edge, 2D screen space)
- *     → middle ([perspective:900px] — the vanishing point, NO overflow here)
+ *     → middle ([perspective:1000px] — the vanishing point, NO overflow here)
  *       → track (motion.div, [transform-style:preserve-3d], onPan — does NOT move)
- *         → CoverCard (motion.div, x/z/rotateY/opacity via useTransform on `pos`)
+ *         → CoverCard (motion.div, x/z/rotateY/scale/opacity via useTransform on `pos`)
  *
  * `transform-style: preserve-3d` on the track is mandatory — `perspective` only
  * applies to DIRECT children, and the cards are grandchildren. Drop it and the
  * whole thing collapses to flat 2D slides.
  *
- * Transform order: framer-motion emits `translate3d(x,0,z) rotateY(θ)`, so
- * rotateY applies first (around the card's own center = tilt in place), then
- * translate moves the tilted card to its cylinder position. Correct cylinder look.
+ * Transform order: framer-motion emits `translate3d(x,0,z) rotateY(θ) scale(s)`,
+ * so rotateY applies first (around the card's own center = tilt in place), then
+ * translate moves the tilted card to its slot. Correct Cover Flow look.
+ *
+ * Rotation sign: `rotateY(+θ)` turns a card's face toward the right, so LEFT-side
+ * cards take `+` and RIGHT-side cards take `−` — both angle inward to face center.
+ * `Math.sign(offset)` yields this naturally.
  */
 
-const CARD_W = 240;
-const CARD_H = 180; // 4:3 of CARD_W
-// Cylinder geometry. R = radius; STEP = degrees per card on the front arc.
-// Tuned so offset 0/±1/±2 sit on a readable front arc and ±3 fades past the edge.
-const R = 280;
-const STEP = 32; // degrees per card
-const STEP_RAD = (STEP * Math.PI) / 180;
-// Drag px → card-step conversion: visual x-distance between adjacent cards.
-const DRAG_UNIT = R * Math.sin(STEP_RAD);
+const CARD_W = 260;
+const CARD_H = 195; // 4:3 of CARD_W
+// Decoupled geometry constants — each axis tuned independently.
+const SPACING = 180; // px between adjacent card centers (world space)
+const Z_STEP = 130; // px depth retreat per |offset| step
+const ANGLE = 42; // deg rotateY per |offset| step, capped at 2·ANGLE = 84°
 
 type Props = {
   items: GalleryEntry[];
@@ -67,7 +73,7 @@ export function CoverFlow({ items, onOpen }: Props) {
   const clamp = (n: number) => Math.max(0, Math.min(n, count - 1));
   const current = clamp(index);
 
-  // Continuous cylinder position (card units). Integer = a card centered.
+  // Continuous carousel position (card units). Integer = a card centered.
   const pos = useMotionValue(current);
   // Position captured at pan start — deltas are measured from here.
   const baseRef = useRef(current);
@@ -76,9 +82,7 @@ export function CoverFlow({ items, onOpen }: Props) {
     animate(
       pos,
       target,
-      reduce
-        ? { duration: 0 }
-        : { type: "spring", stiffness: 260, damping: 30 }
+      reduce ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 30 }
     );
   };
 
@@ -92,11 +96,11 @@ export function CoverFlow({ items, onOpen }: Props) {
     baseRef.current = pos.get();
   };
   const onPan = (_e: unknown, info: PanInfo) => {
-    // Drag left → offset.x < 0 → pos increases → next card rolls into center.
-    pos.set(baseRef.current - info.offset.x / DRAG_UNIT);
+    // Drag left → offset.x < 0 → pos increases → next card flows into center.
+    pos.set(baseRef.current - info.offset.x / SPACING);
   };
   const onPanEnd = (_e: unknown, info: PanInfo) => {
-    const moved = -info.offset.x / DRAG_UNIT;
+    const moved = -info.offset.x / SPACING;
     let target = Math.round(baseRef.current + moved);
     // Flick: a fast short drag still advances at least one card.
     if (target === baseRef.current && Math.abs(info.velocity.x) > 0.3) {
@@ -158,9 +162,9 @@ export function CoverFlow({ items, onOpen }: Props) {
       )}
 
       {/* 3D stage: perspective → preserve-3d track (does NOT move) → cards */}
-      <div className="[perspective:900px]">
+      <div className="[perspective:1000px]">
         <motion.div
-          className="[transform-style:preserve-3d] relative h-[200px] cursor-grab active:cursor-grabbing touch-pan-y"
+          className="[transform-style:preserve-3d] relative h-[220px] cursor-grab active:cursor-grabbing touch-pan-y"
           onPanStart={onPanStart}
           onPan={onPan}
           onPanEnd={onPanEnd}
@@ -199,8 +203,8 @@ export function CoverFlow({ items, onOpen }: Props) {
   );
 }
 
-/** Single card on the cylinder. Its own component so useTransform hooks are
- *  called unconditionally per card (rules of hooks in a loop). */
+/** Single card in the 3D arrangement. Its own component so useTransform hooks
+ *  are called unconditionally per card (rules of hooks in a loop). */
 function CoverCard({
   item,
   i,
@@ -218,18 +222,25 @@ function CoverCard({
   onOpen: (item: GalleryEntry) => void;
   onSelect: (next: number) => void;
 }) {
-  // θ = (i − pos) · STEP — the card's angle on the cylinder arc.
-  const x = useTransform(pos, (p) => R * Math.sin((i - p) * STEP_RAD));
-  const z = useTransform(pos, (p) => R * (Math.cos((i - p) * STEP_RAD) - 1));
-  const rotateY = useTransform(pos, (p) => (i - p) * STEP);
-  // Subtle center pop; perspective does the rest of the size work.
+  // offset = i − pos (continuous). Each axis is an INDEPENDENT function of it —
+  // NOT a shared angle. This is the fix: depth (z) no longer drags x with it.
+  const x = useTransform(pos, (p) => (i - p) * SPACING);
+  // Side cards retreat in depth; far cards cap at 3 steps so they park behind.
+  const z = useTransform(pos, (p) => -Math.min(Math.abs(i - p), 3) * Z_STEP);
+  // Turn to face center; cap rotation at 2·ANGLE so far cards don't exceed 84°.
+  const rotateY = useTransform(pos, (p) => {
+    const o = i - p;
+    if (o === 0) return 0;
+    return Math.sign(o) * Math.min(Math.abs(o), 2) * ANGLE;
+  });
+  // Subtle center pop on top of the perspective-driven size shrink.
   const scale = useTransform(pos, (p) => {
     const ao = Math.abs(i - p);
-    return ao < 0.5 ? 1 + (0.5 - ao) * 0.12 : 1;
+    return 1 + (0.5 - Math.min(ao, 0.5)) * 0.1;
   });
   const opacity = useTransform(pos, (p) => {
     const ao = Math.abs(i - p);
-    return ao <= 1 ? 1 : Math.max(0, 1 - (ao - 1) * 0.5);
+    return ao <= 1.5 ? 1 : Math.max(0, 1 - (ao - 1.5) * 0.6);
   });
   const aoNow = Math.abs(i - current);
   const zIndex = count - aoNow;
