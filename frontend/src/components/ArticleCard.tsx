@@ -32,11 +32,11 @@ export function ArticleCard({ post }: { post: Post }) {
         <div className="home-article-meta-info-container">
           <div className="home-article-meta-info">
             <span className="meta-item whitespace-nowrap">
-              <CalendarIcon />
+              <CalendarIcon width={15} height={15} />
               <span className="home-article-date">{formatDate(post.date)}</span>
             </span>
             <span className="home-article-category whitespace-nowrap">
-              <FolderIcon />
+              <FolderIcon width={15} height={15} />
               <span
                 className={
                   post.category === "经验分享" ? "font-semibold text-primary" : ""

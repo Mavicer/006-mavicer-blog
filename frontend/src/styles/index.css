@@ -295,6 +295,7 @@ a:hover {
     align-items: center;
     gap: 6px;
     padding: 4px 0;
+    line-height: 1;
     color: #374151;
     transition: color 0.2s ease;
   }
@@ -441,6 +442,7 @@ a:hover {
     border-radius: 12px;
     color: var(--second-text-color);
     font-size: 0.95rem;
+    line-height: 1;
     transition: all 0.2s ease;
   }
   .sidebar-links .links:hover {
@@ -522,8 +524,12 @@ a:hover {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
+    line-height: 1;
   }
-  /* Article card: 阅读全文 link hover */
+  /* Article card: 阅读全文 link */
+  .home-article-readmore {
+    line-height: 1;
+  }
   .home-article-readmore:hover {
     color: var(--primary-color);
   }
@@ -844,6 +850,7 @@ a:hover {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    line-height: 1;
   }
 
   /* Markdown body */
@@ -1150,6 +1157,7 @@ a:hover {
     align-items: center;
     gap: 0.3rem;
     padding: 0.3rem 0.7rem;
+    line-height: 1;
     border: 1px solid var(--border-color);
     border-radius: 999px;
     background: transparent;
@@ -1210,6 +1218,10 @@ a:hover {
   }
   .aleph-online__del {
     margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    line-height: 1;
     border: none;
     background: transparent;
     color: var(--third-text-color);
@@ -1269,6 +1281,7 @@ a:hover {
     padding: 0.4rem 0.9rem;
     font-size: 0.85rem;
     font-weight: 500;
+    line-height: 1;
     color: #fff;
     background: var(--primary-color);
     border: none;
@@ -1383,6 +1396,7 @@ a:hover {
     align-items: center;
     gap: 0.35rem;
     padding: 0.45rem 1rem;
+    line-height: 1;
     border: none;
     border-radius: 6px;
     background: var(--primary-color);
