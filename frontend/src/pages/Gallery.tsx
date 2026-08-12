@@ -1,46 +1,22 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
 import { PageShell } from "@/components/PageShell";
 import { useImageViewer } from "@/components/ImageViewer";
-import { listGallery, type GalleryItem } from "@/services/galleryService";
-import { useAuth } from "@/hooks/useAuth";
+import { gallery, type GalleryEntry } from "@/data/gallery";
 
 export default function Gallery() {
-  const [items, setItems] = useState<GalleryItem[]>([]);
   const [playing, setPlaying] = useState<string | null>(null);
   const viewer = useImageViewer();
-  const { user } = useAuth();
 
-  const load = () => setItems(listGallery());
-
-  useEffect(() => {
-    load();
-    const onChanged = () => load();
-    window.addEventListener("mavicer-gallery-changed", onChanged);
-    window.addEventListener("storage", onChanged);
-    return () => {
-      window.removeEventListener("mavicer-gallery-changed", onChanged);
-      window.removeEventListener("storage", onChanged);
-    };
-  }, []);
+  // Static showcase data — same for every visitor (committed to git),
+  // unlike the old localStorage store which was per-browser only.
+  const items = [...gallery].sort((a, b) => b.sortOrder - a.sortOrder);
 
   return (
     <PageShell>
       <div className="article-content-container">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2 text-first-text">展示</h1>
-            <p className="text-third-text">摄影 · 视频 · 视觉创作</p>
-          </div>
-          {user?.is_owner && (
-            <Link
-              to="/gallery/admin"
-              className="px-4 py-2 rounded-md border border-border font-semibold hover:text-primary transition-colors text-sm"
-            >
-              <i className="fa-solid fa-pen-to-square mr-1.5" />
-              管理
-            </Link>
-          )}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2 text-first-text">展示</h1>
+          <p className="text-third-text">摄影 · 视频 · 视觉创作</p>
         </div>
 
         {items.length === 0 ? (
