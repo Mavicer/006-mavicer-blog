@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { PageShell } from "@/components/PageShell";
 import { useImageViewer } from "@/components/ImageViewer";
+import CoverFlow from "@/components/CoverFlow";
 import { gallery, type GalleryEntry } from "@/data/gallery";
 
 export default function Gallery() {
@@ -22,61 +23,14 @@ export default function Gallery() {
         {items.length === 0 ? (
           <p className="text-third-text text-center py-20">展示内容即将上线</p>
         ) : (
-          <div className="gallery-grid columns-1 sm:columns-2 lg:columns-3 gap-4">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="gallery-item mb-4 break-inside-avoid rounded-redefine overflow-hidden shadow-redefine-flat hover:shadow-redefine-flat-hover transition-all group cursor-pointer"
-                onClick={() => {
-                  if (item.type === "photo") {
-                    viewer.show(item.url);
-                  } else {
-                    setPlaying(item.id);
-                  }
-                }}
-              >
-                {/* Thumbnail */}
-                <div className="relative overflow-hidden aspect-[4/3]">
-                  <img
-                    src={item.type === "photo" ? item.url : item.cover || ""}
-                    alt={item.title}
-                    loading="lazy"
-                    width={400}
-                    height={300}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.opacity = "0";
-                    }}
-                  />
-                  {item.type === "video" && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Caption */}
-                {(item.title || item.description) && (
-                  <div className="p-3">
-                    {item.title && (
-                      <h3 className="text-sm font-semibold text-first-text mb-1">
-                        {item.title}
-                      </h3>
-                    )}
-                    {item.description && (
-                      <p className="text-xs text-third-text leading-relaxed">
-                        {item.description}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <CoverFlow
+            items={items}
+            onOpen={(item: GalleryEntry) =>
+              item.type === "photo"
+                ? viewer.show(item.url)
+                : setPlaying(item.id)
+            }
+          />
         )}
       </div>
 
