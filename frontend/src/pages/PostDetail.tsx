@@ -203,10 +203,13 @@ export default function PostDetail() {
                   </Link>
                 </span>
                 {post.tags.map((t) => (
-                  <span key={t} className="article-meta-item">
-                    <i className="fa-regular fa-tag" />
-                    <Link to={`/tags/${encodeURIComponent(t)}`}>{t}</Link>
-                  </span>
+                  <Link
+                    key={t}
+                    to={`/tags/${encodeURIComponent(t)}`}
+                    className="tag-pill px-2.5 py-1 rounded-full text-xs bg-third-background text-third-text border border-border no-underline hover:text-primary hover:border-primary transition-colors"
+                  >
+                    #{t}
+                  </Link>
                 ))}
               </div>
 
