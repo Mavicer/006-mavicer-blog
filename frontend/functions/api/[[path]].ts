@@ -405,35 +405,45 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
   const cacheHeaders = {
     "Content-Type": "application/json",
     ...CORS,
-    "Cache-Control": "public, max-age=300",
+    // Bypass edge cache while debugging so each request hits the function.
+    "Cache-Control": "no-store",
   };
+  // Diagnostic info threaded through every return path. The frontend only
+  // reads `pv`/`uv`, so an extra `_debug` key is harmless and reveals no secrets.
+  const debug: Record<string, unknown> = {};
 
   // 1. Check D1 cache (5min TTL).
   const cached = await ctx.env.DB.prepare(
     `SELECT pv, uv, fetched_at FROM visits_cache WHERE id = 1`
   ).first<CacheRow>();
+  debug.cacheAgeMin = cached?.fetched_at
+    ? Math.round((Date.now() - new Date(cached.fetched_at).getTime()) / 60000)
+    : null;
   const fresh =
     cached &&
     cached.fetched_at &&
     new Date(cached.fetched_at).getTime() >
       Date.now() - VISITS_CACHE_TTL_MIN * 60 * 1000;
   if (fresh) {
-    return new Response(JSON.stringify({ pv: cached!.pv, uv: cached!.uv }), {
-      headers: cacheHeaders,
-    });
+    return new Response(
+      JSON.stringify({ pv: cached!.pv, uv: cached!.uv, _debug: debug }),
+      { headers: cacheHeaders }
+    );
   }
 
   // 2. Fetch fresh from Cloudflare GraphQL Analytics API.
   const token = ctx.env.CLOUDFLARE_API_TOKEN;
   const zoneId = ctx.env.CLOUDFLARE_ZONE_ID;
+  debug.hasToken = !!token;
+  debug.hasZone = !!zoneId;
+  debug.tokenLen = token?.length || 0;
+  debug.zoneLen = zoneId?.length || 0;
   if (!token || !zoneId) {
-    // Not configured — serve stale cache if present, else zeros.
-    if (cached) {
-      return new Response(JSON.stringify({ pv: cached.pv, uv: cached.uv }), {
-        headers: cacheHeaders,
-      });
-    }
-    return new Response(JSON.stringify({ pv: 0, uv: 0 }), { headers: cacheHeaders });
+    debug.reason = "env-not-set";
+    return new Response(
+      JSON.stringify({ pv: cached?.pv || 0, uv: cached?.uv || 0, _debug: debug }),
+      { headers: cacheHeaders }
+    );
   }
 
   try {
@@ -458,15 +468,22 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
         }),
       }
     );
+    debug.gqlStatus = gqlRes.status;
     const body: any = await gqlRes.json();
+    debug.gqlSuccess = body?.success;
+    debug.gqlErrors = JSON.stringify(body?.errors || null).slice(0, 300);
+    debug.zonesReturned = body?.data?.viewer?.zones?.length ?? null;
     const groups =
       body?.data?.viewer?.zones?.[0]?.httpRequests1dGroups || [];
+    debug.groupsCount = groups.length;
     let pv = 0;
     let uv = 0;
     for (const g of groups) {
       pv += Number(g?.sum?.pageViews || 0);
       uv += Number(g?.uniq?.uniqVisitors || 0);
     }
+    debug.pvSum = pv;
+    debug.uvSum = uv;
 
     // 3. Write back cache (upsert single row).
     const now = new Date().toISOString();
@@ -477,14 +494,15 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
       .bind(pv, uv, now)
       .run();
 
-    return new Response(JSON.stringify({ pv, uv }), { headers: cacheHeaders });
-  } catch {
-    // Upstream failure — serve stale cache if present, else zeros. Never 5xx.
-    if (cached) {
-      return new Response(JSON.stringify({ pv: cached.pv, uv: cached.uv }), {
-        headers: cacheHeaders,
-      });
-    }
-    return new Response(JSON.stringify({ pv: 0, uv: 0 }), { headers: cacheHeaders });
+    return new Response(JSON.stringify({ pv, uv, _debug: debug }), {
+      headers: cacheHeaders,
+    });
+  } catch (e: any) {
+    debug.reason = "fetch-threw";
+    debug.err = String(e?.message || e).slice(0, 300);
+    return new Response(
+      JSON.stringify({ pv: cached?.pv || 0, uv: cached?.uv || 0, _debug: debug }),
+      { headers: cacheHeaders }
+    );
   }
 }
