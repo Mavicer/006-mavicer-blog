@@ -260,3 +260,9 @@ export async function trackPageView(path: string, postSlug?: string) {
     /* never block on analytics */
   }
 }
+
+// ---- Visits (Cloudflare Analytics API via Pages Function, 5min cache) ----
+export type VisitStats = { pv: number; uv: number };
+export async function getVisits(): Promise<VisitStats> {
+  return request("/visits");
+}

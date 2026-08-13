@@ -13,12 +13,16 @@
  *   GET    /posts/:slug/interactions?client_id=
  *   POST   /posts/:slug/like                body: { client_id }
  *   POST   /posts/:slug/favorite            body: { client_id }
+ *   GET    /visits                            → { pv, uv } (Cloudflare Analytics API, 5min D1 cache)
  *
  * D1 binding: env.DB.
+ * Visits: env.CLOUDFLARE_API_TOKEN + env.CLOUDFLARE_ZONE_ID (Pages env vars).
  */
 
 interface Env {
   DB: D1Database;
+  CLOUDFLARE_API_TOKEN: string;
+  CLOUDFLARE_ZONE_ID: string;
 }
 
 const CORS = {
@@ -81,6 +85,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     const fav = path.match(/^posts\/([^/]+)\/favorite$/);
     if (fav && method === "POST") {
       return await toggleInteraction(ctx, decodeURIComponent(fav[1]), "favorite");
+    }
+    if (path === "visits" && method === "GET") {
+      return await getVisits(ctx);
     }
 
     return jsonError(404, "Not Found");
@@ -146,6 +153,14 @@ async function migrateCommentTable(ctx: PagesFunction<Env>): Promise<void> {
     ),
     ctx.env.DB.prepare(
       `CREATE INDEX IF NOT EXISTS idx_fav_slug_client ON favorite(post_slug, client_id)`
+    ),
+    ctx.env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS visits_cache (
+        id INTEGER PRIMARY KEY,
+        pv INTEGER NOT NULL DEFAULT 0,
+        uv INTEGER NOT NULL DEFAULT 0,
+        fetched_at TEXT NOT NULL DEFAULT ''
+      )`
     ),
   ]);
 }
@@ -371,4 +386,105 @@ async function toggleInteraction(
 
   // Return updated interactions (single query via getInteractions).
   return getInteractions(ctx, slug, clientId);
+}
+
+// ── visits (Cloudflare Analytics API, 5min D1 cache) ──────────────
+
+const VISITS_CACHE_TTL_MIN = 5;
+// Since-date covers the whole life of the site (sums all daily groups).
+const CF_ANALYTICS_SINCE = "2024-01-01";
+
+interface CacheRow {
+  id: number;
+  pv: number;
+  uv: number;
+  fetched_at: string;
+}
+
+async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
+  const cacheHeaders = {
+    "Content-Type": "application/json",
+    ...CORS,
+    "Cache-Control": "public, max-age=300",
+  };
+
+  // 1. Check D1 cache (5min TTL).
+  const cached = await ctx.env.DB.prepare(
+    `SELECT pv, uv, fetched_at FROM visits_cache WHERE id = 1`
+  ).first<CacheRow>();
+  const fresh =
+    cached &&
+    cached.fetched_at &&
+    new Date(cached.fetched_at).getTime() >
+      Date.now() - VISITS_CACHE_TTL_MIN * 60 * 1000;
+  if (fresh) {
+    return new Response(JSON.stringify({ pv: cached!.pv, uv: cached!.uv }), {
+      headers: cacheHeaders,
+    });
+  }
+
+  // 2. Fetch fresh from Cloudflare GraphQL Analytics API.
+  const token = ctx.env.CLOUDFLARE_API_TOKEN;
+  const zoneId = ctx.env.CLOUDFLARE_ZONE_ID;
+  if (!token || !zoneId) {
+    // Not configured — serve stale cache if present, else zeros.
+    if (cached) {
+      return new Response(JSON.stringify({ pv: cached.pv, uv: cached.uv }), {
+        headers: cacheHeaders,
+      });
+    }
+    return new Response(JSON.stringify({ pv: 0, uv: 0 }), { headers: cacheHeaders });
+  }
+
+  try {
+    const gqlRes = await fetch(
+      "https://api.cloudflare.com/client/v4/graphql",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: `query($zoneTag:String!, $since:Date!){
+            viewer { zones(filter:{zoneTag:$zoneTag}) {
+              httpRequests1dGroups(limit:1000, filter:{date_geq:$since}) {
+                sum { pageViews }
+                uniq { uniqVisitors }
+              }
+            }}
+          }`,
+          variables: { zoneTag: zoneId, since: CF_ANALYTICS_SINCE },
+        }),
+      }
+    );
+    const body: any = await gqlRes.json();
+    const groups =
+      body?.data?.viewer?.zones?.[0]?.httpRequests1dGroups || [];
+    let pv = 0;
+    let uv = 0;
+    for (const g of groups) {
+      pv += Number(g?.sum?.pageViews || 0);
+      uv += Number(g?.uniq?.uniqVisitors || 0);
+    }
+
+    // 3. Write back cache (upsert single row).
+    const now = new Date().toISOString();
+    await ctx.env.DB.prepare(
+      `INSERT INTO visits_cache (id, pv, uv, fetched_at) VALUES (1, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET pv=excluded.pv, uv=excluded.uv, fetched_at=excluded.fetched_at`
+    )
+      .bind(pv, uv, now)
+      .run();
+
+    return new Response(JSON.stringify({ pv, uv }), { headers: cacheHeaders });
+  } catch {
+    // Upstream failure — serve stale cache if present, else zeros. Never 5xx.
+    if (cached) {
+      return new Response(JSON.stringify({ pv: cached.pv, uv: cached.uv }), {
+        headers: cacheHeaders,
+      });
+    }
+    return new Response(JSON.stringify({ pv: 0, uv: 0 }), { headers: cacheHeaders });
+  }
 }
