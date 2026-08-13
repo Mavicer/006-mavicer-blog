@@ -186,6 +186,20 @@ async function migrateCommentTable(ctx: PagesFunction<Env>): Promise<void> {
       }
     }
   }
+  // Seed the archive base on the pre-existing cache row. The table predates the
+  // archive+delta counter: the row was written by the old rolling-window logic
+  // with a (bot-inflated) multi-day pageViews total in `pv`, and the ALTER
+  // TABLE above left pv_base=0 / pv_anchor_date=''. Stamp the user-provided
+  // lifetime baseline and invalidate the stale `pv`/`fetched_at` so the next
+  // request recomputes lifetime_pv = base + fresh delta instead of serving the
+  // wrong total. Idempotent: only touches rows still in the un-seeded state.
+  await ctx.env.DB.prepare(
+    `UPDATE visits_cache
+       SET pv_base = ?, pv_anchor_date = ?, pv = 0, fetched_at = ''
+     WHERE id = 1 AND pv_base = 0 AND pv_anchor_date = ''`
+  )
+    .bind(PV_BASE_INITIAL, PV_ANCHOR_DATE)
+    .run();
 }
 
 // ── endpoints ────────────────────────────────────────────────────────
@@ -465,10 +479,15 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
     });
   }
 
-  // 2. Resolve the archive base. If no row exists yet, seed it with the
-  //    built-in initial values; otherwise reuse whatever was persisted.
-  let pvBase = cached?.pv_base ?? PV_BASE_INITIAL;
-  let anchorDate = cached?.pv_anchor_date || PV_ANCHOR_DATE;
+  // 2. Resolve the archive base. If no row exists yet, or the row is still in
+  //    its un-seeded state (pv_base=0 / anchor='' from the ALTER TABLE default
+  //    on a pre-existing row), seed it with the built-in initial values;
+  //    otherwise reuse whatever was persisted.
+  const seededBase = cached && cached.pv_base > 0 ? cached.pv_base : PV_BASE_INITIAL;
+  const seededAnchor =
+    cached && cached.pv_anchor_date ? cached.pv_anchor_date : PV_ANCHOR_DATE;
+  let pvBase = seededBase;
+  let anchorDate = seededAnchor;
 
   // 3. Fetch recent page views from Cloudflare GraphQL Analytics API.
   const token = ctx.env.CLOUDFLARE_API_TOKEN;
