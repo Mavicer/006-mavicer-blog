@@ -402,38 +402,39 @@ interface CacheRow {
 }
 
 async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
+  const url = new URL(ctx.request.url);
+  const debug = url.searchParams.get("debug") === "1";
   const cacheHeaders = {
     "Content-Type": "application/json",
     ...CORS,
-    "Cache-Control": "public, max-age=300",
+    "Cache-Control": debug ? "no-store" : "public, max-age=300",
   };
 
-  // 1. Check D1 cache (5min TTL).
-  const cached = await ctx.env.DB.prepare(
-    `SELECT pv, uv, fetched_at FROM visits_cache WHERE id = 1`
-  ).first<CacheRow>();
-  const fresh =
-    cached &&
-    cached.fetched_at &&
-    new Date(cached.fetched_at).getTime() >
-      Date.now() - VISITS_CACHE_TTL_MIN * 60 * 1000;
-  if (fresh) {
-    return new Response(JSON.stringify({ pv: cached!.pv, uv: cached!.uv }), {
-      headers: cacheHeaders,
-    });
+  // 1. Check D1 cache (5min TTL) — skipped in debug mode to force the upstream call.
+  if (!debug) {
+    const cached = await ctx.env.DB.prepare(
+      `SELECT pv, uv, fetched_at FROM visits_cache WHERE id = 1`
+    ).first<CacheRow>();
+    const fresh =
+      cached &&
+      cached.fetched_at &&
+      new Date(cached.fetched_at).getTime() >
+        Date.now() - VISITS_CACHE_TTL_MIN * 60 * 1000;
+    if (fresh) {
+      return new Response(JSON.stringify({ pv: cached!.pv, uv: cached!.uv }), {
+        headers: cacheHeaders,
+      });
+    }
   }
 
   // 2. Fetch fresh from Cloudflare GraphQL Analytics API.
   const token = ctx.env.CLOUDFLARE_API_TOKEN;
   const zoneId = ctx.env.CLOUDFLARE_ZONE_ID;
   if (!token || !zoneId) {
-    // Not configured — serve stale cache if present, else zeros.
-    if (cached) {
-      return new Response(JSON.stringify({ pv: cached.pv, uv: cached.uv }), {
-        headers: cacheHeaders,
-      });
-    }
-    return new Response(JSON.stringify({ pv: 0, uv: 0 }), { headers: cacheHeaders });
+    return new Response(
+      JSON.stringify({ pv: 0, uv: 0, _debug: { reason: "no token/zone", hasToken: !!token, hasZone: !!zoneId } }),
+      { headers: cacheHeaders }
+    );
   }
 
   try {
@@ -446,10 +447,6 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          // httpRequests1dGroups: zone-level daily HTTP analytics.
-          // sum.pageViews = page views (访问量); uniq.uniques = unique visitors (访客数).
-          // Field names verified via GraphQL schema introspection — the unique-visitors
-          // field is `uniques` under `uniq`, NOT `uniqVisitors`.
           query: `query($zoneTag:String!, $since:Date!){
             viewer { zones(filter:{zoneTag:$zoneTag}) {
               httpRequests1dGroups(limit:1000, filter:{date_geq:$since}) {
@@ -472,6 +469,24 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
       uv += Number(g?.uniq?.uniques || 0);
     }
 
+    if (debug) {
+      return new Response(
+        JSON.stringify({
+          pv,
+          uv,
+          _debug: {
+            httpStatus: gqlRes.status,
+            zonesLen: body?.data?.viewer?.zones?.length ?? 0,
+            groupsLen: groups.length,
+            gqlErrors: body?.errors || null,
+            dataViewerZones: body?.data?.viewer?.zones ?? null,
+            rawData: body?.data ?? null,
+          },
+        }),
+        { headers: cacheHeaders }
+      );
+    }
+
     // 3. Write back cache (upsert single row).
     const now = new Date().toISOString();
     await ctx.env.DB.prepare(
@@ -482,12 +497,12 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
       .run();
 
     return new Response(JSON.stringify({ pv, uv }), { headers: cacheHeaders });
-  } catch {
-    // Upstream failure — serve stale cache if present, else zeros. Never 5xx.
-    if (cached) {
-      return new Response(JSON.stringify({ pv: cached.pv, uv: cached.uv }), {
-        headers: cacheHeaders,
-      });
+  } catch (e: any) {
+    if (debug) {
+      return new Response(
+        JSON.stringify({ pv: 0, uv: 0, _debug: { reason: "catch", err: String(e?.message || e) } }),
+        { headers: cacheHeaders }
+      );
     }
     return new Response(JSON.stringify({ pv: 0, uv: 0 }), { headers: cacheHeaders });
   }
