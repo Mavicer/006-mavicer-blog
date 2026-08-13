@@ -459,11 +459,13 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          // Cloudflare Analytics GraphQL schema uses `uniqVisitors` under the
+          // top-level group (NOT under `uniq`). `sum.pageViews` = total page views.
           query: `query($zoneTag:String!, $since:Date!){
             viewer { zones(filter:{zoneTag:$zoneTag}) {
               httpRequests1dGroups(limit:1000, filter:{date_geq:$since}) {
-                sum { pageViews }
-                uniq { uniqVisitors }
+                sum { pageViews requests }
+                uniqVisitors
               }
             }}
           }`,
@@ -483,7 +485,7 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
     let uv = 0;
     for (const g of groups) {
       pv += Number(g?.sum?.pageViews || 0);
-      uv += Number(g?.uniq?.uniqVisitors || 0);
+      uv += Number(g?.uniqVisitors || 0);
     }
     debug.pvSum = pv;
     debug.uvSum = uv;
