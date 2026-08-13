@@ -390,7 +390,7 @@ async function toggleInteraction(
 
 // ── visits (Cloudflare Analytics API, 5min D1 cache) ──────────────
 
-const VISITS_CACHE_TTL_MIN = 5;
+const VISITS_CACHE_TTL_MIN = 0; // DEBUG: force GraphQL call every request
 // Since-date covers the whole life of the site (sums all daily groups).
 const CF_ANALYTICS_SINCE = "2024-01-01";
 
