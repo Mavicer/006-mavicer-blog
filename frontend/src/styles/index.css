@@ -1615,7 +1615,8 @@ a:hover {
     font-size: 0.85rem;
   }
   .footer .footer-powered,
-  .footer .footer-runtime {
+  .footer .footer-runtime,
+  .footer .footer-visits {
     font-size: 0.8rem;
   }
 

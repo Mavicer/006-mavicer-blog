@@ -1,10 +1,7 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { site } from "@/config/site";
 import { profile } from "@/data/profile";
 import { usePosts } from "@/hooks/usePosts";
-import { Odometer } from "@/components/Odometer";
-import { getVisits } from "@/lib/api";
 
 /**
  * MobileProfileCard — compact personal info card shown only on mobile,
@@ -14,21 +11,6 @@ import { getVisits } from "@/lib/api";
  */
 export function MobileProfileCard() {
   const { posts, categories } = usePosts();
-  const [visits, setVisits] = useState<{ pv: number; uv: number }>({
-    pv: 0,
-    uv: 0,
-  });
-
-  useEffect(() => {
-    let alive = true;
-    getVisits()
-      .then((v) => alive && setVisits(v))
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, []);
-
 
   return (
     <div className="mobile-profile-card mb-6">
@@ -62,12 +44,6 @@ export function MobileProfileCard() {
               </span>
               <span className="text-[0.65rem] text-third-text">文章</span>
             </Link>
-            <div className="flex flex-col" title={`${visits.pv} 次访问`}>
-              <span className="text-lg font-semibold text-second-text leading-tight">
-                <Odometer value={visits.uv} />
-              </span>
-              <span className="text-[0.65rem] text-third-text">访客</span>
-            </div>
           </div>
         </div>
       </div>

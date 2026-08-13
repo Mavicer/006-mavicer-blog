@@ -1,30 +1,12 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { SIDEBAR_LINKS } from "@/config/nav";
 import { site } from "@/config/site";
 import { profile } from "@/data/profile";
 import { usePosts } from "@/hooks/usePosts";
 import { ICONS } from "@/components/icons";
-import { Odometer } from "@/components/Odometer";
-import { getVisits } from "@/lib/api";
 
 export function Sidebar() {
   const { posts, categories } = usePosts();
-  const [visits, setVisits] = useState<{ pv: number; uv: number }>({
-    pv: 0,
-    uv: 0,
-  });
-
-  useEffect(() => {
-    let alive = true;
-    getVisits()
-      .then((v) => alive && setVisits(v))
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, []);
-
   return (
     <div className="home-sidebar-container hidden md:block">
       <div className="sticky-container sticky">
@@ -84,15 +66,6 @@ export function Sidebar() {
               </div>
               <div className="label text-third-text text-sm">文章</div>
             </Link>
-            <div
-              className="item tag-count-item flex flex-col justify-center items-center w-20"
-              title={`${visits.pv} 次访问`}
-            >
-              <div className="number text-2xl sm:text-xl text-second-text font-semibold">
-                <Odometer value={visits.uv} />
-              </div>
-              <div className="label text-third-text text-sm">访客</div>
-            </div>
           </div>
 
           {/* Personal intro tags — fixed self-description, decoupled from

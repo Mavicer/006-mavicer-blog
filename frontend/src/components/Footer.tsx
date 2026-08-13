@@ -1,13 +1,30 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { site } from "@/config/site";
 import { useRuntime } from "@/hooks/useScroll";
 import { usePosts } from "@/hooks/usePosts";
 import { Odometer } from "@/components/Odometer";
+import { getVisits } from "@/lib/api";
 
 export function Footer() {
   const runtime = useRuntime(site.footerStart);
   const { posts } = usePosts();
   const articleCount = posts.filter((p) => p.published !== false).length;
+  const [visits, setVisits] = useState<{ pv: number; uv: number }>({
+    pv: 0,
+    uv: 0,
+  });
+
+  useEffect(() => {
+    let alive = true;
+    getVisits()
+      .then((v) => alive && setVisits(v))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   return (
     <footer className="footer mt-5 py-5 h-auto text-base text-second-text relative border-t-2 border-border-color">
       <div className="info-container py-3 text-center">
@@ -33,6 +50,11 @@ export function Footer() {
           分钟{" "}
           <Odometer value={String(runtime.s).padStart(2, "0")} />{" "}
           秒
+        </div>
+
+        <div className="footer-visits">
+          <Odometer value={visits.uv} /> 位访客 ·{" "}
+          <Odometer value={visits.pv} /> 次访问
         </div>
 
         <div className="footer-side footer-powered text-center lg:absolute lg:left-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-left">
