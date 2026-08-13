@@ -450,8 +450,8 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
   }
 
   try {
-    // Introspect the httpRequests1dGroups type to discover the real field
-    // names (uniqVisitors is rejected as "unknown field"). One-shot debug.
+    // Introspect the schema to discover the real field name for unique
+    // visitors. Dump every type whose name contains "http" plus its fields.
     const introspect = await fetch(
       "https://api.cloudflare.com/client/v4/graphql",
       {
@@ -461,14 +461,16 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          query: `{ __type(name:"httpRequests1dGroups") { fields { name } } }`,
+          query: `{ __schema { types { name fields { name } } } }`,
         }),
       }
     );
     const introBody: any = await introspect.json();
-    const availableFields =
-      introBody?.data?.__type?.fields?.map((f: any) => f.name) || [];
-    debug.availableFields = availableFields;
+    const allTypes: any[] = introBody?.data?.__schema?.types || [];
+    const httpTypes = allTypes
+      .filter((t) => /http/i.test(t.name || ""))
+      .map((t) => ({ name: t.name, fields: (t.fields || []).map((f: any) => f.name) }));
+    debug.httpTypes = httpTypes;
 
     const gqlRes = await fetch(
       "https://api.cloudflare.com/client/v4/graphql",
