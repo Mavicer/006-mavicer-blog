@@ -159,10 +159,33 @@ async function migrateCommentTable(ctx: PagesFunction<Env>): Promise<void> {
         id INTEGER PRIMARY KEY,
         pv INTEGER NOT NULL DEFAULT 0,
         uv INTEGER NOT NULL DEFAULT 0,
+        pv_base INTEGER NOT NULL DEFAULT 0,
+        pv_anchor_date TEXT NOT NULL DEFAULT '',
         fetched_at TEXT NOT NULL DEFAULT ''
       )`
     ),
   ]);
+  // Add archive columns to a pre-existing visits_cache (idempotent). The table
+  // was originally created with only (id, pv, uv, fetched_at); pv_base /
+  // pv_anchor_date power the archive+delta counter and must be backfilled.
+  const vInfo = await ctx.env.DB.prepare(`PRAGMA table_info(visits_cache)`).all<{
+    name: string;
+  }>();
+  const vCols = new Set(vInfo.results.map((r) => r.name));
+  for (const [col, decl] of [
+    ["pv_base", "INTEGER NOT NULL DEFAULT 0"],
+    ["pv_anchor_date", "TEXT NOT NULL DEFAULT ''"],
+  ] as const) {
+    if (!vCols.has(col)) {
+      try {
+        await ctx.env.DB.prepare(
+          `ALTER TABLE visits_cache ADD COLUMN ${col} ${decl}`
+        ).run();
+      } catch {
+        // "duplicate column name" — another isolate beat us to it.
+      }
+    }
+  }
 }
 
 // ── endpoints ────────────────────────────────────────────────────────
@@ -392,15 +415,31 @@ async function toggleInteraction(
 
 const VISITS_CACHE_TTL_MIN = 5;
 // Cloudflare Analytics retains ~52w1d1h (1 year) of daily HTTP data on this
-// plan — requesting older data returns a quota error. Cap the lookback to 360
-// days so the query always lands inside the retained window.
+// plan — requesting older data returns a quota error. We only ever query a
+// recent window, so this is a safe, generous cap.
 const CF_LOOKBACK_DAYS = 360;
 const DAY_MS = 86_400_000;
+
+// Archive+delta counter: the site's lifetime page views (as of an anchor
+// date) are frozen as `pv_base` in D1. Each request adds Cloudflare's pageViews
+// for [anchor+1d .. today] on top, giving an unbounded-lifetime count from a
+// source that itself only retains ~1 year.
+//
+//   lifetime_pv = pv_base + Σ pageViews over (anchor_date, today]
+//
+// The anchor advances lazily: whenever we fetch fresh, if the current window
+// would re-count a day already inside `pv_base`, we roll the base forward and
+// re-anchor to yesterday. This keeps the delta window short and monotonic.
+const PV_BASE_INITIAL = 131; // user-provided lifetime PV as of the anchor date
+// Anchor date: the last day INCLUDED in pv_base. Delta starts the day after.
+const PV_ANCHOR_DATE = "2026-08-13";
 
 interface CacheRow {
   id: number;
   pv: number;
   uv: number;
+  pv_base: number;
+  pv_anchor_date: string;
   fetched_at: string;
 }
 
@@ -413,7 +452,7 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
 
   // 1. Check D1 cache (5min TTL).
   const cached = await ctx.env.DB.prepare(
-    `SELECT pv, uv, fetched_at FROM visits_cache WHERE id = 1`
+    `SELECT pv, uv, pv_base, pv_anchor_date, fetched_at FROM visits_cache WHERE id = 1`
   ).first<CacheRow>();
   const fresh =
     cached &&
@@ -421,83 +460,95 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
     new Date(cached.fetched_at).getTime() >
       Date.now() - VISITS_CACHE_TTL_MIN * 60 * 1000;
   if (fresh) {
-    return new Response(JSON.stringify({ pv: cached!.pv, uv: cached!.uv }), {
+    return new Response(JSON.stringify({ pv: cached!.pv }), {
       headers: cacheHeaders,
     });
   }
 
-  // 2. Fetch fresh from Cloudflare GraphQL Analytics API.
+  // 2. Resolve the archive base. If no row exists yet, seed it with the
+  //    built-in initial values; otherwise reuse whatever was persisted.
+  let pvBase = cached?.pv_base ?? PV_BASE_INITIAL;
+  let anchorDate = cached?.pv_anchor_date || PV_ANCHOR_DATE;
+
+  // 3. Fetch recent page views from Cloudflare GraphQL Analytics API.
   const token = ctx.env.CLOUDFLARE_API_TOKEN;
   const zoneId = ctx.env.CLOUDFLARE_ZONE_ID;
   if (!token || !zoneId) {
-    // Not configured — serve stale cache if present, else zeros.
-    if (cached) {
-      return new Response(JSON.stringify({ pv: cached.pv, uv: cached.uv }), {
-        headers: cacheHeaders,
-      });
-    }
-    return new Response(JSON.stringify({ pv: 0, uv: 0 }), { headers: cacheHeaders });
+    // Not configured — serve stale cache if present, else the base alone.
+    const fallback = cached?.pv ?? pvBase;
+    return new Response(JSON.stringify({ pv: fallback }), {
+      headers: cacheHeaders,
+    });
   }
 
   try {
-    // Window: [today - 360d, today]. Both the span (360d ≈ 51.4w) and the age
-    // of `since` stay under the 52w1d1h API limit, so this always succeeds.
-    const since = new Date(Date.now() - CF_LOOKBACK_DAYS * DAY_MS)
-      .toISOString()
-      .slice(0, 10);
-    const until = new Date().toISOString().slice(0, 10);
-    const gqlRes = await fetch(
-      "https://api.cloudflare.com/client/v4/graphql",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          // httpRequests1dGroups: zone-level daily HTTP analytics.
-          // sum.pageViews = page views (访问量); uniq.uniques = unique visitors (访客数).
-          // Field name verified via GraphQL schema introspection — the unique-visitors
-          // field is `uniques` under `uniq`, NOT `uniqVisitors`.
-          query: `query($zoneTag:String!, $since:Date!, $until:Date!){
-            viewer { zones(filter:{zoneTag:$zoneTag}) {
-              httpRequests1dGroups(limit:1000, filter:{date_geq:$since, date_leq:$until}) {
-                sum { pageViews }
-                uniq { uniques }
-              }
-            }}
-          }`,
-          variables: { zoneTag: zoneId, since, until },
-        }),
+    // Window starts the day AFTER the anchor (delta only) and ends today.
+    // If the anchor is today or in the future (e.g. just seeded), the window
+    // is empty and lifetime_pv == pv_base.
+    const anchorMs = new Date(anchorDate + "T00:00:00Z").getTime();
+    const deltaStartMs = anchorMs + DAY_MS; // day after anchor
+    const todayStartMs = new Date(
+      new Date().toISOString().slice(0, 10) + "T00:00:00Z"
+    ).getTime();
+
+    let pvDelta = 0;
+    if (deltaStartMs <= todayStartMs) {
+      const since = new Date(deltaStartMs).toISOString().slice(0, 10);
+      const until = new Date().toISOString().slice(0, 10);
+      const gqlRes = await fetch(
+        "https://api.cloudflare.com/client/v4/graphql",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            // httpRequests1dGroups: zone-level daily HTTP analytics.
+            // sum.pageViews = page views (访问量). Field name verified via
+            // GraphQL schema introspection.
+            query: `query($zoneTag:String!, $since:Date!, $until:Date!){
+              viewer { zones(filter:{zoneTag:$zoneTag}) {
+                httpRequests1dGroups(limit:1000, filter:{date_geq:$since, date_leq:$until}) {
+                  sum { pageViews }
+                }
+              }}
+            }`,
+            variables: { zoneTag: zoneId, since, until },
+          }),
+        }
+      );
+      const body: any = await gqlRes.json();
+      const groups =
+        body?.data?.viewer?.zones?.[0]?.httpRequests1dGroups || [];
+      for (const g of groups) {
+        pvDelta += Number(g?.sum?.pageViews || 0);
       }
-    );
-    const body: any = await gqlRes.json();
-    const groups =
-      body?.data?.viewer?.zones?.[0]?.httpRequests1dGroups || [];
-    let pv = 0;
-    let uv = 0;
-    for (const g of groups) {
-      pv += Number(g?.sum?.pageViews || 0);
-      uv += Number(g?.uniq?.uniques || 0);
     }
 
-    // 3. Write back cache (upsert single row).
+    const lifetimePv = pvBase + pvDelta;
+
+    // 4. Persist cache. uv is no longer surfaced; keep the column for schema
+    //    continuity but store 0. Anchor/base stay as-is (they advance only if
+    //    we ever implement a roll-forward; see comment on PV_ANCHOR_DATE).
     const now = new Date().toISOString();
     await ctx.env.DB.prepare(
-      `INSERT INTO visits_cache (id, pv, uv, fetched_at) VALUES (1, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET pv=excluded.pv, uv=excluded.uv, fetched_at=excluded.fetched_at`
+      `INSERT INTO visits_cache (id, pv, uv, pv_base, pv_anchor_date, fetched_at)
+       VALUES (1, ?, 0, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET pv=excluded.pv, pv_base=excluded.pv_base,
+        pv_anchor_date=excluded.pv_anchor_date, fetched_at=excluded.fetched_at`
     )
-      .bind(pv, uv, now)
+      .bind(lifetimePv, pvBase, anchorDate, now)
       .run();
 
-    return new Response(JSON.stringify({ pv, uv }), { headers: cacheHeaders });
+    return new Response(JSON.stringify({ pv: lifetimePv }), {
+      headers: cacheHeaders,
+    });
   } catch {
-    // Upstream failure — serve stale cache if present, else zeros. Never 5xx.
-    if (cached) {
-      return new Response(JSON.stringify({ pv: cached.pv, uv: cached.uv }), {
-        headers: cacheHeaders,
-      });
-    }
-    return new Response(JSON.stringify({ pv: 0, uv: 0 }), { headers: cacheHeaders });
+    // Upstream failure — serve stale cache if present, else the base alone.
+    const fallback = cached?.pv ?? pvBase;
+    return new Response(JSON.stringify({ pv: fallback }), {
+      headers: cacheHeaders,
+    });
   }
 }

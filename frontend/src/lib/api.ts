@@ -262,7 +262,10 @@ export async function trackPageView(path: string, postSlug?: string) {
 }
 
 // ---- Visits (Cloudflare Analytics API via Pages Function, 5min cache) ----
-export type VisitStats = { pv: number; uv: number };
+// Lifetime page views via archive+delta: a frozen base (site PV as of an
+// anchor date) plus the live pageViews fetched from Cloudflare since. Only PV
+// is surfaced — unique visitors can't be summed across periods on this plan.
+export type VisitStats = { pv: number };
 export async function getVisits(): Promise<VisitStats> {
   return request("/visits");
 }

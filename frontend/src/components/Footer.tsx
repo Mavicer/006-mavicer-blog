@@ -10,10 +10,7 @@ export function Footer() {
   const runtime = useRuntime(site.footerStart);
   const { posts } = usePosts();
   const articleCount = posts.filter((p) => p.published !== false).length;
-  const [visits, setVisits] = useState<{ pv: number; uv: number }>({
-    pv: 0,
-    uv: 0,
-  });
+  const [visits, setVisits] = useState<{ pv: number }>({ pv: 0 });
 
   useEffect(() => {
     let alive = true;
@@ -53,7 +50,6 @@ export function Footer() {
         </div>
 
         <div className="footer-visits">
-          <Odometer value={visits.uv} /> 位访客 ·{" "}
           <Odometer value={visits.pv} /> 次访问
         </div>
 
