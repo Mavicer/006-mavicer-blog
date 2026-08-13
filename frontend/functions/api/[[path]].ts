@@ -424,6 +424,9 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
     cached.fetched_at &&
     new Date(cached.fetched_at).getTime() >
       Date.now() - VISITS_CACHE_TTL_MIN * 60 * 1000;
+  debug.fresh = !!fresh;
+  debug.cachedPv = cached?.pv ?? null;
+  debug.cachedUv = cached?.uv ?? null;
   if (fresh) {
     return new Response(
       JSON.stringify({ pv: cached!.pv, uv: cached!.uv, _debug: debug }),
