@@ -450,6 +450,26 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
   }
 
   try {
+    // Introspect the httpRequests1dGroups type to discover the real field
+    // names (uniqVisitors is rejected as "unknown field"). One-shot debug.
+    const introspect = await fetch(
+      "https://api.cloudflare.com/client/v4/graphql",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: `{ __type(name:"httpRequests1dGroups") { fields { name } } }`,
+        }),
+      }
+    );
+    const introBody: any = await introspect.json();
+    const availableFields =
+      introBody?.data?.__type?.fields?.map((f: any) => f.name) || [];
+    debug.availableFields = availableFields;
+
     const gqlRes = await fetch(
       "https://api.cloudflare.com/client/v4/graphql",
       {
