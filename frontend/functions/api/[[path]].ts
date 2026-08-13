@@ -393,12 +393,33 @@ async function toggleInteraction(
 const VISITS_CACHE_TTL_MIN = 5;
 // Since-date covers the whole life of the site (sums all daily groups).
 const CF_ANALYTICS_SINCE = "2024-01-01";
+// Cloudflare caps httpRequests1dGroups at 52w1d1h per query; split the range
+// into sub-year (360-day) chunks and sum across them to cover the full lifetime.
+const CHUNK_DAYS = 360;
+const DAY_MS = 86_400_000;
 
 interface CacheRow {
   id: number;
   pv: number;
   uv: number;
   fetched_at: string;
+}
+
+/** Split [sinceISO, untilDate] into non-overlapping ≤360-day date chunks. */
+function buildDateChunks(sinceISO: string, untilDate: Date) {
+  const chunks: Array<{ since: string; until: string }> = [];
+  let cursor = new Date(sinceISO + "T00:00:00Z").getTime();
+  const end = untilDate.getTime();
+  while (cursor <= end) {
+    let next = cursor + CHUNK_DAYS * DAY_MS;
+    if (next > end) next = end;
+    chunks.push({
+      since: new Date(cursor).toISOString().slice(0, 10),
+      until: new Date(next).toISOString().slice(0, 10),
+    });
+    cursor = next + DAY_MS; // next chunk starts the day after `until` (no overlap)
+  }
+  return chunks;
 }
 
 async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
@@ -428,6 +449,8 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
   }
 
   // 2. Fetch fresh from Cloudflare GraphQL Analytics API.
+  // The API caps httpRequests1dGroups at 52w1d1h per query, so we split the
+  // full site lifetime into sub-year chunks and sum across them.
   const token = ctx.env.CLOUDFLARE_API_TOKEN;
   const zoneId = ctx.env.CLOUDFLARE_ZONE_ID;
   if (!token || !zoneId) {
@@ -438,51 +461,60 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
   }
 
   try {
-    const gqlRes = await fetch(
-      "https://api.cloudflare.com/client/v4/graphql",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: `query($zoneTag:String!, $since:Date!){
-            viewer { zones(filter:{zoneTag:$zoneTag}) {
-              httpRequests1dGroups(limit:1000, filter:{date_geq:$since}) {
-                sum { pageViews }
-                uniq { uniques }
-              }
-            }}
-          }`,
-          variables: { zoneTag: zoneId, since: CF_ANALYTICS_SINCE },
-        }),
-      }
-    );
-    const body: any = await gqlRes.json();
-    const groups =
-      body?.data?.viewer?.zones?.[0]?.httpRequests1dGroups || [];
+    const chunks = buildDateChunks(CF_ANALYTICS_SINCE, new Date());
     let pv = 0;
     let uv = 0;
-    for (const g of groups) {
-      pv += Number(g?.sum?.pageViews || 0);
-      uv += Number(g?.uniq?.uniques || 0);
+    const debugChunks: any[] = [];
+    for (const ch of chunks) {
+      const gqlRes = await fetch(
+        "https://api.cloudflare.com/client/v4/graphql",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            // httpRequests1dGroups: zone-level daily HTTP analytics.
+            // sum.pageViews = page views (访问量); uniq.uniques = unique visitors (访客数).
+            query: `query($zoneTag:String!, $since:Date!, $until:Date!){
+              viewer { zones(filter:{zoneTag:$zoneTag}) {
+                httpRequests1dGroups(limit:1000, filter:{date_geq:$since, date_leq:$until}) {
+                  sum { pageViews }
+                  uniq { uniques }
+                }
+              }}
+            }`,
+            variables: { zoneTag: zoneId, since: ch.since, until: ch.until },
+          }),
+        }
+      );
+      const body: any = await gqlRes.json();
+      const groups =
+        body?.data?.viewer?.zones?.[0]?.httpRequests1dGroups || [];
+      let cpv = 0;
+      let cuv = 0;
+      for (const g of groups) {
+        cpv += Number(g?.sum?.pageViews || 0);
+        cuv += Number(g?.uniq?.uniques || 0);
+      }
+      pv += cpv;
+      uv += cuv;
+      if (debug) {
+        debugChunks.push({
+          since: ch.since,
+          until: ch.until,
+          groupsLen: groups.length,
+          pv: cpv,
+          uv: cuv,
+          errors: body?.errors || null,
+        });
+      }
     }
 
     if (debug) {
       return new Response(
-        JSON.stringify({
-          pv,
-          uv,
-          _debug: {
-            httpStatus: gqlRes.status,
-            zonesLen: body?.data?.viewer?.zones?.length ?? 0,
-            groupsLen: groups.length,
-            gqlErrors: body?.errors || null,
-            dataViewerZones: body?.data?.viewer?.zones ?? null,
-            rawData: body?.data ?? null,
-          },
-        }),
+        JSON.stringify({ pv, uv, _debug: { chunks: debugChunks } }),
         { headers: cacheHeaders }
       );
     }
