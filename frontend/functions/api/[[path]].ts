@@ -391,11 +391,10 @@ async function toggleInteraction(
 // ── visits (Cloudflare Analytics API, 5min D1 cache) ──────────────
 
 const VISITS_CACHE_TTL_MIN = 5;
-// Since-date covers the whole life of the site (sums all daily groups).
-const CF_ANALYTICS_SINCE = "2024-01-01";
-// Cloudflare caps httpRequests1dGroups at 52w1d1h per query; split the range
-// into sub-year (360-day) chunks and sum across them to cover the full lifetime.
-const CHUNK_DAYS = 360;
+// Cloudflare Analytics retains ~52w1d1h (1 year) of daily HTTP data on this
+// plan — requesting older data returns a quota error. Cap the lookback to 360
+// days so the query always lands inside the retained window.
+const CF_LOOKBACK_DAYS = 360;
 const DAY_MS = 86_400_000;
 
 interface CacheRow {
@@ -405,118 +404,81 @@ interface CacheRow {
   fetched_at: string;
 }
 
-/** Split [sinceISO, untilDate] into non-overlapping ≤360-day date chunks. */
-function buildDateChunks(sinceISO: string, untilDate: Date) {
-  const chunks: Array<{ since: string; until: string }> = [];
-  let cursor = new Date(sinceISO + "T00:00:00Z").getTime();
-  const end = untilDate.getTime();
-  while (cursor <= end) {
-    let next = cursor + CHUNK_DAYS * DAY_MS;
-    if (next > end) next = end;
-    chunks.push({
-      since: new Date(cursor).toISOString().slice(0, 10),
-      until: new Date(next).toISOString().slice(0, 10),
-    });
-    cursor = next + DAY_MS; // next chunk starts the day after `until` (no overlap)
-  }
-  return chunks;
-}
-
 async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
-  const url = new URL(ctx.request.url);
-  const debug = url.searchParams.get("debug") === "1";
   const cacheHeaders = {
     "Content-Type": "application/json",
     ...CORS,
-    "Cache-Control": debug ? "no-store" : "public, max-age=300",
+    "Cache-Control": "public, max-age=300",
   };
 
-  // 1. Check D1 cache (5min TTL) — skipped in debug mode to force the upstream call.
-  if (!debug) {
-    const cached = await ctx.env.DB.prepare(
-      `SELECT pv, uv, fetched_at FROM visits_cache WHERE id = 1`
-    ).first<CacheRow>();
-    const fresh =
-      cached &&
-      cached.fetched_at &&
-      new Date(cached.fetched_at).getTime() >
-        Date.now() - VISITS_CACHE_TTL_MIN * 60 * 1000;
-    if (fresh) {
-      return new Response(JSON.stringify({ pv: cached!.pv, uv: cached!.uv }), {
-        headers: cacheHeaders,
-      });
-    }
+  // 1. Check D1 cache (5min TTL).
+  const cached = await ctx.env.DB.prepare(
+    `SELECT pv, uv, fetched_at FROM visits_cache WHERE id = 1`
+  ).first<CacheRow>();
+  const fresh =
+    cached &&
+    cached.fetched_at &&
+    new Date(cached.fetched_at).getTime() >
+      Date.now() - VISITS_CACHE_TTL_MIN * 60 * 1000;
+  if (fresh) {
+    return new Response(JSON.stringify({ pv: cached!.pv, uv: cached!.uv }), {
+      headers: cacheHeaders,
+    });
   }
 
   // 2. Fetch fresh from Cloudflare GraphQL Analytics API.
-  // The API caps httpRequests1dGroups at 52w1d1h per query, so we split the
-  // full site lifetime into sub-year chunks and sum across them.
   const token = ctx.env.CLOUDFLARE_API_TOKEN;
   const zoneId = ctx.env.CLOUDFLARE_ZONE_ID;
   if (!token || !zoneId) {
-    return new Response(
-      JSON.stringify({ pv: 0, uv: 0, _debug: { reason: "no token/zone", hasToken: !!token, hasZone: !!zoneId } }),
-      { headers: cacheHeaders }
-    );
+    // Not configured — serve stale cache if present, else zeros.
+    if (cached) {
+      return new Response(JSON.stringify({ pv: cached.pv, uv: cached.uv }), {
+        headers: cacheHeaders,
+      });
+    }
+    return new Response(JSON.stringify({ pv: 0, uv: 0 }), { headers: cacheHeaders });
   }
 
   try {
-    const chunks = buildDateChunks(CF_ANALYTICS_SINCE, new Date());
+    // Window: [today - 360d, today]. Both the span (360d ≈ 51.4w) and the age
+    // of `since` stay under the 52w1d1h API limit, so this always succeeds.
+    const since = new Date(Date.now() - CF_LOOKBACK_DAYS * DAY_MS)
+      .toISOString()
+      .slice(0, 10);
+    const until = new Date().toISOString().slice(0, 10);
+    const gqlRes = await fetch(
+      "https://api.cloudflare.com/client/v4/graphql",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          // httpRequests1dGroups: zone-level daily HTTP analytics.
+          // sum.pageViews = page views (访问量); uniq.uniques = unique visitors (访客数).
+          // Field name verified via GraphQL schema introspection — the unique-visitors
+          // field is `uniques` under `uniq`, NOT `uniqVisitors`.
+          query: `query($zoneTag:String!, $since:Date!, $until:Date!){
+            viewer { zones(filter:{zoneTag:$zoneTag}) {
+              httpRequests1dGroups(limit:1000, filter:{date_geq:$since, date_leq:$until}) {
+                sum { pageViews }
+                uniq { uniques }
+              }
+            }}
+          }`,
+          variables: { zoneTag: zoneId, since, until },
+        }),
+      }
+    );
+    const body: any = await gqlRes.json();
+    const groups =
+      body?.data?.viewer?.zones?.[0]?.httpRequests1dGroups || [];
     let pv = 0;
     let uv = 0;
-    const debugChunks: any[] = [];
-    for (const ch of chunks) {
-      const gqlRes = await fetch(
-        "https://api.cloudflare.com/client/v4/graphql",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            // httpRequests1dGroups: zone-level daily HTTP analytics.
-            // sum.pageViews = page views (访问量); uniq.uniques = unique visitors (访客数).
-            query: `query($zoneTag:String!, $since:Date!, $until:Date!){
-              viewer { zones(filter:{zoneTag:$zoneTag}) {
-                httpRequests1dGroups(limit:1000, filter:{date_geq:$since, date_leq:$until}) {
-                  sum { pageViews }
-                  uniq { uniques }
-                }
-              }}
-            }`,
-            variables: { zoneTag: zoneId, since: ch.since, until: ch.until },
-          }),
-        }
-      );
-      const body: any = await gqlRes.json();
-      const groups =
-        body?.data?.viewer?.zones?.[0]?.httpRequests1dGroups || [];
-      let cpv = 0;
-      let cuv = 0;
-      for (const g of groups) {
-        cpv += Number(g?.sum?.pageViews || 0);
-        cuv += Number(g?.uniq?.uniques || 0);
-      }
-      pv += cpv;
-      uv += cuv;
-      if (debug) {
-        debugChunks.push({
-          since: ch.since,
-          until: ch.until,
-          groupsLen: groups.length,
-          pv: cpv,
-          uv: cuv,
-          errors: body?.errors || null,
-        });
-      }
-    }
-
-    if (debug) {
-      return new Response(
-        JSON.stringify({ pv, uv, _debug: { chunks: debugChunks } }),
-        { headers: cacheHeaders }
-      );
+    for (const g of groups) {
+      pv += Number(g?.sum?.pageViews || 0);
+      uv += Number(g?.uniq?.uniques || 0);
     }
 
     // 3. Write back cache (upsert single row).
@@ -529,12 +491,12 @@ async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
       .run();
 
     return new Response(JSON.stringify({ pv, uv }), { headers: cacheHeaders });
-  } catch (e: any) {
-    if (debug) {
-      return new Response(
-        JSON.stringify({ pv: 0, uv: 0, _debug: { reason: "catch", err: String(e?.message || e) } }),
-        { headers: cacheHeaders }
-      );
+  } catch {
+    // Upstream failure — serve stale cache if present, else zeros. Never 5xx.
+    if (cached) {
+      return new Response(JSON.stringify({ pv: cached.pv, uv: cached.uv }), {
+        headers: cacheHeaders,
+      });
     }
     return new Response(JSON.stringify({ pv: 0, uv: 0 }), { headers: cacheHeaders });
   }
