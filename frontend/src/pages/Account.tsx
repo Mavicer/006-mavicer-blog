@@ -18,7 +18,7 @@ export default function Account() {
               to="/login"
               className="px-4 py-2 rounded-md bg-primary text-white font-semibold"
             >
-              <i className="fa-regular fa-right-to-bracket" /> 登录
+              <i className="fa-solid fa-right-to-bracket" /> 登录
             </Link>
           </div>
         </div>
@@ -45,7 +45,7 @@ export default function Account() {
             onClick={logout}
             className="px-4 py-2 rounded-md border border-border font-semibold hover:text-primary"
           >
-            <i className="fa-regular fa-right-from-bracket" /> 退出登录
+            <i className="fa-solid fa-right-from-bracket" /> 退出登录
           </button>
         </div>
       </div>

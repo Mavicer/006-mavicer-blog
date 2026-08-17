@@ -24,40 +24,37 @@ export type NavIcon =
 export type NavItem = {
   label: string;
   path?: string;
-  icon: string; // legacy fa class (mobile drawer)
-  svg: NavIcon; // inline SVG icon (desktop navbar)
+  svg: NavIcon; // inline SVG icon (desktop navbar + mobile drawer)
   external?: boolean;
   submenus?: { label: string; path: string; external?: boolean }[];
 };
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: "首页", path: "/", icon: "fa-regular fa-house", svg: "home" },
-  { label: "归档", path: "/archives", icon: "fa-regular fa-archive", svg: "archive" },
+  { label: "首页", path: "/", svg: "home" },
+  { label: "归档", path: "/archives", svg: "archive" },
   {
     label: "关于",
-    icon: "fa-regular fa-user",
     svg: "user",
     submenus: [
       { label: "ME", path: "/about" },
       { label: "GITHUB", path: "https://github.com/Mavicer", external: true },
     ],
   },
-  { label: "PROJECTS", path: "/projects", icon: "fa-regular fa-code", svg: "code" },
-  { label: "展示", path: "/gallery", icon: "fa-regular fa-images", svg: "camera" },
-  { label: "分类", path: "/categories", icon: "fa-regular fa-folder", svg: "folder" },
+  { label: "PROJECTS", path: "/projects", svg: "code" },
+  { label: "展示", path: "/gallery", svg: "camera" },
+  { label: "分类", path: "/categories", svg: "folder" },
 ];
 
 export type SidebarLink = {
   label: string;
   path: string;
-  icon: string; // legacy fa class (mobile drawer)
   svg: NavIcon; // inline SVG icon (desktop sidebar)
 };
 
 export const SIDEBAR_LINKS: SidebarLink[] = [
-  { label: "About", path: "/about", icon: "fa-regular fa-user", svg: "user" },
-  { label: "Archives", path: "/archives", icon: "fa-regular fa-archive", svg: "archive" },
-  { label: "Projects", path: "/projects", icon: "fa-regular fa-code", svg: "code" },
-  { label: "Gallery", path: "/gallery", icon: "fa-regular fa-images", svg: "camera" },
-  { label: "Categories", path: "/categories", icon: "fa-regular fa-folder", svg: "folder" },
+  { label: "About", path: "/about", svg: "user" },
+  { label: "Archives", path: "/archives", svg: "archive" },
+  { label: "Projects", path: "/projects", svg: "code" },
+  { label: "Gallery", path: "/gallery", svg: "camera" },
+  { label: "Categories", path: "/categories", svg: "folder" },
 ];

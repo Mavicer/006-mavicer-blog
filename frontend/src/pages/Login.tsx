@@ -63,7 +63,7 @@ export default function Login() {
               className="px-4 py-2 rounded-md bg-primary text-white font-semibold hover:opacity-90 disabled:opacity-50"
               disabled={loading}
             >
-              <i className="fa-regular fa-right-to-bracket" /> 登录
+              <i className="fa-solid fa-right-to-bracket" /> 登录
             </button>
           </div>
         </form>

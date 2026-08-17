@@ -185,8 +185,9 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
         onTouchEnd={onTouchEnd}
       >
         <ul className="drawer-navbar-list flex flex-col px-4 justify-center items-start pt-20">
-          {NAV_ITEMS.map((item) =>
-            item.path ? (
+          {NAV_ITEMS.map((item) => {
+            const Icon = ICONS[item.svg];
+            return item.path ? (
               <li
                 key={item.label}
                 className="drawer-navbar-item text-base my-1.5 flex flex-col w-full"
@@ -199,7 +200,7 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
                   onClick={() => setDrawerOpen(false)}
                 >
                   <span>{item.label}</span>
-                  <i className={`${item.icon} fa-sm fa-fw`} />
+                  <Icon className="shrink-0" />
                 </Link>
               </li>
             ) : (
@@ -237,8 +238,8 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
                   )}
                 </div>
               </li>
-            )
-          )}
+            );
+          })}
         </ul>
       </div>
 
