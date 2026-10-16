@@ -35,7 +35,7 @@ export default function Login({ registering = false }: { registering?: boolean }
         {registering && <><p className="text-sm text-third-text">3–30 个字母、数字或下划线，不区分大小写。</p><label className="flex flex-col gap-1"><span>昵称（公开显示）</span><input name="display_name" autoComplete="nickname" maxLength={40} value={displayName} onChange={(e) => setDisplayName(e.target.value)} className={inputClass} /></label></>}
         <label className="flex flex-col gap-1"><span>密码</span><input name="password" type="password" autoComplete={registering ? "new-password" : "current-password"} required minLength={12} maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} /></label>
         {registering && <label className="flex flex-col gap-1"><span>再次输入密码</span><input type="password" autoComplete="new-password" required minLength={12} maxLength={128} value={confirm} onChange={(e) => setConfirm(e.target.value)} className={inputClass} /></label>}
-        <p className="text-sm text-third-text">密码至少 12 个字符。忘记密码时请联系博主协助重置。</p>
+        <p className="text-sm text-third-text">密码至少 12 个字符。忘记密码时请<Link className="text-primary" to="/about">联系博主</Link>协助重置。</p>
         {error && <p role="alert" className="text-sm text-primary">{error}</p>}
         <button type="submit" disabled={auth.loading} className="px-4 py-2 rounded-md bg-primary text-white font-semibold disabled:opacity-50">{auth.loading ? "处理中…" : registering ? "注册并登录" : "登录"}</button>
         <Link className="text-primary" to={`${registering ? "/login" : "/register"}?next=${encodeURIComponent(next)}`}>{registering ? "已有账号？去登录" : "还没有账号？去注册"}</Link>
