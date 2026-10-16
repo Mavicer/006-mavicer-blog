@@ -19,10 +19,24 @@
  * Visits: env.CLOUDFLARE_API_TOKEN + env.CLOUDFLARE_ZONE_ID (Pages env vars).
  */
 
+import staticPostSlugs from "../../generated/static-post-slugs.json";
+
+const staticPosts = new Set(staticPostSlugs);
+
 interface Env {
   DB: D1Database;
   CLOUDFLARE_API_TOKEN: string;
   CLOUDFLARE_ZONE_ID: string;
+}
+
+type ApiContext = Parameters<PagesFunction<Env>>[0];
+
+async function postExists(ctx: ApiContext, slug: string): Promise<boolean> {
+  if (staticPosts.has(slug)) return true;
+  const row = await ctx.env.DB.prepare(
+    `SELECT slug FROM post WHERE slug = ? AND published = 1`
+  ).bind(slug).first();
+  return !!row;
 }
 
 const CORS = {
@@ -129,7 +143,7 @@ function tagsList(s: string | null | undefined): string[] {
  * Add client_id column + indexes if missing (idempotent).
  * Wrapped in try/catch by caller — never blocks requests.
  */
-async function migrateCommentTable(ctx: PagesFunction<Env>): Promise<void> {
+async function migrateCommentTable(ctx: ApiContext): Promise<void> {
   const { results } = await ctx.env.DB.prepare(`PRAGMA table_info(comment)`).all<{
     name: string;
   }>();
@@ -235,7 +249,7 @@ function postDetail(p: PostRow) {
   return { ...postOut(p), body: p.body };
 }
 
-async function listPosts(ctx: PagesFunction<Env>): Promise<Response> {
+async function listPosts(ctx: ApiContext): Promise<Response> {
   // Exclude body — list page only needs metadata.
   const { results } = await ctx.env.DB.prepare(
     `SELECT slug, title, date, excerpt, source, category, tags, published, sort_order, created_at, updated_at FROM post WHERE published = 1 ORDER BY sort_order ASC, date DESC`
@@ -243,7 +257,7 @@ async function listPosts(ctx: PagesFunction<Env>): Promise<Response> {
   return json(results.map(postOut));
 }
 
-async function getPost(ctx: PagesFunction<Env>, slug: string): Promise<Response> {
+async function getPost(ctx: ApiContext, slug: string): Promise<Response> {
   const p = await ctx.env.DB.prepare(`SELECT * FROM post WHERE slug = ?`)
     .bind(slug)
     .first<PostRow>();
@@ -274,7 +288,7 @@ function commentOut(c: CommentRow, requestingClientId: string) {
 }
 
 async function listComments(
-  ctx: PagesFunction<Env>,
+  ctx: ApiContext,
   slug: string,
   requestingClientId: string
 ): Promise<Response> {
@@ -286,12 +300,9 @@ async function listComments(
   return json(results.map((c) => commentOut(c, requestingClientId)));
 }
 
-async function createComment(ctx: PagesFunction<Env>, slug: string): Promise<Response> {
+async function createComment(ctx: ApiContext, slug: string): Promise<Response> {
   const payload = await readBody(ctx.request);
-  const p = await ctx.env.DB.prepare(`SELECT slug FROM post WHERE slug = ?`)
-    .bind(slug)
-    .first();
-  if (!p) return jsonError(404, "文章不存在");
+  if (!(await postExists(ctx, slug))) return jsonError(404, "文章不存在");
 
   const body = (payload.body || "").toString().trim();
   if (!body) return jsonError(422, "评论不能为空");
@@ -322,7 +333,7 @@ async function createComment(ctx: PagesFunction<Env>, slug: string): Promise<Res
 }
 
 async function deleteComment(
-  ctx: PagesFunction<Env>,
+  ctx: ApiContext,
   slug: string,
   commentId: number
 ): Promise<Response> {
@@ -347,33 +358,31 @@ async function deleteComment(
 }
 
 /**
- * Single-query interactions lookup.
- * Combines 5 separate D1 round-trips into 1 using subqueries.
+ * Count and browser-state lookup in one query after validating the article.
  */
 async function getInteractions(
-  ctx: PagesFunction<Env>,
+  ctx: ApiContext,
   slug: string,
   clientId: string
 ): Promise<Response> {
+  if (!(await postExists(ctx, slug))) return jsonError(404, "文章不存在");
   const row = await ctx.env.DB.prepare(
     `SELECT
        (SELECT COUNT(*) FROM "like" WHERE post_slug = ?) AS likes,
        (SELECT COUNT(*) FROM favorite WHERE post_slug = ?) AS favorites,
-       EXISTS(SELECT 1 FROM post WHERE slug = ?) AS exists_val,
        ? != '' AND EXISTS(SELECT 1 FROM "like" WHERE post_slug = ? AND client_id = ?) AS liked,
        ? != '' AND EXISTS(SELECT 1 FROM favorite WHERE post_slug = ? AND client_id = ?) AS favorited
     `
   )
-    .bind(slug, slug, slug, clientId, slug, clientId, clientId, slug, clientId)
+    .bind(slug, slug, clientId, slug, clientId, clientId, slug, clientId)
     .first<{
       likes: number;
       favorites: number;
-      exists_val: number;
       liked: number;
       favorited: number;
     }>();
 
-  if (!row || !row.exists_val) return jsonError(404, "文章不存在");
+  if (!row) throw new Error("Missing interaction counts");
 
   return json({
     post_slug: slug,
@@ -385,29 +394,25 @@ async function getInteractions(
 }
 
 async function toggleInteraction(
-  ctx: PagesFunction<Env>,
+  ctx: ApiContext,
   slug: string,
   table: "like" | "favorite"
 ): Promise<Response> {
   const payload = await readBody(ctx.request);
   const clientId = (payload.client_id || "").toString().trim();
   if (!clientId) return jsonError(422, "client_id 不能为空");
+  if (!(await postExists(ctx, slug))) return jsonError(404, "文章不存在");
 
-  // Check post exists + check existing interaction in 1 query.
+  // Static Markdown posts need no duplicate row in D1's post table.
   const existing = await ctx.env.DB.prepare(
     `SELECT
-       (SELECT 1 FROM post WHERE slug = ?) AS post_exists,
        (SELECT id FROM ${table === "like" ? '"like"' : "favorite"} WHERE post_slug = ? AND client_id = ?) AS existing_id
     `
   )
-    .bind(slug, slug, clientId)
-    .first<{ post_exists: number; existing_id: number | null }>();
+    .bind(slug, clientId)
+    .first<{ existing_id: number | null }>();
 
-  if (!existing || !existing.post_exists) {
-    return jsonError(404, "文章不存在");
-  }
-
-  if (existing.existing_id) {
+  if (existing?.existing_id) {
     await ctx.env.DB.prepare(
       `DELETE FROM ${table === "like" ? '"like"' : "favorite"} WHERE id = ?`
     )
@@ -457,7 +462,7 @@ interface CacheRow {
   fetched_at: string;
 }
 
-async function getVisits(ctx: PagesFunction<Env>): Promise<Response> {
+async function getVisits(ctx: ApiContext): Promise<Response> {
   const cacheHeaders = {
     "Content-Type": "application/json",
     ...CORS,

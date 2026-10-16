@@ -95,6 +95,17 @@ uv pip install -e . --python .venv/bin/python
 5. **设管理员密钥**：复制 `backend/.env.example` → `backend/.env`，设 `OWNER_KEY`
 6. **注册管理员**：在 `/register` 页面用设好的 Owner Key 注册
 
+### Markdown 文章的线上互动
+
+`npm run build` 会自动从 Markdown 生成 Pages API 使用的文章 slug 清单。
+点赞、收藏和评论同时支持清单内文章与 D1 中已发布的文章；新增 Markdown
+不需要再向 D1 的 `post` 表重复插入记录。互动数据仍保存在 D1 原有表中。
+请使用 `npm run build` 构建部署（直接调用 `vite build` 会跳过生成步骤）。
+本地修改文章 slug 或新增文件后，需重新运行生成步骤。
+
+回归验证：在 `frontend/` 下使用 Node.js 22.13+ 执行 `npm test`，覆盖
+只有 Markdown、只有数据库记录、不存在/未发布文章，以及点赞收藏切换和评论删除权限。
+
 ## 与原站差异
 
 | 项 | 原站 | 复刻版 |
