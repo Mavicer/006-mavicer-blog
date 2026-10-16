@@ -4,10 +4,11 @@ import type { Post } from "@/hooks/usePosts";
 export type PostDetail = Post & { body: string };
 
 export type User = {
-  id: number;
+  id: string;
   username: string;
   display_name: string;
   is_owner: boolean;
+  must_change_password: boolean;
 };
 
 export type Comment = {
@@ -43,30 +44,10 @@ export type AdminPost = PostDetail & {
   updated_at: string;
 };
 
-const TOKEN_KEY = "MAVICER_TOKEN";
-const USER_KEY = "MAVICER_USER";
-
-function apiBase(): string {
-  // In dev, Vite proxies /api -> backend. In production, same-origin /api.
-  return (import.meta.env.VITE_API_BASE as string) || "/api";
-}
-
-export function token(): string {
-  return localStorage.getItem(TOKEN_KEY) || "";
-}
-
-export function currentUser(): User | null {
-  try {
-    return JSON.parse(localStorage.getItem(USER_KEY) || "null");
-  } catch {
-    return null;
-  }
-}
-
-function authHeaders(): Record<string, string> {
-  const t = token();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
+let verifiedUser: User | null = null;
+function apiBase(): string { return "/api"; }
+export function currentUser(): User | null { return verifiedUser; }
+function authHeaders(): Record<string, string> { return {}; }
 
 async function request<T>(
   path: string,
@@ -77,6 +58,8 @@ async function request<T>(
   try {
     const res = await fetch(`${apiBase()}${path}`, {
       ...options,
+      credentials: "same-origin",
+      cache: "no-store",
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
@@ -124,9 +107,9 @@ export async function uploadImage(file: File): Promise<{ url: string; filename: 
   return res.json();
 }
 
-// ---- Auth ---- (public registration removed; only owner login remains)
+// ---- Accounts: same-origin HttpOnly cookie sessions ----
 export async function login(payload: { username: string; password: string }) {
-  return request<{ access_token: string; token_type: string; user: User }>(
+  return request<{ user: User }>(
     "/auth/login",
     { method: "POST", body: JSON.stringify(payload) }
   );
@@ -136,14 +119,27 @@ export async function me(): Promise<User> {
   return request("/auth/me");
 }
 
-export function storeSession(result: { access_token: string; user: User }) {
-  localStorage.setItem(TOKEN_KEY, result.access_token);
-  localStorage.setItem(USER_KEY, JSON.stringify(result.user));
+export async function register(payload: { username: string; password: string; display_name?: string }) {
+  return request<{ user: User }>("/auth/register", { method: "POST", body: JSON.stringify(payload) });
 }
-
-export function logout() {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
+export function storeSession(result: { user: User }) { verifiedUser = result.user; }
+export function clearSession() {
+  verifiedUser = null;
+  // Retire frontend-only identities and legacy bearer tokens. These are never
+  // accepted as proof of login by the server.
+  for (const key of ["MAVICER_TOKEN", "MAVICER_USER", "MAVICER_SESSION", "MAVICER_USERS"]) localStorage.removeItem(key);
+}
+export async function logout() {
+  await request("/auth/logout", { method: "POST", body: "{}" });
+  clearSession();
+}
+export async function changePassword(current_password: string, new_password: string) {
+  await request("/auth/password", { method: "POST", body: JSON.stringify({ current_password, new_password }) });
+  clearSession();
+}
+export async function listUsers(): Promise<User[]> { return request("/admin/users"); }
+export async function resetUserPassword(id: string, current_password: string): Promise<{ temporary_password: string }> {
+  return request(`/admin/users/${encodeURIComponent(id)}/reset-password`, { method: "POST", body: JSON.stringify({ current_password }) });
 }
 
 // ---- Stable anonymous browser identifier (UX only, not security) ----
@@ -176,46 +172,40 @@ export async function searchPosts(q: string): Promise<Post[]> {
 
 // ---- Comments / Interactions ---- (anonymous, browser-identified)
 export async function listComments(slug: string): Promise<Comment[]> {
-  return request(`/posts/${slug}/comments?client_id=${encodeURIComponent(clientId())}`);
+  return request(`/posts/${slug}/comments`);
 }
 export async function createComment(
   slug: string,
-  body: string,
-  authorName?: string
+  body: string
 ): Promise<Comment> {
   return request(`/posts/${slug}/comments`, {
     method: "POST",
     body: JSON.stringify({
       body,
-      author_name: authorName || null,
-      client_id: clientId(),
     }),
   });
 }
 export async function deleteComment(slug: string, id: number) {
   return request(`/posts/${slug}/comments/${id}`, {
     method: "DELETE",
-    body: JSON.stringify({ client_id: clientId() }),
+    body: "{}",
   });
 }
 export async function getInteractions(slug: string): Promise<Interaction> {
   return request(`/posts/${slug}/interactions?client_id=${encodeURIComponent(clientId())}`);
 }
-export async function like(slug: string): Promise<Interaction> {
+export async function like(slug: string, liked: boolean): Promise<Interaction> {
   return request(`/posts/${slug}/like`, {
     method: "POST",
-    body: JSON.stringify({ client_id: clientId() }),
+    body: JSON.stringify({ client_id: clientId(), liked }),
   });
 }
-export async function favorite(slug: string): Promise<Interaction> {
-  return request(`/posts/${slug}/favorite`, {
-    method: "POST",
-    body: JSON.stringify({ client_id: clientId() }),
+export async function favorite(slug: string, saved: boolean): Promise<Interaction> {
+  return request(`/posts/${slug}/favorite?client_id=${encodeURIComponent(clientId())}`, {
+    method: saved ? "PUT" : "DELETE", body: "{}",
   });
 }
-export async function myFavorites(): Promise<Post[]> {
-  return request(`/me/favorites?client_id=${encodeURIComponent(clientId())}`);
-}
+export async function myFavorites(): Promise<Post[]> { return request("/me/favorites"); }
 
 // ---- Admin ----
 export async function listAdminPosts(): Promise<AdminPost[]> {

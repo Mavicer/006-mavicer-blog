@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Account from "./pages/Account";
 import Admin from "./pages/Admin";
+import UserAdmin from "./pages/UserAdmin";
 
 export default function App() {
   const location = useLocation();
@@ -34,6 +35,8 @@ export default function App() {
           <Route path="/categories/:cat" element={<Categories />} />
           <Route path="/posts/:slug" element={<PostDetail />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Login registering />} />
+          <Route path="/admin/users" element={<ProtectedRoute requireOwner><UserAdmin /></ProtectedRoute>} />
           <Route path="/account" element={<Account />} />
           <Route path="/admin" element={<ProtectedRoute requireOwner><Admin /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />

@@ -43,6 +43,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "PROJECTS", path: "/projects", svg: "code" },
   { label: "展示", path: "/gallery", svg: "camera" },
   { label: "分类", path: "/categories", svg: "folder" },
+  { label: "账户", path: "/account", svg: "user" },
 ];
 
 export type SidebarLink = {

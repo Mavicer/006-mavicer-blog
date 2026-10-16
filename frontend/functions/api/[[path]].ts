@@ -1,18 +1,18 @@
 /**
  * Cloudflare Pages Function — public blog interaction API.
  *
- * Phase 1+2: anonymous comment / like / favorite / post-read flow,
- * plus comment self-deletion keyed by browser client_id.
+ * Anonymous likes; server-authenticated account comments and favorites.
+ * Legacy anonymous comments and favorite counts remain readable.
  *
  * Routes (mounted under /api by Pages):
  *   GET    /posts
  *   GET    /posts/:slug
- *   GET    /posts/:slug/comments?client_id=
- *   POST   /posts/:slug/comments            body: { body, author_name?, client_id }
- *   DELETE /posts/:slug/comments/:id         body: { client_id }
+ *   GET    /posts/:slug/comments
+ *   POST   /posts/:slug/comments            body: { body } (session required)
+ *   DELETE /posts/:slug/comments/:id         (session required)
  *   GET    /posts/:slug/interactions?client_id=
  *   POST   /posts/:slug/like                body: { client_id }
- *   POST   /posts/:slug/favorite            body: { client_id }
+ *   PUT/DELETE /posts/:slug/favorite       (session required)
  *   GET    /visits                            → { pv, uv } (Cloudflare Analytics API, 5min D1 cache)
  *
  * D1 binding: env.DB.
@@ -20,16 +20,12 @@
  */
 
 import staticPostSlugs from "../../generated/static-post-slugs.json";
+import staticPostCatalog from "../../generated/static-posts.json";
+import { authRoute, currentUser, requireUser, type User } from "../../server/auth";
+import { ensureAccounts } from "../../server/schema";
+import { checkWrite, HttpError, json, readBody, rateLimit, type Context as ApiContext } from "../../server/http";
 
 const staticPosts = new Set(staticPostSlugs);
-
-interface Env {
-  DB: D1Database;
-  CLOUDFLARE_API_TOKEN: string;
-  CLOUDFLARE_ZONE_ID: string;
-}
-
-type ApiContext = Parameters<PagesFunction<Env>>[0];
 
 async function postExists(ctx: ApiContext, slug: string): Promise<boolean> {
   if (staticPosts.has(slug)) return true;
@@ -39,35 +35,28 @@ async function postExists(ctx: ApiContext, slug: string): Promise<boolean> {
   return !!row;
 }
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Max-Age": "86400",
-};
-
-export const onRequestOptions: PagesFunction<Env> = async () =>
-  new Response(null, { status: 204, headers: CORS });
-
 let migrated = false;
 
-export const onRequest: PagesFunction<Env> = async (ctx) => {
+export const onRequest: PagesFunction<import("../../server/http").Env> = async (ctx) => {
   const url = new URL(ctx.request.url);
   const path = url.pathname.replace(/^\/api\/?/, "");
   const method = ctx.request.method;
 
-  // Run schema migration once per isolate (idempotent, never blocks requests).
-  if (!migrated) {
-    try {
-      await migrateCommentTable(ctx);
-    } catch {
-      // Migration failure must NOT block requests — old comments simply
-      // lack client_id, which only affects self-deletion, not reading.
-    }
-    migrated = true;
-  }
-
   try {
+    checkWrite(ctx.request);
+    await ensureAccounts(ctx);
+    if (method === "OPTIONS") return new Response(null, { status: 204 });
+    if (path === "health" && method === "GET") return json({ ok: true });
+
+    // The older visits migration is independent of the accounts schema.
+    if (!migrated) {
+      try { await migrateCommentTable(ctx); migrated = true; }
+      catch { /* The visits route can retry on the next request. */ }
+    }
+
+    const auth = await authRoute(ctx, path);
+    if (auth) return auth;
+    if (path === "me/favorites" && method === "GET") return await myFavorites(ctx);
     if (path === "posts" && method === "GET") {
       return await listPosts(ctx);
     }
@@ -77,8 +66,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     }
     const cmts = path.match(/^posts\/([^/]+)\/comments$/);
     if (cmts && method === "GET") {
-      const cid = url.searchParams.get("client_id") || "";
-      return await listComments(ctx, decodeURIComponent(cmts[1]), cid);
+      return await listComments(ctx, decodeURIComponent(cmts[1]));
     }
     if (cmts && method === "POST") {
       return await createComment(ctx, decodeURIComponent(cmts[1]));
@@ -97,8 +85,8 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       return await toggleInteraction(ctx, decodeURIComponent(like[1]), "like");
     }
     const fav = path.match(/^posts\/([^/]+)\/favorite$/);
-    if (fav && method === "POST") {
-      return await toggleInteraction(ctx, decodeURIComponent(fav[1]), "favorite");
+    if (fav && ["POST", "PUT", "DELETE"].includes(method)) {
+      return await saveFavorite(ctx, decodeURIComponent(fav[1]));
     }
     if (path === "visits" && method === "GET") {
       return await getVisits(ctx);
@@ -106,29 +94,17 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
     return jsonError(404, "Not Found");
   } catch (e: any) {
-    return jsonError(500, e?.message || "Internal Server Error");
+    if (e instanceof HttpError) return jsonError(e.status, e.message);
+    const requestId = crypto.randomUUID();
+    console.error(JSON.stringify({ event: "api_error", requestId, method, path, message: String(e?.message || e) }));
+    return json({ detail: "服务暂时不可用，请稍后重试", request_id: requestId }, 503);
   }
 };
 
 // ── helpers ──────────────────────────────────────────────────────────
 
-function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json", ...CORS },
-  });
-}
-
 function jsonError(status: number, detail: string): Response {
   return json({ detail }, status);
-}
-
-async function readBody(req: Request): Promise<any> {
-  try {
-    return await req.json();
-  } catch {
-    return {};
-  }
 }
 
 function tagsList(s: string | null | undefined): string[] {
@@ -271,11 +247,12 @@ interface CommentRow {
   body: string;
   author_name: string;
   client_id: string;
+  user_id: string | null;
   created_at: string;
   updated_at: string;
 }
 
-function commentOut(c: CommentRow, requestingClientId: string) {
+function commentOut(c: CommentRow, user: User | null) {
   return {
     id: c.id,
     post_slug: c.post_slug,
@@ -283,38 +260,39 @@ function commentOut(c: CommentRow, requestingClientId: string) {
     author_name: c.author_name,
     created_at: c.created_at,
     updated_at: c.updated_at,
-    is_own: !!requestingClientId && c.client_id === requestingClientId,
+    is_own: !!user && c.user_id === user.id,
   };
 }
 
 async function listComments(
   ctx: ApiContext,
-  slug: string,
-  requestingClientId: string
+  slug: string
 ): Promise<Response> {
+  const user = await currentUser(ctx);
   const { results } = await ctx.env.DB.prepare(
-    `SELECT * FROM comment WHERE post_slug = ? ORDER BY created_at DESC`
+    `SELECT * FROM comment WHERE post_slug = ? ORDER BY created_at DESC LIMIT 500`
   )
     .bind(slug)
     .all<CommentRow>();
-  return json(results.map((c) => commentOut(c, requestingClientId)));
+  return json(results.map((c) => commentOut(c, user)));
 }
 
 async function createComment(ctx: ApiContext, slug: string): Promise<Response> {
+  const user = await requireUser(ctx);
+  await rateLimit(ctx, "comment", user.id, 20, 3600);
   const payload = await readBody(ctx.request);
   if (!(await postExists(ctx, slug))) return jsonError(404, "文章不存在");
 
-  const body = (payload.body || "").toString().trim();
-  if (!body) return jsonError(422, "评论不能为空");
+  const body = typeof payload.body === "string" ? payload.body.trim() : "";
+  if (!body || body.length > 3000) return jsonError(422, "评论需为 1–3000 个字符");
 
-  const author = ((payload.author_name || "").toString().trim() || "访客").slice(0, 60);
-  const clientId = (payload.client_id || "").toString().trim().slice(0, 120);
+  const author = user.display_name;
   const now = new Date().toISOString();
 
   const result = await ctx.env.DB.prepare(
-    `INSERT INTO comment (post_slug, body, author_name, client_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`
+    `INSERT INTO comment (post_slug, body, author_name, client_id, user_id, created_at, updated_at) VALUES (?, ?, ?, '', ?, ?, ?)`
   )
-    .bind(slug, body, author, clientId, now, now)
+    .bind(slug, body, author, user.id, now, now)
     .run();
   const id = result.meta?.last_row_id as number;
 
@@ -337,17 +315,16 @@ async function deleteComment(
   slug: string,
   commentId: number
 ): Promise<Response> {
-  const payload = await readBody(ctx.request);
-  const clientId = (payload.client_id || "").toString().trim();
+  const user = await requireUser(ctx);
 
   const c = await ctx.env.DB.prepare(
-    `SELECT client_id FROM comment WHERE id = ? AND post_slug = ?`
+    `SELECT user_id FROM comment WHERE id = ? AND post_slug = ?`
   )
     .bind(commentId, slug)
-    .first<{ client_id: string }>();
+    .first<{ user_id: string | null }>();
 
   if (!c) return jsonError(404, "评论不存在");
-  if (!clientId || c.client_id !== clientId) {
+  if (!user.is_owner && c.user_id !== user.id) {
     return jsonError(403, "无权删除这条评论");
   }
 
@@ -366,15 +343,16 @@ async function getInteractions(
   clientId: string
 ): Promise<Response> {
   if (!(await postExists(ctx, slug))) return jsonError(404, "文章不存在");
+  const user = await currentUser(ctx);
   const row = await ctx.env.DB.prepare(
     `SELECT
        (SELECT COUNT(*) FROM "like" WHERE post_slug = ?) AS likes,
-       (SELECT COUNT(*) FROM favorite WHERE post_slug = ?) AS favorites,
+       ((SELECT COUNT(*) FROM favorite WHERE post_slug = ?) + (SELECT COUNT(*) FROM account_favorite WHERE post_slug = ?)) AS favorites,
        ? != '' AND EXISTS(SELECT 1 FROM "like" WHERE post_slug = ? AND client_id = ?) AS liked,
-       ? != '' AND EXISTS(SELECT 1 FROM favorite WHERE post_slug = ? AND client_id = ?) AS favorited
+       EXISTS(SELECT 1 FROM account_favorite WHERE post_slug = ? AND user_id = ?) AS favorited
     `
   )
-    .bind(slug, slug, clientId, slug, clientId, clientId, slug, clientId)
+    .bind(slug, slug, slug, clientId, slug, clientId, slug, user?.id || "")
     .first<{
       likes: number;
       favorites: number;
@@ -393,41 +371,52 @@ async function getInteractions(
   });
 }
 
-async function toggleInteraction(
-  ctx: ApiContext,
-  slug: string,
-  table: "like" | "favorite"
-): Promise<Response> {
+async function toggleInteraction(ctx: ApiContext, slug: string, _table: "like"): Promise<Response> {
   const payload = await readBody(ctx.request);
-  const clientId = (payload.client_id || "").toString().trim();
-  if (!clientId) return jsonError(422, "client_id 不能为空");
+  const clientId = typeof payload.client_id === "string" ? payload.client_id.trim() : "";
+  if (!clientId || clientId.length > 120) return jsonError(422, "无效的浏览器标识");
   if (!(await postExists(ctx, slug))) return jsonError(404, "文章不存在");
-
-  // Static Markdown posts need no duplicate row in D1's post table.
-  const existing = await ctx.env.DB.prepare(
-    `SELECT
-       (SELECT id FROM ${table === "like" ? '"like"' : "favorite"} WHERE post_slug = ? AND client_id = ?) AS existing_id
-    `
-  )
-    .bind(slug, clientId)
-    .first<{ existing_id: number | null }>();
-
-  if (existing?.existing_id) {
-    await ctx.env.DB.prepare(
-      `DELETE FROM ${table === "like" ? '"like"' : "favorite"} WHERE id = ?`
-    )
-      .bind(existing.existing_id)
-      .run();
-  } else {
-    await ctx.env.DB.prepare(
-      `INSERT INTO ${table === "like" ? '"like"' : "favorite"} (post_slug, client_id) VALUES (?, ?)`
-    )
-      .bind(slug, clientId)
-      .run();
+  await rateLimit(ctx, "like", ctx.request.headers.get("CF-Connecting-IP") || clientId, 60, 60);
+  let desired = payload.liked;
+  if (typeof desired !== "boolean") {
+    desired = !(await ctx.env.DB.prepare(`SELECT id FROM "like" WHERE post_slug = ? AND client_id = ?`).bind(slug, clientId).first());
   }
-
-  // Return updated interactions (single query via getInteractions).
+  if (desired) {
+    // A repeated request cannot create duplicate likes.
+    await ctx.env.DB.prepare(`INSERT INTO "like" (post_slug, client_id) SELECT ?, ?
+      WHERE NOT EXISTS (SELECT 1 FROM "like" WHERE post_slug = ? AND client_id = ?)`)
+      .bind(slug, clientId, slug, clientId).run();
+  } else {
+    await ctx.env.DB.prepare(`DELETE FROM "like" WHERE post_slug = ? AND client_id = ?`).bind(slug, clientId).run();
+  }
   return getInteractions(ctx, slug, clientId);
+}
+
+async function saveFavorite(ctx: ApiContext, slug: string): Promise<Response> {
+  const user = await requireUser(ctx);
+  if (ctx.request.method === "POST") throw new HttpError(405, "请使用 PUT 收藏或 DELETE 取消收藏");
+  if (!(await postExists(ctx, slug))) return jsonError(404, "文章不存在");
+  await rateLimit(ctx, "favorite", user.id, 120, 60);
+  if (ctx.request.method === "PUT") {
+    await ctx.env.DB.prepare(`INSERT OR IGNORE INTO account_favorite (user_id, post_slug, created_at) VALUES (?, ?, ?)`)
+      .bind(user.id, slug, new Date().toISOString()).run();
+  } else {
+    await ctx.env.DB.prepare(`DELETE FROM account_favorite WHERE user_id = ? AND post_slug = ?`).bind(user.id, slug).run();
+  }
+  return getInteractions(ctx, slug, new URL(ctx.request.url).searchParams.get("client_id") || "");
+}
+
+async function myFavorites(ctx: ApiContext): Promise<Response> {
+  const user = await requireUser(ctx);
+  const { results } = await ctx.env.DB.prepare(`SELECT f.post_slug, p.* FROM account_favorite f
+    LEFT JOIN post p ON p.slug = f.post_slug WHERE f.user_id = ? ORDER BY f.created_at DESC LIMIT 500`)
+    .bind(user.id).all<PostRow & { post_slug: string }>();
+  const catalog = new Map(staticPostCatalog.map((p) => [p.slug, p]));
+  return json(results.flatMap((row) => {
+    const local = catalog.get(row.post_slug);
+    if (local) return [local];
+    return row.published ? [{ ...postOut(row), published: true, sortOrder: row.sort_order }] : [];
+  }));
 }
 
 // ── visits (Cloudflare Analytics API, 5min D1 cache) ──────────────
@@ -465,7 +454,6 @@ interface CacheRow {
 async function getVisits(ctx: ApiContext): Promise<Response> {
   const cacheHeaders = {
     "Content-Type": "application/json",
-    ...CORS,
     "Cache-Control": "public, max-age=300",
   };
 

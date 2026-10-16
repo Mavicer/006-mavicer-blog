@@ -1,26 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import * as api from "@/lib/api";
 import type { Comment, Interaction } from "@/lib/api";
 
-/**
- * ArticleInteractions — the comments / like / favorite block mounted below
- * article bodies. Mirrors the original site's .aleph-online widget.
- *
- * Anonymous-first: any visitor can like, favorite, and comment without
- * logging in. A nickname field defaults to "访客". Interactions are keyed
- * by a stable browser client_id (UX only). Visitors can delete their OWN
- * comments:
- *   - Desktop: a trash icon on their comment → custom confirm dialog
- *   - Mobile:  long-press → floating delete button at finger position
- * The owner sees a delete button on every comment.
- */
+/** Visitor likes; account-owned favorites and comments. */
 export function ArticleInteractions({ slug }: { slug: string }) {
-  const { user } = useAuth();
+  const { user, loading, refresh: refreshAuth } = useAuth();
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const requestVersion = useRef(0);
   const [interaction, setInteraction] = useState<Interaction | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [draft, setDraft] = useState("");
-  const [nick, setNick] = useState("");
   const [status, setStatus] = useState("正在连接在线互动");
   const longPressTimer = useRef<number | null>(null);
 
@@ -35,57 +28,59 @@ export function ArticleInteractions({ slug }: { slug: string }) {
   } | null>(null);
 
   const refresh = useCallback(async () => {
+    const version = ++requestVersion.current;
     try {
       const [inter, list] = await Promise.all([
         api.getInteractions(slug),
         api.listComments(slug),
       ]);
+      if (version !== requestVersion.current) return;
+      setLoaded(true);
       setInteraction(inter);
       setComments(Array.isArray(list) ? list : []);
       setStatus("在线互动已连接");
-    } catch {
-      setStatus("在线互动暂不可用");
+    } catch (e: any) {
+      if (version === requestVersion.current) setStatus(e?.message || "在线互动暂不可用");
     }
-  }, [slug]);
+  }, [slug, user?.id]);
 
   useEffect(() => {
-    refresh();
+    void refresh();
+    return () => { requestVersion.current++; };
   }, [refresh]);
 
+  const handleFailure = async (e: any) => {
+    setStatus(e?.message || "操作失败，请稍后再试");
+    if (e?.status === 401) await refreshAuth();
+  };
+  const requireLogin = () => {
+    if (!user) { navigate(`/login?next=${encodeURIComponent(`/posts/${slug}`)}`); return false; }
+    if (user.must_change_password) { navigate("/account"); return false; }
+    return true;
+  };
   const onLike = async () => {
-    try {
-      setInteraction(await api.like(slug));
-    } catch {
-      setStatus("操作失败，请稍后再试");
-    }
+    if (busy) return;
+    setBusy(true);
+    try { setInteraction(await api.like(slug, !interaction?.liked)); setStatus("在线互动已连接"); }
+    catch (e) { await handleFailure(e); } finally { setBusy(false); }
   };
-
   const onFavorite = async () => {
-    try {
-      setInteraction(await api.favorite(slug));
-    } catch {
-      setStatus("操作失败，请稍后再试");
-    }
+    if (busy || !requireLogin()) return;
+    setBusy(true);
+    try { setInteraction(await api.favorite(slug, !interaction?.favorited)); setStatus("在线互动已连接"); }
+    catch (e) { await handleFailure(e); } finally { setBusy(false); }
   };
-
   const onComment = async () => {
-    if (!draft.trim()) return;
-    try {
-      await api.createComment(slug, draft.trim(), nick.trim() || undefined);
-      setDraft("");
-      refresh();
-    } catch (e: any) {
-      setStatus(e?.message || "评论发布失败");
-    }
+    if (!draft.trim() || busy || !requireLogin()) return;
+    setBusy(true);
+    try { await api.createComment(slug, draft.trim()); setDraft(""); await refresh(); }
+    catch (e) { await handleFailure(e); } finally { setBusy(false); }
   };
-
   const onDeleteComment = async (id: number) => {
-    try {
-      await api.deleteComment(slug, id);
-      refresh();
-    } catch {
-      setStatus("删除失败");
-    }
+    if (busy) return;
+    setBusy(true);
+    try { await api.deleteComment(slug, id); await refresh(); }
+    catch (e) { await handleFailure(e); } finally { setBusy(false); }
   };
 
   // ── Mobile long-press ──────────────────────────────────────────────
@@ -125,6 +120,7 @@ export function ArticleInteractions({ slug }: { slug: string }) {
           <button
             type="button"
             onClick={onLike}
+            disabled={busy || !loaded}
             data-active={interaction?.liked ? "true" : "false"}
           >
             <i className="fa-regular fa-heart" /> 点赞 {interaction?.likes ?? 0}
@@ -132,6 +128,7 @@ export function ArticleInteractions({ slug }: { slug: string }) {
           <button
             type="button"
             onClick={onFavorite}
+            disabled={busy || loading || !loaded}
             data-active={interaction?.favorited ? "true" : "false"}
           >
             <i className="fa-regular fa-bookmark" /> 收藏 {interaction?.favorites ?? 0}
@@ -139,16 +136,16 @@ export function ArticleInteractions({ slug }: { slug: string }) {
         </div>
       </div>
 
-      <p className="aleph-online__status">{status}</p>
+      <p className="aleph-online__status" role="status">{status} {status !== "在线互动已连接" && <button disabled={busy} onClick={() => void refresh()}>重新连接</button>}</p>
 
       <div className="aleph-online__auth">
         <span className="aleph-online__user">
-          {user?.is_owner ? "管理员模式" : "访客模式"}
+          {loading ? "正在确认账号…" : user ? `已登录：${user.display_name}` : "访客可以点赞，评论和收藏需登录"}
         </span>
       </div>
 
       <div className="aleph-online__comments">
-        {comments.length === 0 ? (
+        {!loaded ? <p>正在加载评论…</p> : comments.length === 0 ? (
           <p className="aleph-online__empty">暂无评论，来抢沙发吧</p>
         ) : (
           comments.map((c) => {
@@ -187,7 +184,7 @@ export function ArticleInteractions({ slug }: { slug: string }) {
                 {user?.is_owner && (
                   <button
                     type="button"
-                    onClick={() => onDeleteComment(c.id)}
+                    onClick={() => setConfirmId(c.id)}
                     className="aleph-online__del"
                   >
                     <i className="fa-regular fa-trash-can" /> 删除
@@ -199,24 +196,19 @@ export function ArticleInteractions({ slug }: { slug: string }) {
         )}
       </div>
 
-      <div className="aleph-online__composer">
-        <input
-          value={nick}
-          onChange={(e) => setNick(e.target.value)}
-          placeholder="昵称（可选，默认访客）"
-          maxLength={60}
-          className="aleph-online__nick w-full"
-        />
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="写下评论"
-          className="w-full"
-        />
-        <button type="button" onClick={onComment} disabled={!draft.trim()}>
-          <i className="fa-regular fa-paper-plane" /> 发布评论
+      {user && !user.must_change_password ? <div className="aleph-online__composer">
+        <textarea value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={3000}
+          placeholder="写下评论（最多 3000 字）" aria-label="评论内容" className="w-full" />
+        <button type="button" onClick={onComment} disabled={busy || !draft.trim()}>
+          <i className="fa-regular fa-paper-plane" /> {busy ? "处理中…" : "发布评论"}
         </button>
-      </div>
+      </div> : !loading && <p className="my-4">
+        {user?.must_change_password ? <Link className="text-primary" to="/account">请先修改临时密码</Link> : <>
+          <Link className="text-primary" to={`/login?next=${encodeURIComponent(`/posts/${slug}`)}`}>登录</Link>
+          {" 或 "}<Link className="text-primary" to={`/register?next=${encodeURIComponent(`/posts/${slug}`)}`}>注册</Link>
+          {" 后可以发表评论、收藏文章。"}
+        </>}
+      </p>}
 
       {/* ── Desktop: custom confirm dialog ── */}
       {confirmId !== null && (
@@ -240,6 +232,7 @@ export function ArticleInteractions({ slug }: { slug: string }) {
               <button
                 type="button"
                 className="aleph-confirm-ok"
+                disabled={busy}
                 onClick={handleDesktopDelete}
               >
                 删除
