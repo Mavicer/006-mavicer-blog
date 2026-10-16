@@ -51,10 +51,10 @@ function authHeaders(): Record<string, string> { return {}; }
 
 async function request<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {}, timeoutMs = 8000
 ): Promise<T> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(`${apiBase()}${path}`, {
       ...options,
@@ -143,6 +143,17 @@ export async function listUsers(): Promise<User[]> { return request("/admin/user
 export async function resetUserPassword(id: string, current_password: string): Promise<{ temporary_password: string }> {
   return request(`/admin/users/${encodeURIComponent(id)}/reset-password`, { method: "POST", body: JSON.stringify({ current_password }) });
 }
+
+export type EditorArticle = { slug: string; sha: string; data: Record<string, unknown>; body: string };
+export type PublishInput = { request_id: string; slug: string; sha: string; action: "create" | "update";
+  title: string; category: string; tags: string[]; excerpt: string; mode: "plain" | "markdown"; body: string };
+export type PublishJob = { id: string; slug: string; state: string; error: string; commit_sha: string; file_sha: string; article_url: string; commit_url: string };
+export function publishingConfig(): Promise<{ configured: boolean; repository: string }> { return request("/admin/publishing/config"); }
+export function editorArticle(slug: string): Promise<EditorArticle> { return request(`/admin/content/${encodeURIComponent(slug)}`); }
+export function publishArticle(payload: PublishInput): Promise<PublishJob> {
+  return request("/admin/publishing", { method: "POST", body: JSON.stringify(payload) }, 30000);
+}
+export function publishJob(id: string): Promise<PublishJob> { return request(`/admin/publishing/jobs/${id}`, {}, 20000); }
 
 // ---- Stable anonymous browser identifier (UX only, not security) ----
 let memoryClientId = "";

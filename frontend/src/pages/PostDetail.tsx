@@ -6,6 +6,7 @@ import type { Post } from "@/hooks/usePosts";
 import { getPost as getApiPost } from "@/lib/api";
 import { renderMarkdown, extractToc, type TocItem } from "@/lib/markdown";
 import { useImageViewer } from "@/components/ImageViewer";
+import { useAuth } from "@/hooks/useAuth";
 import { ArticleInteractions } from "@/components/ArticleInteractions";
 
 const BILINGUAL_SLUGS = ["python-to-ai-journey"];
@@ -13,6 +14,7 @@ const BILINGUAL_SLUGS = ["python-to-ai-journey"];
 export default function PostDetail() {
   const { slug = "" } = useParams();
   const viewer = useImageViewer();
+  const { user } = useAuth();
   const bodyRef = useRef<HTMLDivElement>(null);
   const [activeId, setActiveId] = useState<string>("");
   const [post, setPost] = useState<Post | null>(getPost(slug) || null);
@@ -178,6 +180,7 @@ export default function PostDetail() {
           <div className="home-content-container">
             <article className="article-content-container">
               <h1 className="article-title">{post.title}</h1>
+              {user?.is_owner && <div className="flex justify-end mb-4"><Link className="text-primary font-bold" to={`/admin/articles/${encodeURIComponent(slug)}/edit`}>编辑文章</Link></div>}
 
               {/* Reading-time banner — small gray note above the meta-info
                   divider line. Only posts that declare reading_time show it. */}

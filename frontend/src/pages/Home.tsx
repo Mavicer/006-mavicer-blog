@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { HomeBanner } from "@/sections/HomeBanner";
 import { Sidebar } from "@/sections/Sidebar";
@@ -7,6 +9,7 @@ import { usePosts } from "@/hooks/usePosts";
 
 export default function Home() {
   const { posts, loading } = usePosts();
+  const { user } = useAuth();
 
   return (
     <>
@@ -23,6 +26,7 @@ export default function Home() {
           <div className="main-content w-full md:w-auto">
             <div className="home-content-container">
               <MobileProfileCard />
+              {user?.is_owner && <div className="flex justify-end px-7 py-4"><Link to="/admin/articles/new" className="px-4 py-2 rounded-md bg-primary text-white font-bold">发布文章</Link></div>}
               {loading ? (
                 <p className="text-center py-10 text-third-text">正在读取文章列表</p>
               ) : posts.length === 0 ? (

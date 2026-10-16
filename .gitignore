@@ -31,3 +31,5 @@ verify-*.cjs
 screenshot*.cjs
 阶段一成果报告.txt
 
+
+frontend/public/_publication.json

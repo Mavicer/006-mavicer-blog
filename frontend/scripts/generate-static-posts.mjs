@@ -1,5 +1,7 @@
 import { readdirSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
+import { parse } from "yaml";
 
 // Build the API's allowlist from the same Markdown files Vite imports.
 // No database seeding or production credentials are needed to publish a post.
@@ -9,17 +11,14 @@ export function publishedPosts(directory) {
   for (const file of readdirSync(directory).filter((name) => name.endsWith(".md"))) {
     const raw = readFileSync(new URL(file, directory), "utf8");
     const frontmatter = raw.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)?.[1] || "";
-    const data = Object.fromEntries(frontmatter.split(/\r?\n/).flatMap((line) => {
-      const match = line.match(/^([A-Za-z0-9_]+):\s*(.*)$/);
-      return match ? [[match[1], match[2].trim().replace(/^["']|["']$/g, "")]] : [];
-    }));
-    if (data.published === "false") continue;
+    const data = parse(frontmatter, { maxAliasCount: 0 }) || {};
+    if (data.published === false) continue;
     const slug = data.slug || file.slice(0, -3);
     if (slugs.has(slug)) throw new Error(`Duplicate article slug: ${slug}`);
     slugs.add(slug);
-    const tags = (data.tags || "").replace(/^\[|\]$/g, "").split(",")
-      .map((tag) => tag.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
-    posts.push({ slug, title: data.title || slug, date: data.date || "", category: data.category || "未分类",
+    const tags = Array.isArray(data.tags) ? data.tags.filter((tag) => typeof tag === "string") : [];
+    const sha = createHash("sha1").update(`blob ${Buffer.byteLength(raw)}\0`).update(raw).digest("hex");
+    posts.push({ slug, file, sha, title: data.title || slug, date: data.date || "", category: data.category || "未分类",
       excerpt: data.excerpt || "", tags, published: true, sortOrder: Number(data.sort_order || 10) });
   }
   return posts.sort((a, b) => a.slug.localeCompare(b.slug));
@@ -34,6 +33,9 @@ export function generate() {
   mkdirSync(output, { recursive: true });
   writeFileSync(new URL("static-post-slugs.json", output), JSON.stringify(slugs, null, 2) + "\n");
   writeFileSync(new URL("static-posts.json", output), JSON.stringify(posts, null, 2) + "\n");
+  writeFileSync(new URL("../public/_publication.json", import.meta.url), JSON.stringify({
+    commit: process.env.CF_PAGES_COMMIT_SHA || "local", articles: posts.map(({ slug, sha }) => ({ slug, sha }))
+  }) + "\n");
   console.log(`Generated API allowlist for ${slugs.length} static posts`);
 }
 

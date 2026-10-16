@@ -32,13 +32,20 @@ async function verifyPassword(password: string, stored: string): Promise<boolean
   if (parts.length !== 6 || parts.slice(0, 4).join("$") !== "scrypt$16384$8$5" || !/^[a-f0-9]{32}$/.test(parts[4]) || !/^[a-f0-9]{128}$/.test(parts[5])) return false;
   return timingSafeEqual(await derive(password, parts[4]), Buffer.from(parts[5], "hex"));
 }
-function passwordInput(value: unknown): string {
-  if (typeof value !== "string" || value.length < 12 || value.length > 128) throw new HttpError(422, "密码需为 12–128 个字符");
+function passwordInput(value: unknown, minimum = 1): string {
+  if (typeof value !== "string" || value.length < minimum || value.length > 128) throw new HttpError(422, "密码长度无效");
   return value;
 }
+function memberPassword(value: unknown): string {
+  const password = passwordInput(value, 8);
+  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) throw new HttpError(422, "密码至少 8 位，且需同时包含字母和数字");
+  return password;
+}
 function usernameInput(value: unknown): string {
-  if (typeof value !== "string" || !/^[a-zA-Z0-9_]{3,30}$/.test(value.trim())) throw new HttpError(422, "用户名需为 3–30 个字母、数字或下划线");
-  return value.trim().toLowerCase();
+  if (typeof value !== "string") throw new HttpError(422, "用户名格式无效");
+  const name = value.trim().normalize("NFKC").toLowerCase();
+  if (!/^[\p{L}\p{N}_]{2,30}$/u.test(name)) throw new HttpError(422, "用户名需为 2–30 个中文、字母、数字或下划线");
+  return name;
 }
 function cookie(token: string, maxAge = SESSION_SECONDS): string {
   return `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
@@ -88,7 +95,7 @@ export async function authRoute(ctx: Context, path: string): Promise<Response | 
     await rateLimit(ctx, "register", ip, 5, 3600);
     const body = await readBody(ctx.request);
     const username = usernameInput(body.username);
-    const password = passwordInput(body.password);
+    const password = memberPassword(body.password);
     const displayName = typeof body.display_name === "string" ? body.display_name.trim() : username;
     if (!displayName || displayName.length > 40) throw new HttpError(422, "昵称需为 1–40 个字符");
     const row: UserRow = { id: crypto.randomUUID(), username, display_name: displayName, password_hash: await hashPassword(password), is_owner: 0, must_change_password: 0, created_at: new Date().toISOString() };
@@ -114,7 +121,7 @@ export async function authRoute(ctx: Context, path: string): Promise<Response | 
     await rateLimit(ctx, "password", user.id, 5, 900);
     const body = await readBody(ctx.request);
     const oldPassword = passwordInput(body.current_password);
-    const newPassword = passwordInput(body.new_password);
+    const newPassword = user.is_owner ? passwordInput(body.new_password, 6) : memberPassword(body.new_password);
     if (oldPassword === newPassword) throw new HttpError(422, "新密码应与原密码不同");
     const row = await ctx.env.DB.prepare(`SELECT * FROM blog_user WHERE id = ?`).bind(user.id).first<UserRow>();
     if (!row || !(await verifyPassword(oldPassword, row.password_hash))) throw new HttpError(401, "原密码错误");
