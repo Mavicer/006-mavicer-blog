@@ -4,9 +4,13 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/generate-static-posts.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/generate-static-posts.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "pretest": "node scripts/generate-static-posts.mjs",
+    "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
