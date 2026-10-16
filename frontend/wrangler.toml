@@ -1,5 +1,6 @@
 name = "mavicer-blog"
-compatibility_date = "2024-09-25"
+compatibility_date = "2026-10-16"
+compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "dist"
 
 # D1 database binding. Create the database first:
@@ -11,5 +12,4 @@ binding = "DB"
 database_name = "mavicer-blog"
 database_id = "41f273ee-85f7-464a-bc0e-5ad04b64455b"
 
-# Phase 2+ will add env vars here (JWT_SECRET, ADMIN_USERNAME, ADMIN_PASSWORD)
-# for owner login. Phase 1 (public interactions) needs only the D1 binding.
+# Session tokens are random and stored as hashes in D1; no JWT secret is needed.

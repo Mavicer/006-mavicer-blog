@@ -1,16 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
-/**
- * Route guard for protected pages.
- *
- * ⚠️  This is FRONTEND-ONLY UX protection. It prevents casual users
- *     from stumbling into admin pages, but anyone with DevTools can
- *     forge a session. Production auth must be enforced server-side.
- *
- * - Not logged in → redirect to /login?next=<path>
- * - Logged in but not owner (when requireOwner) → redirect to /
- */
+/** UX route guard; the API independently checks the server session and role. */
 export function ProtectedRoute({
   children,
   requireOwner = false,
@@ -18,9 +9,11 @@ export function ProtectedRoute({
   children: React.ReactNode;
   requireOwner?: boolean;
 }) {
-  const { user } = useAuth();
+  const { user, loading, error, refresh } = useAuth();
   const location = useLocation();
 
+  if (loading) return <p role="status" className="p-6">正在确认登录状态…</p>;
+  if (error) return <p role="alert" className="p-6">{error} <button onClick={() => void refresh()}>重试</button></p>;
   if (!user) {
     return <Navigate to={`/login?next=${location.pathname}`} replace />;
   }

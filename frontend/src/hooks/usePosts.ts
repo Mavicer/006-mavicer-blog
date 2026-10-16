@@ -77,7 +77,7 @@ function loadStaticPosts(): Post[] {
       category: data.category || "未分类",
       tags: Array.isArray(data.tags) ? data.tags : [],
       body,
-      published: data.published !== false,
+      published: data.published !== "false",
       sortOrder: Number(data.sort_order ?? order),
       source: "static",
       readingTime: data.reading_time as string | undefined,

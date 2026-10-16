@@ -4,101 +4,197 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { DatabaseSync } from "node:sqlite";
+import { build } from "esbuild";
 import test from "node:test";
-import ts from "typescript";
 import { publishedSlugs } from "../scripts/generate-static-posts.mjs";
 
-// Exercise the real handler and SQL on SQLite; only adapt D1's async API.
-const slugs = JSON.parse(readFileSync(new URL("../generated/static-post-slugs.json", import.meta.url), "utf8"));
-const source = readFileSync(new URL("../functions/api/[[path]].ts", import.meta.url), "utf8")
-  .replace('import staticPostSlugs from "../../generated/static-post-slugs.json";',
-    `const staticPostSlugs = ${JSON.stringify(slugs)};`);
-const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-const { onRequest } = await import(`data:text/javascript;base64,${Buffer.from(output).toString("base64")}`);
+const { outputFiles } = await build({ entryPoints: [new URL("../functions/api/[[path]].ts", import.meta.url).pathname], bundle: true, platform: "node", format: "esm", write: false });
+const { onRequest } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString("base64")}`);
+const password = "test-password-only-2026";
+const slug = "outside-the-classroom";
+const post = (route) => `/posts/${slug}/${route}`;
 
-function fixture() {
+function fixture({ legacy = false, failMigration = false } = {}) {
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec(readFileSync(new URL("../../backend-worker/schema.sql", import.meta.url), "utf8"));
+  if (legacy) sqlite.exec(`INSERT INTO comment (post_slug, body, author_name, client_id) VALUES ('${slug}', '历史评论', '旧访客', 'known-client'); INSERT INTO favorite (post_slug, client_id) VALUES ('${slug}', 'known-client');`);
+  let shouldFail = failMigration;
   const DB = {
     prepare(sql) {
-      const statement = sqlite.prepare(sql);
+      if (shouldFail && sql.includes("CREATE TABLE IF NOT EXISTS blog_user")) { shouldFail = false; throw new Error("simulated migration error"); }
       let args = [];
       return {
         bind(...values) { args = values; return this; },
-        async all() { return { results: statement.all(...args) }; },
-        async first() { return statement.get(...args) || null; },
-        async run() {
-          const result = statement.run(...args);
-          return { meta: { last_row_id: Number(result.lastInsertRowid) } };
-        },
+        async all() { return { results: sqlite.prepare(sql).all(...args) }; },
+        async first() { return sqlite.prepare(sql).get(...args) || null; },
+        async run() { const result = sqlite.prepare(sql).run(...args); return { meta: { last_row_id: Number(result.lastInsertRowid), changes: result.changes } }; },
       };
     },
-    async batch(statements) { return Promise.all(statements.map((statement) => statement.run())); },
+    async batch(statements) {
+      sqlite.exec("BEGIN");
+      try { const results = []; for (const statement of statements) results.push(await statement.run()); sqlite.exec("COMMIT"); return results; }
+      catch (error) { sqlite.exec("ROLLBACK"); throw error; }
+    },
   };
-  async function request(slug, suffix, method = "GET", payload) {
-    const response = await onRequest({
-      request: new Request(`https://example.test/api/posts/${slug}/${suffix}`, {
-        method,
-        ...(payload ? { body: JSON.stringify(payload), headers: { "Content-Type": "application/json" } } : {}),
-      }),
-      env: { DB },
-    });
-    return { status: response.status, data: await response.json() };
+  async function request(path, { method = "GET", body, cookie = "", headers = {} } = {}) {
+    const response = await onRequest({ request: new Request(`https://example.test/api${path}`, {
+      method, headers: { Cookie: cookie, ...(method !== "GET" ? { "Content-Type": "application/json", Origin: "https://example.test" } : {}), ...headers },
+      ...(method !== "GET" ? { body: typeof body === "string" ? body : JSON.stringify(body || {}) } : {}),
+    }), env: { DB } });
+    return { status: response.status, data: await response.json(), cookie: response.headers.get("Set-Cookie")?.split(";")[0] || "", headers: response.headers };
   }
-  return { sqlite, request };
+  async function register(username = "alice", extra = {}) {
+    const result = await request("/auth/register", { method: "POST", body: { username, password, display_name: username, ...extra } });
+    assert.equal(result.status, 201, JSON.stringify(result.data)); return result;
+  }
+  return { sqlite, DB, request, register };
 }
 
-test("new Markdown post works without a D1 post row: read, toggle, comment and delete", async () => {
-  const { sqlite, request } = fixture();
-  try {
-    const slug = "outside-the-classroom";
-    assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM post").get().n, 0);
-    assert.deepEqual((await request(slug, "interactions")).data, {
-      post_slug: slug, likes: 0, favorites: 0, liked: false, favorited: false,
-    });
-    for (const [route, count, active] of [["like", "likes", "liked"], ["favorite", "favorites", "favorited"]]) {
-      const added = await request(slug, route, "POST", { client_id: "test-client" });
-      assert.equal(added.status, 200);
-      assert.equal(added.data[count], 1);
-      assert.equal(added.data[active], true);
-      const removed = await request(slug, route, "POST", { client_id: "test-client" });
-      assert.equal(removed.data[count], 0);
-      assert.equal(removed.data[active], false);
+test("anonymous likes work; comments and account favorites require a real session", async () => {
+  const f = fixture(); try {
+    assert.equal((await f.request(post("interactions"))).status, 200);
+    const liked = await f.request(post("like"), { method: "POST", body: { client_id: "browser", liked: true } });
+    assert.equal(liked.data.likes, 1);
+    await f.request(post("like"), { method: "POST", body: { client_id: "browser", liked: true } });
+    assert.equal((await f.request(post("interactions"))).data.likes, 1);
+    for (const [route, method] of [[post("comments"), "POST"], [post("favorite"), "PUT"], ["/me/favorites", "GET"]]) {
+      const result = await f.request(route, { method, body: { client_id: "fake", user_id: "fake", body: "fake" }, headers: { Authorization: "Bearer forged", Cookie: "__Host-blog_session=forged" } });
+      assert.equal(result.status, 401);
     }
-    const comment = await request(slug, "comments", "POST", { body: "回归测试", client_id: "test-client" });
-    assert.equal(comment.status, 201);
-    assert.equal((await request(slug, "comments")).data.length, 1);
-    assert.equal((await request(slug, `comments/${comment.data.id}`, "DELETE", { client_id: "another-client" })).status, 403);
-    assert.equal((await request(slug, `comments/${comment.data.id}`, "DELETE", { client_id: "test-client" })).status, 200);
-    assert.deepEqual((await request(slug, "comments")).data, []);
-  } finally { sqlite.close(); }
+  } finally { f.sqlite.close(); }
 });
 
-test("database-only published posts retain counts; unpublished and unknown posts reject writes", async () => {
-  const { sqlite, request } = fixture();
-  try {
-    sqlite.exec(`INSERT INTO post (slug, title) VALUES ('online-only', 'Online');
-      INSERT INTO post (slug, title, published) VALUES ('draft-only', 'Draft', 0);
-      INSERT INTO "like" (post_slug, client_id) VALUES ('online-only', 'reader');`);
-    const existing = await request("online-only", "interactions?client_id=reader");
-    assert.equal(existing.status, 200);
-    assert.equal(existing.data.likes, 1);
-    assert.equal(existing.data.liked, true);
-    for (const slug of ["unknown", "draft-only"]) {
-      assert.equal((await request(slug, "interactions")).status, 404);
-      for (const route of ["like", "favorite", "comments"]) {
-        assert.equal((await request(slug, route, "POST", { client_id: "reader", body: "test" })).status, 404);
-      }
-    }
-    assert.equal((await request("online-only", "like", "POST", {})).status, 422);
-    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM "like"').get().n, 1);
-    assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM comment").get().n, 0);
-  } finally { sqlite.close(); }
+test("registration uses real hashes, host-only cookies, and never accepts owner claims", async () => {
+  const f = fixture(); try {
+    const alice = await f.register("Alice", { is_owner: true, owner_key: "anything" });
+    assert.equal(alice.data.user.is_owner, false);
+    assert.equal(alice.data.user.username, "alice");
+    assert.equal("password_hash" in alice.data.user, false);
+    assert.match(alice.headers.get("Set-Cookie"), /HttpOnly; Secure; SameSite=Lax/);
+    assert.equal(alice.headers.get("Cache-Control"), "no-store");
+    const stored = f.sqlite.prepare("SELECT password_hash FROM blog_user").get().password_hash;
+    assert.match(stored, /^scrypt\$/); assert.equal(stored.includes(password), false);
+    assert.equal((await f.request("/auth/me", { cookie: alice.cookie })).data.id, alice.data.user.id);
+    const duplicate = await f.request("/auth/register", { method: "POST", body: { username: "ALICE", password } });
+    assert.equal(duplicate.status, 409);
+    assert.equal((await f.request("/admin/users", { cookie: alice.cookie })).status, 403);
+    assert.equal((await f.request("/auth/login", { method: "POST", body: { username: "alice", password: "incorrect-password" } })).status, 401);
+    const login = await f.request("/auth/login", { method: "POST", body: { username: "ALICE", password } });
+    assert.equal(login.status, 200);
+    assert.notEqual(login.cookie, alice.cookie);
+  } finally { f.sqlite.close(); }
 });
 
-test("allowlist follows filenames, explicit slugs and published state", () => {
-  const dir = mkdtempSync(join(tmpdir(), "blog-static-posts-"));
-  try {
+test("favorites persist across sessions, are idempotent, and remain isolated between accounts", async () => {
+  const f = fixture(); try {
+    const a = await f.register("alice"), b = await f.register("bob");
+    for (let i = 0; i < 2; i++) assert.equal((await f.request(post("favorite"), { method: "PUT", cookie: a.cookie })).data.favorites, 1);
+    const saved = await f.request("/me/favorites", { cookie: a.cookie });
+    assert.equal(saved.data[0].title, "在课堂之外");
+    assert.deepEqual((await f.request("/me/favorites", { cookie: b.cookie })).data, []);
+    assert.equal((await f.request(post("interactions"), { cookie: b.cookie })).data.favorited, false);
+    await f.request(post("favorite"), { method: "DELETE", cookie: b.cookie });
+    assert.equal((await f.request("/me/favorites", { cookie: a.cookie })).data.length, 1);
+    const second = await f.request("/auth/login", { method: "POST", body: { username: "alice", password } });
+    assert.equal((await f.request("/me/favorites", { cookie: second.cookie })).data.length, 1);
+    await f.request(post("favorite"), { method: "DELETE", cookie: a.cookie });
+    assert.deepEqual((await f.request("/me/favorites", { cookie: second.cookie })).data, []);
+  } finally { f.sqlite.close(); }
+});
+
+test("comment authors and deletion permissions come only from authenticated accounts", async () => {
+  const f = fixture(); try {
+    const a = await f.register("alice"), b = await f.register("bob");
+    const comment = await f.request(post("comments"), { method: "POST", cookie: a.cookie, body: { body: "真实评论", user_id: b.data.user.id, author_name: "冒充管理员" } });
+    assert.equal(comment.status, 201); assert.equal(comment.data.author_name, "alice");
+    const route = post(`comments/${comment.data.id}`);
+    assert.equal((await f.request(route, { method: "DELETE", cookie: b.cookie })).status, 403);
+    assert.equal((await f.request(post("comments"), { cookie: a.cookie })).data[0].is_own, true);
+    assert.equal((await f.request(post("comments"), { cookie: b.cookie })).data[0].is_own, false);
+    assert.equal((await f.request(route, { method: "DELETE" })).status, 401);
+    assert.equal((await f.request(route, { method: "DELETE", cookie: a.cookie })).status, 200);
+    assert.deepEqual((await f.request(post("comments"))).data, []);
+  } finally { f.sqlite.close(); }
+});
+
+test("legacy comments and anonymous favorite counts survive migration without being claimable", async () => {
+  const f = fixture({ legacy: true }); try {
+    const a = await f.register("alice");
+    const inter = await f.request(post("interactions?client_id=known-client"), { cookie: a.cookie });
+    assert.equal(inter.data.favorites, 1); assert.equal(inter.data.favorited, false);
+    const comments = await f.request(post("comments?client_id=known-client"), { cookie: a.cookie });
+    assert.equal(comments.data[0].body, "历史评论"); assert.equal(comments.data[0].is_own, false);
+    assert.equal((await f.request(post("comments/1"), { method: "DELETE", cookie: a.cookie, body: { client_id: "known-client" } })).status, 403);
+    f.sqlite.prepare("UPDATE blog_user SET is_owner = 1 WHERE id = ?").run(a.data.user.id);
+    assert.equal((await f.request(post("comments/1"), { method: "DELETE", cookie: a.cookie })).status, 200);
+  } finally { f.sqlite.close(); }
+});
+
+test("logout, expiry and password changes invalidate server sessions", async () => {
+  const f = fixture(); try {
+    const a = await f.register("alice");
+    await f.request("/auth/logout", { method: "POST", cookie: a.cookie });
+    assert.equal((await f.request("/auth/me", { cookie: a.cookie })).status, 401);
+    const login = await f.request("/auth/login", { method: "POST", body: { username: "alice", password } });
+    const other = await f.request("/auth/login", { method: "POST", body: { username: "alice", password } });
+    assert.equal((await f.request("/auth/password", { method: "POST", cookie: login.cookie, body: { current_password: password, new_password: "new-test-password-2026" } })).status, 200);
+    assert.equal((await f.request("/auth/me", { cookie: other.cookie })).status, 401);
+    assert.equal((await f.request("/auth/login", { method: "POST", body: { username: "alice", password } })).status, 401);
+    const fresh = await f.request("/auth/login", { method: "POST", body: { username: "alice", password: "new-test-password-2026" } });
+    assert.equal(fresh.status, 200);
+    f.sqlite.exec("UPDATE blog_session SET expires_at = 1");
+    assert.equal((await f.request("/auth/me", { cookie: fresh.cookie })).status, 401);
+  } finally { f.sqlite.close(); }
+});
+
+test("admin reset revokes sessions and requires a fresh password before interactions", async () => {
+  const f = fixture(); try {
+    const owner = await f.register("owner"), member = await f.register("alice");
+    f.sqlite.prepare("UPDATE blog_user SET is_owner = 1 WHERE id = ?").run(owner.data.user.id);
+    const route = `/admin/users/${member.data.user.id}/reset-password`;
+    assert.equal((await f.request(route, { method: "POST", cookie: member.cookie, body: { current_password: password } })).status, 403);
+    const reset = await f.request(route, { method: "POST", cookie: owner.cookie, body: { current_password: password } });
+    assert.equal(reset.status, 200); assert.ok(reset.data.temporary_password.length >= 12);
+    assert.equal((await f.request("/auth/me", { cookie: member.cookie })).status, 401);
+    const login = await f.request("/auth/login", { method: "POST", body: { username: "alice", password: reset.data.temporary_password } });
+    assert.equal(login.status, 200); assert.equal(login.data.user.must_change_password, true);
+    assert.equal((await f.request(post("favorite"), { method: "PUT", cookie: login.cookie })).status, 403);
+    assert.equal((await f.request("/auth/password", { method: "POST", cookie: login.cookie, body: { current_password: reset.data.temporary_password, new_password: "changed-again-for-test" } })).status, 200);
+  } finally { f.sqlite.close(); }
+});
+
+test("CSRF, malformed JSON, input limits, brute-force limits and invalid articles are rejected", async () => {
+  const f = fixture(); try {
+    assert.equal((await f.request("/auth/register", { method: "POST", headers: { Origin: "https://evil.test" } })).status, 403);
+    assert.equal((await f.request("/auth/register", { method: "POST", body: "not-json" })).status, 400);
+    assert.equal((await f.request("/auth/register", { method: "POST", body: { username: "x", password: "short" } })).status, 422);
+    assert.equal((await f.request("/auth/login", { method: "POST", body: "x".repeat(17000) })).status, 413);
+    assert.equal((await f.request(post("comments"), { method: "POST", headers: { "Content-Type": "text/plain" } })).status, 415);
+    const a = await f.register("alice");
+    for (const [path, method, body] of [["/posts/unknown/favorite", "PUT", {}], ["/posts/unknown/comments", "POST", { body: "test" }]]) {
+      assert.equal((await f.request(path, { method, body, cookie: a.cookie })).status, 404);
+    }
+    assert.equal((await f.request(post("comments"), { method: "POST", cookie: a.cookie, body: { body: "x".repeat(3001) } })).status, 422);
+    f.sqlite.exec("UPDATE account_rate_limit SET hits = 100 WHERE key LIKE 'login-ip:%'");
+    // First create the rate bucket, then exhaust it without 30 expensive KDFs.
+    await f.request("/auth/login", { method: "POST", body: { username: "alice", password } });
+    f.sqlite.exec("UPDATE account_rate_limit SET hits = 100 WHERE key LIKE 'login-ip:%'");
+    assert.equal((await f.request("/auth/login", { method: "POST", body: { username: "alice", password } })).status, 429);
+  } finally { f.sqlite.close(); }
+});
+
+test("failed migration returns 503 and is retried; database-only posts still work", async () => {
+  const f = fixture({ failMigration: true }); try {
+    assert.equal((await f.request("/health")).status, 503);
+    assert.equal((await f.request("/health")).status, 200);
+    f.sqlite.exec(`INSERT INTO post (slug, title) VALUES ('online-only', 'Online'); INSERT INTO "like" (post_slug, client_id) VALUES ('online-only', 'reader');`);
+    const inter = await f.request("/posts/online-only/interactions?client_id=reader");
+    assert.equal(inter.status, 200); assert.equal(inter.data.likes, 1); assert.equal(inter.data.liked, true);
+  } finally { f.sqlite.close(); }
+});
+
+test("static allowlist handles CRLF, custom slugs and unpublished posts", () => {
+  const dir = mkdtempSync(join(tmpdir(), "blog-static-posts-")); try {
     writeFileSync(join(dir, "new.md"), "---\r\ntitle: New\r\n---\r\nBody");
     writeFileSync(join(dir, "alias.md"), '---\nslug: "custom-slug"\npublished: true\n---\nBody');
     writeFileSync(join(dir, "draft.md"), '---\npublished: false\n---\nDraft');

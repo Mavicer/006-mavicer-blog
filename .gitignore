@@ -3,6 +3,8 @@ frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 frontend/generated/
+frontend/.wrangler/
+frontend/.dev.vars*
 
 # Backend Python
 **/__pycache__/

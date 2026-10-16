@@ -1,126 +1,99 @@
-# Mavicer's Blog — aleph-null.cc 复刻版
+# Mavicer's Blog
 
-> 1:1 复刻 [aleph-null.cc](https://aleph-null.cc) 的视觉、结构、交互与后端 API，改成你自己的个人博客。
+React + Vite 前端，Cloudflare Pages Functions + D1 后端。文章从 Markdown
+加载；点赞支持访客，评论和收藏使用服务器账号登录。
 
-## 快速开始
+## 本地运行
 
-### 前端（开发服务器）
+使用 Node.js 22.13+（测试使用内置 SQLite）：
 
 ```bash
 cd frontend
-npm install
-npm run dev
-# → http://localhost:5173
+npm ci
+npm run db:local
+npm run build
+npm run dev:api
+# http://localhost:8788，包含完整 API 和本地 D1
 ```
 
-### 后端（FastAPI）
+如需前端热更新，另开终端在 `frontend/` 运行 `npm run dev`。
+Vite 将 `/api` 代理到 8788 的同一套 Pages 后端。本地 D1 与线上数据库隔离。
+`backend/` 是早期 FastAPI 实现，当前部署不使用它。
+
+## 写文章与构建
+
+在 `frontend/src/data/posts/` 添加带 frontmatter 的 Markdown。用 `npm run build`
+构建；生成脚本会同时建立前端文章与 API 所需的 slug/元数据清单。
+新增文章无需向 D1 的 `post` 表重复录入。`published: false` 的静态文章不会发布。
+新增或修改 slug 后，需要重新运行生成步骤或重启开发服务。
 
 ```bash
-cd backend
-uv venv .venv
-uv pip install -e . --python .venv/bin/python
-.venv/bin/uvicorn main:app --reload --port 8000
-# → http://localhost:8000/api/docs  (Swagger UI)
+npm run typecheck
+npm test
+npm run build
 ```
 
-前端通过 Vite 代理 `/api` → `http://127.0.0.1:8000`，所以两边都开着即可。
+后端类型检查已包含在构建中；回归测试在 SQLite 上运行真实处理函数与 SQL，
+覆盖账号隔离、会话失效、权限、历史数据兼容和失败后的迁移重试。
 
-## 项目结构
+## 账号与互动
 
-```
-006/
-├ site.config.ts              ← 站点身份信息（改这里就能换名字/简介/邮箱）
-├ ANALYSIS.md                 ← 原站分析与技术方案文档
-├ frontend/
-│  ├ public/images/            ← 头像、背景图、favicon、OG 图
-│  ├ src/
-│  │  ├ components/            ← Navbar, Footer, Sidebar, SearchPopup, ImageViewer,
-│  │  │                          ArticleCard, AccountDock, ReaderDock, ProgressBar,
-│  │  │                          RightSideTools, Layout, PageShell
-│  │  ├ sections/             ← HomeBanner, Sidebar
-│  │  ├ pages/                ← Home, Archives, About, Projects, Categories, Tags,
-│  │  │                          PostDetail, Login, Register, Account, Admin, NotFound
-│  │  ├ hooks/                ← useTheme, useAuth, usePosts, useScroll, useTypedSubtitle
-│  │  ├ lib/                  ← api.ts (后端客户端), markdown.ts (渲染), highlight.ts
-│  │  ├ config/               ← site.ts, nav.ts
-│  │  ├ data/posts/           ← 本地 Markdown 文章
-│  │  ├ styles/               ← index.css (CSS 变量 + 组件), fonts.css, highlight.css
-│  │  └ main.tsx, App.tsx
-│  ├ tailwind.config.ts        ← 原站 CSS 变量映射到 Tailwind 工具类
-│  └ vite.config.ts           ← /api 代理 + chunk 拆分
-├ backend/
-│  ├ main.py                   ← FastAPI 入口，22 个端点
-│  ├ db.py                     ← SQLModel 模型 + SQLite
-│  ├ schemas.py                ← Pydantic 请求/响应模型（对齐原站 OpenAPI）
-│  ├ security.py               ← JWT + argon2 密码哈希 + Owner Key
-│  ├ deps.py                   ← 认证依赖（require_user / require_owner）
-│  ├ api/                      ← health, auth, posts, comments, interactions,
-│  │                          admin, analytics, online, uploads
-│  ├ pyproject.toml
-│  └ .env.example              ← BLOG_SECRET_KEY / OWNER_KEY
-```
+- `/register`：用户名、密码和公开昵称。用户名 3–30 个字母/数字/下划线，不区分大小写；密码 12–128 字符。
+- `/login`：登录后返回原文章，或进入 `/account`。
+- `/account`：我的收藏、取消收藏、修改密码、退出登录。收藏绑定账号，可跨设备读取。
+- 点赞保持匿名，使用浏览器标识去重；它不作为身份验证凭据。
+- 所有人可以阅读评论；发表评论需要登录，作者可删除自己的评论，管理员可删除所有评论。
+- 不接邮件。忘记密码时联系博主；管理员核实用户身份后在 `/admin/users` 重置。临时密码只返回一次，用户登录后必须更改。
 
-## 技术栈
+密码使用原生 scrypt（N=16384、r=8、p=5、随机盐）散列，不储存明文。
+登录令牌为随机 256 位值；D1 只保存 SHA-256 摘要。Cookie 是 host-only、
+HttpOnly、Secure、SameSite=Lax，有效期 30 天。退出立即撤销当前会话；
+修改或重置密码撤销该账号所有会话。客户端不保存令牌或信任 localStorage 中的角色。
 
-**前端**：React 18 + TypeScript + Vite + Tailwind CSS v3 + Framer Motion
-**后端**：FastAPI + SQLModel + SQLite + JWT (python-jose) + argon2
-**字体**：Chillax（标题）、Geist（正文）、Geist Mono（代码）— jsdelivr CDN
-**图标**：FontAwesome 6 CDN + lucide-react
-**Markdown**：marked + highlight.js + KaTeX
+写接口校验同源 Origin 和 JSON 类型，并限制请求体大小。注册/登录/密码操作、
+评论和点赞有基于 D1 的原子计数限流。接口响应不缓存；异常返回 503 和请求编号，
+服务器日志记录故障位置，不记录密码、Cookie 或请求体。
 
-## 关键特性
+## 部署与历史数据
 
-### 前端
-- **1:1 视觉复刻**：原站的所有 CSS 变量、圆角、阴影 token、字体栈、明暗双主题
-- **Hero Banner**：全屏背景图 + 打字机副标题 + 向下滚动按钮 + 社交胶囊
-- **Navbar**：双色渐变毛玻璃、sticky、滚动收缩、移动端抽屉、搜索弹窗
-- **Sidebar**：站点信息 + 头像 + 统计计数 + 链接
-- **文章系统**：本地 Markdown frontmatter、代码高亮（mac 风格）、LaTeX、TOC 目录、图片查看器
-- **动态功能**：评论 / 点赞 / 收藏 / 在线人数药丸 / 账户中心 / 管理后台 CMS
-- **响应式 + 暗色模式**：跟随系统偏好，可手动切换
+Pages 项目根目录为 `frontend`，构建命令 `npm run build`，输出目录 `dist`。
+D1 绑定名为 `DB`，数据库 ID 在 `frontend/wrangler.toml` 中。
+当前会话机制无需 JWT 密钥或邮件服务。
 
-### 后端
-- **22 个 API 端点**，与原站 `/api/openapi.json` 完全对齐
-- **Owner Key 机制**：注册时携带正确的 `OWNER_KEY` 环境变量即成为管理员
-- **JWT 认证**：30 天有效期，localStorage 存 token
-- **SQLite**：零配置，`blog.db` 自动创建
-- **图片上传**：`/admin/uploads`，存 `backend/uploads/`，静态服务
+首次请求会执行 `frontend/server/schema.ts` 中的增量迁移，建立账号、会话、
+账号收藏、限流表，并为评论增加可空的 `user_id`。迁移有数据库版本标记，
+只有成功完成才标记；中途失败可重试，不删除原表或原记录。
 
-## 如何个性化
+旧评论继续公开展示，但不允许用原来的 browser client_id 冒领。旧匿名收藏保留
+历史总数，不迁移到任意账号；新的收藏保存在 `account_favorite` 中。
+点赞数据沿用原表。升级前后的旧版前端可能存在短暂缓存差异，刷新页面可更新。
 
-1. **改名字/简介/邮箱**：编辑 `site.config.ts`
-2. **写文章**：在 `frontend/src/data/posts/` 放 Markdown 文件（带 frontmatter）
-3. **换头像/背景图**：替换 `frontend/public/images/` 下的文件
-4. **改导航**：编辑 `frontend/src/config/nav.ts`
-5. **设管理员密钥**：复制 `backend/.env.example` → `backend/.env`，设 `OWNER_KEY`
-6. **注册管理员**：在 `/register` 页面用设好的 Owner Key 注册
+健康检查：`GET /api/health` 应返回 `200 {"ok":true}`。未登录访问
+`/api/auth/me`、`/api/me/favorites` 或发表评论返回 401 是预期行为。
+观察 Cloudflare 日志中的 `api_error` 与 requestId 可排查数据库/运行时故障。
+后续结构性改动前，先使用 Cloudflare D1 的导出或 Time Travel 功能留存恢复点。
+回滚代码不会删除新增账号和收藏表；不要通过重跑旧 seed.sql 覆盖真实数据。
 
-### Markdown 文章的线上互动
+### 初始化博主账号
 
-`npm run build` 会自动从 Markdown 生成 Pages API 使用的文章 slug 清单。
-点赞、收藏和评论同时支持清单内文章与 D1 中已发布的文章；新增 Markdown
-不需要再向 D1 的 `post` 表重复插入记录。互动数据仍保存在 D1 原有表中。
-请使用 `npm run build` 构建部署（直接调用 `vite build` 会跳过生成步骤）。
-本地修改文章 slug 或新增文件后，需重新运行生成步骤。
+公共注册始终创建普通用户，不接受 owner_key、is_owner 或“第一个注册者自动成为管理员”。
+博主先在正式站自行注册，然后由数据库操作员在 Cloudflare D1 Console 核对其 ID
+并执行以下语句（用真实 ID 替换占位内容，不要按不可信昵称提升权限）：
 
-回归验证：在 `frontend/` 下使用 Node.js 22.13+ 执行 `npm test`，覆盖
-只有 Markdown、只有数据库记录、不存在/未发布文章，以及点赞收藏切换和评论删除权限。
-
-## 与原站差异
-
-| 项 | 原站 | 复刻版 |
-|---|---|---|
-| 前端框架 | Hexo 静态生成 + Swup | React SPA + react-router |
-| 后端 | FastAPI（推断） | FastAPI（22 端点 1:1 对齐） |
-| 文章源 | 静态 1 篇 + 在线 7 篇 | 本地 Markdown + 后端在线 |
-| 背景图 | wallhaven 摄影图 | 占位图（你换自己的） |
-| 字体加载 | 自托管 woff2 | jsdelivr CDN |
-| 页面切换 | Swup | Framer Motion |
-
-## 构建
-
-```bash
-cd frontend && npm run build   # → dist/
+```sql
+SELECT id, username, is_owner FROM blog_user ORDER BY created_at;
+UPDATE blog_user SET is_owner = 1 WHERE id = 'verified-owner-user-id';
 ```
 
-产物：5 个 JS chunk + 1 个 CSS，gzip 后约 240KB（不含 KaTeX 字体）。
+刷新账户页后出现“账号管理”。普通用户没有此权限。正式站与预览域名的 Cookie
+相互隔离；当前 Pages 预览共享同一个 D1 绑定，勿在预览发布真实测试评论。
+文章/图库的旧本地 CMS 仍是浏览器本地草稿工具，此次账号改动不将它升级为服务器 CMS。
+
+## 目录
+
+- `frontend/functions/api/[[path]].ts`：路由、文章和互动接口
+- `frontend/server/`：账号、会话、迁移、同源与限流
+- `frontend/src/pages/`：注册、登录、账户及页面
+- `frontend/scripts/generate-static-posts.mjs`：构建时文章清单
+- `frontend/tests/interactions.test.mjs`：真实 SQL 回归测试
+- `backend-worker/schema.sql`：首次创建旧基础表（仅用于空数据库初始化）
