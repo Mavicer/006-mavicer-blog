@@ -127,17 +127,6 @@ html {
   min-height: 100%;
 }
 
-/* Paint Safari's extended viewport and overscroll canvas behind the hero. */
-html.home-page {
-  background-color: #304f61;
-}
-html.home-page.dark {
-  background-color: #182b40;
-}
-html.home-page body {
-  background: transparent;
-}
-
 ::selection {
   background: var(--selection-color);
   color: #fff;
@@ -234,42 +223,7 @@ a:hover {
   }
 
   .home-banner-background {
-    height: 100vh;
-    height: 100lvh;
     transition: filter 0.3s ease;
-  }
-
-  @media (max-width: 768px) {
-    .navbar-container {
-      height: calc(var(--navbar-height) + env(safe-area-inset-top, 0px));
-      padding-top: calc(2px + env(safe-area-inset-top, 0px));
-    }
-    .navbar-container.navbar-shrink {
-      height: calc(var(--navbar-shrink-height) + env(safe-area-inset-top, 0px));
-    }
-    .navbar-content {
-      padding-left: max(16px, env(safe-area-inset-left, 0px));
-      padding-right: max(16px, env(safe-area-inset-right, 0px));
-    }
-    /* Keep the entire first screen inside the visible Safari viewport. */
-    .home-banner-container {
-      min-height: calc(100vh - var(--navbar-height) - env(safe-area-inset-top, 0px));
-      min-height: calc(100svh - var(--navbar-height) - env(safe-area-inset-top, 0px));
-    }
-    .home-banner-container .content {
-      min-height: inherit;
-      padding-top: 0;
-      margin-top: -10svh;
-    }
-    .home-banner-bottom-bar {
-      bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-      right: max(1rem, env(safe-area-inset-right, 0px));
-    }
-    /* Safari 26 can stop sampling the page tint behind an edge blur. */
-    html.home-page .navbar-container:not(.navbar-shrink) {
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
-    }
   }
 
   .navbar-container {
