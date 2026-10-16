@@ -97,7 +97,7 @@ UPDATE blog_user SET is_owner = 1 WHERE id = 'verified-owner-user-id';
 编辑已有文章会读取 GitHub 最新文件，保留原始日期与额外 frontmatter 字段。
 预览使用与文章页相同的 Markdown 渲染和 HTML 清洗。草稿只暂存在当前设备。
 
-在 Cloudflare Pages 项目 `blog-cmc` 的 Production Secret 配置
+在 Cloudflare Pages 项目 `blog` 的 Production Secret 配置
 `GITHUB_PUBLISH_TOKEN`，然后重新部署。使用仅限 `Mavicer/006-mavicer-blog`
 的 fine-grained GitHub token，仓库权限为 Contents: Read and write、Checks: Read；
 不需要仓库管理、Actions 写权限。令牌到期前由管理员轮换，勿粘贴到文章、聊天或提交中。
