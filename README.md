@@ -99,8 +99,9 @@ UPDATE blog_user SET is_owner = 1 WHERE id = 'verified-owner-user-id';
 
 在 Cloudflare Pages 项目 `blog` 的 Production Secret 配置
 `GITHUB_PUBLISH_TOKEN`，然后重新部署。使用仅限 `Mavicer/006-mavicer-blog`
-的 fine-grained GitHub token，仓库权限为 Contents: Read and write、Checks: Read；
-不需要仓库管理、Actions 写权限。令牌到期前由管理员轮换，勿粘贴到文章、聊天或提交中。
+的 fine-grained GitHub token，仓库权限为 Contents: Read and write（自动附带 Metadata: Read）；
+公开仓库的部署检查可读取公开 API，不需要仓库管理、Actions 或 Checks 写权限。
+令牌到期前由管理员轮换，勿粘贴到文章、聊天或提交中。
 本地开发可在被忽略的 `frontend/.dev.vars` 中配置同名变量。
 
 发布接口仅允许数据库标记的管理员调用；仓库、`main` 分支和文章目录由服务器固定。
