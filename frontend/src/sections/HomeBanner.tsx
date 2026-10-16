@@ -20,7 +20,7 @@ export function HomeBanner() {
     <>
       {/* Full-screen background with parallax scale */}
       <div
-        className="home-banner-background fixed top-0 left-0 w-screen h-screen scale-125 sm:scale-110 box-border will-change-transform bg-cover transition-fade"
+        className="home-banner-background fixed top-0 left-0 w-full scale-125 sm:scale-110 box-border will-change-transform bg-cover transition-fade"
         style={{
           backgroundImage: `url(/images/wallhaven-${
             effectiveMode === "dark" ? "wqery6-dark" : "wqery6-light"
