@@ -59,9 +59,9 @@ export default function Account() {
       </section>}
       <section><h2 className="text-xl font-bold mb-4">修改密码</h2>
         <form className="aleph-form flex flex-col gap-4 max-w-[480px]" onSubmit={changePassword}>
-          <label className="flex flex-col gap-1">当前密码<input type="password" autoComplete="current-password" required minLength={12} maxLength={128} value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} className={inputClass} /></label>
-          <label className="flex flex-col gap-1">新密码<input type="password" autoComplete="new-password" required minLength={12} maxLength={128} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className={inputClass} /></label>
-          <label className="flex flex-col gap-1">确认新密码<input type="password" autoComplete="new-password" required minLength={12} maxLength={128} value={confirm} onChange={(e) => setConfirm(e.target.value)} className={inputClass} /></label>
+          <label className="flex flex-col gap-1">当前密码<input type="password" autoComplete="current-password" required minLength={1} maxLength={128} value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} className={inputClass} /></label>
+          <label className="flex flex-col gap-1">新密码<input type="password" autoComplete="new-password" required minLength={user?.is_owner ? 6 : 8} maxLength={128} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className={inputClass} /></label>
+          <label className="flex flex-col gap-1">确认新密码<input type="password" autoComplete="new-password" required minLength={user?.is_owner ? 6 : 8} maxLength={128} value={confirm} onChange={(e) => setConfirm(e.target.value)} className={inputClass} /></label>
           <button type="submit" disabled={busy} className="px-4 py-2 rounded-md bg-primary text-white disabled:opacity-50">修改密码并退出所有设备</button>
         </form>
       </section>

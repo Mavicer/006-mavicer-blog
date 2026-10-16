@@ -1,6 +1,7 @@
 export interface Env extends Cloudflare.Env {
   CLOUDFLARE_API_TOKEN?: string;
   CLOUDFLARE_ZONE_ID?: string;
+  GITHUB_PUBLISH_TOKEN?: string;
 }
 export type Context = Parameters<PagesFunction<Env>>[0];
 
@@ -30,8 +31,7 @@ export function checkWrite(request: Request): void {
   }
 }
 
-export async function readBody(request: Request): Promise<Record<string, unknown>> {
-  const limit = 16_384;
+export async function readBody(request: Request, limit = 16_384): Promise<Record<string, unknown>> {
   if (Number(request.headers.get("Content-Length")) > limit) throw new HttpError(413, "内容过长");
   const reader = request.body?.getReader();
   if (!reader) throw new HttpError(400, "请求内容不能为空");

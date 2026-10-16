@@ -16,6 +16,7 @@ import Login from "./pages/Login";
 import Account from "./pages/Account";
 import Admin from "./pages/Admin";
 import UserAdmin from "./pages/UserAdmin";
+import ArticleEditor from "./pages/ArticleEditor";
 
 export default function App() {
   const location = useLocation();
@@ -38,6 +39,8 @@ export default function App() {
           <Route path="/register" element={<Login registering />} />
           <Route path="/admin/users" element={<ProtectedRoute requireOwner><UserAdmin /></ProtectedRoute>} />
           <Route path="/account" element={<Account />} />
+          <Route path="/admin/articles/new" element={<ProtectedRoute requireOwner><ArticleEditor /></ProtectedRoute>} />
+          <Route path="/admin/articles/:slug/edit" element={<ProtectedRoute requireOwner><ArticleEditor /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute requireOwner><Admin /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

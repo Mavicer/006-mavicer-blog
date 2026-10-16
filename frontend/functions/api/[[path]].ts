@@ -23,6 +23,7 @@ import staticPostSlugs from "../../generated/static-post-slugs.json";
 import staticPostCatalog from "../../generated/static-posts.json";
 import { authRoute, currentUser, requireUser, type User } from "../../server/auth";
 import { ensureAccounts } from "../../server/schema";
+import { publishingRoute } from "../../server/publishing";
 import { checkWrite, HttpError, json, readBody, rateLimit, type Context as ApiContext } from "../../server/http";
 
 const staticPosts = new Set(staticPostSlugs);
@@ -56,6 +57,8 @@ export const onRequest: PagesFunction<import("../../server/http").Env> = async (
 
     const auth = await authRoute(ctx, path);
     if (auth) return auth;
+    const publishing = await publishingRoute(ctx, path);
+    if (publishing) return publishing;
     if (path === "me/favorites" && method === "GET") return await myFavorites(ctx);
     if (path === "posts" && method === "GET") {
       return await listPosts(ctx);
@@ -412,7 +415,7 @@ async function myFavorites(ctx: ApiContext): Promise<Response> {
     LEFT JOIN post p ON p.slug = f.post_slug WHERE f.user_id = ? ORDER BY f.created_at DESC LIMIT 500`)
     .bind(user.id).all<PostRow & { post_slug: string }>();
   const catalog = new Map(staticPostCatalog.map((p) => [p.slug, p]));
-  return json(results.flatMap((row) => {
+  return json(results.flatMap<Record<string, unknown>>((row) => {
     const local = catalog.get(row.post_slug);
     if (local) return [local];
     return row.published ? [{ ...postOut(row), published: true, sortOrder: row.sort_order }] : [];
