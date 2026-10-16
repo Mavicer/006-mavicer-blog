@@ -127,7 +127,9 @@ export function clearSession() {
   verifiedUser = null;
   // Retire frontend-only identities and legacy bearer tokens. These are never
   // accepted as proof of login by the server.
-  for (const key of ["MAVICER_TOKEN", "MAVICER_USER", "MAVICER_SESSION", "MAVICER_USERS"]) localStorage.removeItem(key);
+  try {
+    for (const key of ["MAVICER_TOKEN", "MAVICER_USER", "MAVICER_SESSION", "MAVICER_USERS"]) localStorage.removeItem(key);
+  } catch { /* Cookie sessions do not depend on browser localStorage. */ }
 }
 export async function logout() {
   await request("/auth/logout", { method: "POST", body: "{}" });
@@ -143,16 +145,15 @@ export async function resetUserPassword(id: string, current_password: string): P
 }
 
 // ---- Stable anonymous browser identifier (UX only, not security) ----
+let memoryClientId = "";
 function onlineClientId(): string {
+  if (memoryClientId) return memoryClientId;
   const key = "MAVICER_ONLINE_CLIENT_ID";
-  let v: string = localStorage.getItem(key) || "";
-  if (!v) {
-    v =
-      (window.crypto as any)?.randomUUID?.() ||
-      `client-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    localStorage.setItem(key, v);
-  }
-  return v;
+  try { memoryClientId = localStorage.getItem(key) || ""; } catch { /* blocked storage */ }
+  if (memoryClientId && memoryClientId.length <= 120) return memoryClientId;
+  memoryClientId = crypto.randomUUID();
+  try { localStorage.setItem(key, memoryClientId); } catch { /* Keep this tab's identifier in memory. */ }
+  return memoryClientId;
 }
 
 export function clientId(): string {
