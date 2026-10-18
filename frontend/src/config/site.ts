@@ -10,26 +10,28 @@ export const site = {
   copyrightYear: 2026,
   about: {
     name: "Leon Kong",
-    role: "Undergraduate Student, Artificial Intelligence",
+    role: "Undergraduate Student in Artificial Intelligence",
     school: "Nanjing University of Aeronautics and Astronautics",
     location: "Nanjing, China",
     email: "leonkong0810@gmail.com",
     qq: "2096014086@qq.com",
     wechat: "Ks2008810",
     github: "https://github.com/Mavicer",
-    bio: `I am an AI undergraduate student and independent developer who enjoys building things with emerging technologies.
+    bio: `I'm an undergraduate student majoring in Artificial Intelligence at Nanjing University of Aeronautics and Astronautics, with a strong interest in software development and emerging technologies.
 
-My focus is on AI-native applications, full-stack development, and intelligent systems. I am fascinated by how large language models can reshape software creation, productivity, and human-computer interaction.
+I enjoy exploring how AI can be integrated into real-world applications, particularly through large language models, intelligent agents, and computer vision.
 
-I learn by building — from AI tools and web applications to experimental systems — continuously exploring new ways to turn ideas into reality`,
+Beyond AI, I'm also interested in full-stack development, algorithms, and mathematical modeling.
+
+I believe the best way to learn is by building. Through personal projects and continuous experimentation, I'm gradually strengthening my foundations in programming, mathematics, and engineering while exploring new ideas and possibilities.`,
     profile: [
-      "AI-native software development",
+      "Artificial intelligence & practical applications",
       "Large language models & AI agents",
-      "Full-stack engineering and modern web architecture",
-      "AI-powered products and developer tools",
-      "Algorithms and problem solving",
+      "Computer vision & intelligent systems",
+      "Full-stack development & software engineering",
+      "Mathematical modeling & algorithmic problem solving",
       "Creative technology, photography & music production",
-      "Fitness, strength training and sports",
+      "Calisthenics, strength training & sports",
     ],
   },
 };
