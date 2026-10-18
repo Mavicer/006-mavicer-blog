@@ -15,12 +15,19 @@ export function MobileProfileCard() {
   return (
     <div className="mobile-profile-card mb-6">
       <div className="flex items-center gap-4">
-        <img
-          src="/images/avatar.jpg"
-          alt="avatar"
-          loading="lazy"
-          className="w-14 h-14 rounded-full object-cover shrink-0"
-        />
+        <Link
+          to="/about"
+          aria-label="查看个人简介"
+          title="查看个人简介"
+          className="block shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        >
+          <img
+            src="/images/avatar.jpg"
+            alt="avatar"
+            loading="lazy"
+            className="w-14 h-14 rounded-full object-cover shrink-0"
+          />
+        </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
             <span className="text-base font-semibold text-first-text truncate">

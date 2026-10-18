@@ -28,12 +28,19 @@ export function Sidebar() {
 
         <div className="sidebar-content">
           <div className="avatar flex justify-center">
-            <img
-              src="/images/avatar.jpg"
-              alt="avatar"
-              loading="lazy"
-              className="w-[110px] h-[110px] rounded-full object-cover"
-            />
+            <Link
+              to="/about"
+              aria-label="查看个人简介"
+              title="查看个人简介"
+              className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              <img
+                src="/images/avatar.jpg"
+                alt="avatar"
+                loading="lazy"
+                className="w-[110px] h-[110px] rounded-full object-cover"
+              />
+            </Link>
           </div>
           <div className="author flex flex-col justify-center my-2.5 mx-0">
             <div className="name text-center text-lg font-semibold text-first-text">
