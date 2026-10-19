@@ -12,49 +12,90 @@ type Repo = {
   updated_at: string;
 };
 
+
+// Names verified against the public GitHub profile on 2026-10-19.
+// Do not invent stars, languages or timestamps when live data is unavailable.
+const KNOWN_PROJECTS = ["007-visuallab", "006-mavicer-blog", "005-nexus", "003-travel-website"];
+
+function isRepoList(value: unknown): value is Repo[] {
+  return Array.isArray(value) && value.every((repo) =>
+    repo && typeof repo.name === "string" &&
+    typeof repo.html_url === "string" && repo.html_url.startsWith("https://github.com/Mavicer/") &&
+    (repo.description === null || typeof repo.description === "string") &&
+    (repo.language === null || typeof repo.language === "string") &&
+    typeof repo.stars === "number" && typeof repo.forks === "number" &&
+    typeof repo.updated_at === "string" && Array.isArray(repo.topics) &&
+    repo.topics.every((topic: unknown) => typeof topic === "string"));
+}
+
 export default function Projects() {
   const [repos, setRepos] = useState<Repo[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
-    fetch("https://api.github.com/users/Mavicer/repos?sort=updated&per_page=20")
-      .then((r) => r.json())
-      .then((data: any[]) => {
-        const list: Repo[] = (data || [])
-          .filter((r) => !r.fork)
-          .map((r) => ({
-            name: r.name,
-            description: r.description,
-            html_url: r.html_url,
-            language: r.language,
-            stars: r.stargazers_count || 0,
-            forks: r.forks_count || 0,
-            topics: r.topics || [],
-            updated_at: r.updated_at,
-          }))
-          .sort((a, b) => {
-          // Sort by leading number prefix (e.g. "003-xxx" → 3), descending.
-          const numA = parseInt(a.name.match(/^(\d+)/)?.[1] || "0", 10);
-          const numB = parseInt(b.name.match(/^(\d+)/)?.[1] || "0", 10);
-          return numB - numA;
-        });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    let active = true;
+    setLoading(true);
+    setError("");
+    // Storage is optional: blocked storage must never prevent loading projects.
+    try {
+      const cached = JSON.parse(localStorage.getItem("mavicer-projects-v1") || "null");
+      if (isRepoList(cached)) setRepos(cached);
+    } catch { /* Ignore unavailable or corrupted browser storage. */ }
+
+    fetch("/api/projects", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data: unknown = await response.json();
+        if (!isRepoList(data)) throw new Error("Invalid project response");
+        if (!active) return;
+        const list = [...data].sort((a, b) =>
+          parseInt(b.name.match(/^(\d+)/)?.[1] || "0", 10) -
+          parseInt(a.name.match(/^(\d+)/)?.[1] || "0", 10));
         setRepos(list);
-        setLoading(false);
+        try { localStorage.setItem("mavicer-projects-v1", JSON.stringify(list)); }
+        catch { /* The current response is still usable without persistence. */ }
       })
-      .catch(() => setLoading(false));
-  }, []);
+      .catch(() => {
+        if (active) setError("项目列表暂时无法更新，以下保留已知项目，统计信息可能不是最新。");
+      })
+      .finally(() => {
+        clearTimeout(timeout);
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [attempt]);
 
   return (
     <PageShell>
       <div className="article-content-container">
         <h1 className="text-4xl font-bold mb-2 text-first-text">Projects</h1>
         <p className="text-third-text mb-8">
-          GitHub Repositories — 从 <a href="https://github.com/Mavicer" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">@Mavicer</a> 实时拉取。
+          GitHub Repositories — 从 <a href="https://github.com/Mavicer" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">@Mavicer</a> 定期更新。
         </p>
 
+        {error && (
+          <div role="status" className="text-third-text mb-6">
+            <p>{error}</p>
+            <button type="button" onClick={() => setAttempt((value) => value + 1)} className="text-primary underline mt-2">重试</button>
+            {repos.length === 0 && (
+              <ul className="mt-4 space-y-2">
+                {KNOWN_PROJECTS.map((name) => <li key={name}><a className="text-primary hover:underline" href={`https://github.com/Mavicer/${name}`} target="_blank" rel="noopener noreferrer">{name}</a></li>)}
+              </ul>
+            )}
+          </div>
+        )}
         {loading ? (
           <p className="text-third-text py-10 text-center">正在加载项目列表...</p>
-        ) : repos.length === 0 ? (
+        ) : error && repos.length === 0 ? null : repos.length === 0 ? (
           <p className="text-third-text py-10 text-center">暂无公开仓库。</p>
         ) : (
           <div className="flex flex-col gap-4">
