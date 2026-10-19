@@ -127,7 +127,7 @@ export default function PostDetail() {
 
   if (loading) {
     return (
-      <div className="main-content-container !pt-[140px]">
+      <div className="main-content-container article-reading-page !pt-[140px]">
         <div className="text-center text-third-text py-20">正在加载文章</div>
       </div>
     );
@@ -147,7 +147,7 @@ export default function PostDetail() {
   }
 
   return (
-    <div className="main-content-container !pt-[140px]">
+    <div className="main-content-container article-reading-page !pt-[140px]">
       <motion.div
         className="main-content-body flex flex-row flex-wrap justify-center"
         initial={{ opacity: 0 }}
@@ -156,7 +156,7 @@ export default function PostDetail() {
       >
         {toc.length > 1 && (
           <aside className="hidden lg:block w-[210px] ml-[38px] sticky top-[90px] self-start">
-            <div className="p-4 rounded-redefine shadow-redefine-flat bg-background">
+            <div className="article-reading-toc p-4 rounded-redefine shadow-redefine-flat bg-background">
               <div className="text-xs font-semibold uppercase text-third-text mb-3">
                 目录
               </div>
@@ -178,7 +178,7 @@ export default function PostDetail() {
 
         <div className="main-content max-w-[760px]">
           <div className="home-content-container">
-            <article className="article-content-container">
+            <article className="article-content-container article-reading-card">
               <h1 className="article-title">{post.title}</h1>
               {user?.is_owner && <div className="flex justify-end mb-4"><Link className="text-primary font-bold" to={`/admin/articles/${encodeURIComponent(slug)}/edit`}>编辑文章</Link></div>}
 
