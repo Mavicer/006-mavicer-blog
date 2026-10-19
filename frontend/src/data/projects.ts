@@ -32,12 +32,12 @@ export const projects: Project[] = [
   {
     repo: "006-mavicer-blog", name: "Mavicer's Blog", number: "006", category: "PERSONAL BLOG",
     summary: "用一个持续生长的网站，沉淀技术实践与个人思考。",
-    image: "/images/projects/blog-article.jpg", imageAlt: "Mavicer 博客真实文章页：淡化山景与乳白毛玻璃正文卡片",
-    caption: "文章阅读页 · 真实页面截图", website: "https://mavicer.cc",
+    image: "/images/projects/blog-home.jpg", imageAlt: "Mavicer 博客真实首页：山景背景、站点标题与首页导航",
+    caption: "博客首页 · 真实页面截图", website: "https://mavicer.cc",
     tags: ["React", "TypeScript", "Cloudflare"],
     story: "把写作、发布和作品展示放进同一个长期维护的个人空间，让每一次学习都能留下可以回看的记录。",
     highlights: ["Markdown 文章与在线编辑发布", "账号、评论与收藏形成阅读互动", "浅深主题与专注阅读的毛玻璃文章页"],
-    note: "封面为公开文章页截图；网站内容与界面会随持续更新而变化。",
+    note: "封面为公开首页截图；网站内容与界面会随持续更新而变化。",
   },
   {
     repo: "005-nexus", name: "Nexus", number: "005", category: "STUDENT PLATFORM",
