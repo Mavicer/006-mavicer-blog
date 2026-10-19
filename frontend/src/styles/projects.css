@@ -1,0 +1,91 @@
+/* The gallery owns its layout without changing PageShell's other consumers. */
+.projects-page .main-content-body { width: min(1120px, 100%); margin-inline: auto; padding-inline: 24px; }
+.projects-page .home-content-container { margin: 0; }
+.projects-header { padding: 30px 0 36px; }
+.projects-eyebrow { color: var(--primary-color); letter-spacing: .16em; font-size: .7rem; font-weight: 600; margin: 0 0 12px; }
+.projects-header h1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 22px; color: var(--first-text-color); font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 700; line-height: 1.3; margin: 0; }
+.projects-header h1 span { font-size: 1.05rem; font-weight: 400; color: var(--third-text-color); }
+.projects-intro { max-width: 650px; color: var(--third-text-color); font-size: .9rem; margin: 16px 0; }
+.projects-github { display: inline-flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--third-text-color); }
+.projects-github:hover { color: var(--primary-color); }
+.projects-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+.project-work { min-width: 0; overflow: hidden; border: 1px solid var(--border-color); border-radius: 20px; background: var(--background-color); transition: box-shadow .2s ease; }
+.project-work:hover { box-shadow: var(--redefine-box-shadow); }
+.project-media { width: 100%; aspect-ratio: 16 / 10; position: relative; display: block; overflow: hidden; background: var(--third-background-color); border: 0; padding: 0; cursor: pointer; text-align: left; }
+.project-shot { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s ease; }
+.project-shot-contain { object-fit: contain; background: #2b2924; }
+.project-media:hover .project-shot { transform: scale(1.025); }
+.project-preview-label, .project-featured { position: absolute; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; padding: 7px 10px; font-size: .7rem; color: #fff; background: rgba(25, 28, 31, .82); }
+.project-preview-label { right: 14px; bottom: 14px; }
+.project-featured { left: 14px; top: 14px; }
+.project-copy { padding: 22px 24px 18px; }
+.project-kicker { margin: 0 0 6px; color: var(--third-text-color); font-size: .7rem; letter-spacing: .09em; }
+.project-copy h2 { font-size: 1.4rem; font-weight: 650; line-height: 1.4; color: var(--first-text-color); margin: 0; }
+.project-summary { margin: 8px 0 14px; font-size: .86rem; color: var(--third-text-color); min-height: 2.92em; }
+.project-tags { padding: 0; margin: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.project-tags li { font-size: .68rem; color: var(--third-text-color); background: var(--third-background-color); border-radius: 6px; padding: 3px 8px; }
+.project-actions { margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.project-actions button, .project-actions a { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; }
+.project-actions a { color: var(--third-text-color); }
+.project-actions a:hover { color: var(--primary-color); }
+.project-actions > div { display: flex; gap: 18px; }
+.project-detail-link { color: var(--primary-color); padding: 4px 0; background: none; border: 0; cursor: pointer; font-weight: 600; }
+.project-caption { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid var(--border-color); margin-top: 18px; padding-top: 12px; font-size: .7rem; color: var(--third-text-color); }
+.project-live-stat { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.projects-sync { margin: 24px 0 40px; display: flex; gap: 12px; flex-wrap: wrap; color: var(--third-text-color); font-size: .75rem; }
+.projects-sync button { text-decoration: underline; color: var(--primary-color); }
+.projects-sync button:disabled { opacity: .6; }
+.projects-more { margin-bottom: 40px; }
+.projects-more h2 { font-size: 1.1rem; margin-bottom: 12px; }
+.projects-more a { display: flex; align-items: center; gap: 8px; padding: 8px 0; color: var(--third-text-color); overflow-wrap: anywhere; }
+/* An explicitly labelled product-flow illustration, never a fabricated UI screenshot. */
+.nexus-cover { height: 100%; width: 100%; display: flex; flex-direction: column; justify-content: center; padding: 8%; background: #eeeae3; color: #403b38; position: relative; }
+.nexus-wordmark { font-size: clamp(1.5rem, 3vw, 2.8rem); font-weight: 600; letter-spacing: -.04em; }
+.nexus-wordmark > span { display: block; font-size: .78rem; font-weight: 400; letter-spacing: .08em; margin: 3px 0 25px; color: #655d56; }
+.nexus-path { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid #bcb3a8; gap: 10px; }
+.nexus-path > span { font-size: .72rem; padding-top: 12px; }
+.nexus-path small { display: block; color: #7c6b5e; font-size: .7rem; margin-bottom: 4px; }
+.nexus-caption { position: absolute; bottom: 12px; left: 8%; font-size: .7rem; color: #6b625a; }
+.dark .nexus-cover { background: #35332f; color: #ebe5db; }
+.dark .nexus-wordmark > span, .dark .nexus-caption, .dark .nexus-path small { color: #c1b5a6; }
+.dark .nexus-path { border-color: #776d60; }
+/* Native dialog supplies focus containment and Escape dismissal. */
+.project-dialog { color: var(--default-text-color); background: var(--background-color); width: min(880px, calc(100% - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 0; border: 1px solid var(--border-color); border-radius: 20px; overscroll-behavior: contain; }
+.project-dialog::backdrop { background: rgba(15, 20, 26, .66); }
+.project-dialog-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 20px; color: var(--third-text-color); background: var(--background-color); font-size: .7rem; position: sticky; top: 0; z-index: 1; }
+.project-dialog-header button { min-width: 44px; min-height: 44px; display: flex; justify-content: center; align-items: center; border-radius: 8px; }
+.project-dialog-header button:hover { background: var(--third-background-color); }
+.project-dialog-media { aspect-ratio: 16 / 10; background: var(--third-background-color); overflow: hidden; }
+.project-dialog-media .project-shot { object-fit: contain; }
+.project-dialog-copy { padding: 24px 28px 30px; }
+.project-dialog-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+.project-dialog-heading h2 { font-size: 1.7rem; line-height: 1.4; font-weight: 650; margin: 0; color: var(--first-text-color); }
+.project-play { display: inline-flex; align-items: center; gap: 8px; color: var(--primary-color); font-size: .85rem; border: 1px solid var(--border-color); border-radius: 8px; padding: 9px 12px; }
+.project-story { margin: 18px 0 24px; font-size: .94rem; }
+.project-dialog-copy h3 { font-size: .9rem; font-weight: 600; margin-bottom: 10px; }
+.project-highlights { list-style: disc; padding-left: 20px; font-size: .88rem; color: var(--third-text-color); }
+.project-highlights li { margin: 7px 0; }
+.project-note { margin: 22px 0; padding: 14px 16px; font-size: .78rem; color: var(--third-text-color); background: var(--third-background-color); border-radius: 10px; }
+.project-dialog-actions { display: flex; gap: 22px; flex-wrap: wrap; }
+.project-dialog-actions a { display: inline-flex; gap: 6px; align-items: center; color: var(--primary-color); font-size: .85rem; }
+.projects-page button:focus-visible, .projects-page a:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 4px; }
+@media (max-width: 640px) {
+  .projects-page .main-content-body { padding-inline: 18px; }
+  .projects-header { padding-top: 22px; }
+  .projects-header h1 { flex-direction: column; gap: 6px; }
+  .projects-grid { grid-template-columns: 1fr; gap: 22px; }
+  .project-copy { padding: 20px; }
+  .project-summary { min-height: 0; }
+  .nexus-wordmark { font-size: 2rem; }
+  .project-dialog { width: calc(100% - 20px); max-height: calc(100dvh - 24px); border-radius: 14px; }
+  .project-dialog-copy { padding: 20px; }
+  .project-dialog-header { padding: 8px 14px; }
+  .project-dialog-media { aspect-ratio: 16 / 11; }
+}
+@media (pointer: coarse) {
+  .project-actions button, .project-actions a, .project-dialog-actions a, .projects-sync button { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .project-shot, .project-work { transition: none; }
+  .project-media:hover .project-shot { transform: none; }
+}
