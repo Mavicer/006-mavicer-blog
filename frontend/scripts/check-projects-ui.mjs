@@ -1,6 +1,7 @@
 /** Run after npm run build. Uses installed Chrome; override PLAYWRIGHT_CHANNEL if needed. */
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from 'playwright';
 
@@ -30,16 +31,27 @@ try {
   await page.getByText('GitHub 统计暂时无法更新，作品展示与访问不受影响。', { exact: true }).waitFor();
   assert.equal(await page.locator('.project-work').count(), 4, 'Outage keeps all four works visible');
   await page.locator('.project-media img').evaluateAll(images => Promise.all(images.map(image => image.decode())));
-  assert.equal(gifRequests, 0, 'No animation downloads before explicit play');
+  const gif = readFileSync(new URL('../public/images/projects/visuallab-demo.gif', import.meta.url));
+  const loop = gif.indexOf(Buffer.from('NETSCAPE2.0'));
+  assert.ok(loop >= 0 && gif.readUInt16LE(loop + 13) === 0, 'Demo asset repeats indefinitely');
+  await page.waitForFunction(() => document.querySelector('.project-media img')?.getAttribute('src')?.endsWith('visuallab-demo.gif'));
+  assert.ok(gifRequests >= 1, 'Visible cover starts the looping demo');
+  await page.getByRole('button', { name: '暂停 VisualLab 循环演示', exact: true }).click();
+  assert.ok((await page.locator('.project-media img').first().getAttribute('src')).endsWith('visuallab-poster.jpg'));
+  await page.getByRole('button', { name: '播放 VisualLab 循环演示', exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('.project-media img')?.getAttribute('src')?.endsWith('visuallab-demo.gif'));
+  const nexus = page.locator('.project-work').filter({ has: page.getByRole('heading', { name: 'Nexus', exact: true }) });
+  assert.ok((await nexus.locator('img').getAttribute('src')).endsWith('nexus-home.png'));
   const trigger = page.getByRole('button', { name: '查看 VisualLab 项目', exact: true });
   await trigger.click();
   await page.getByRole('dialog').waitFor();
   assert.equal(await page.getByRole('button', { name: '关闭项目详情' }).evaluate(el => el === document.activeElement), true);
-  assert.equal(gifRequests, 0, 'Opening details shows a static poster');
+  assert.ok((await page.locator('dialog img').getAttribute('src')).endsWith('visuallab-poster.jpg'), 'Details start with a static poster');
+  assert.ok((await page.locator('.project-media img').first().getAttribute('src')).endsWith('visuallab-poster.jpg'), 'Background animation pauses while details are open');
   assert.match(await page.getByRole('dialog').innerText(), /不代表模型准确率/);
   await page.getByRole('button', { name: '播放拖尾演示' }).click();
   await page.locator('dialog img').evaluate(image => image.decode());
-  assert.equal(gifRequests, 1, 'Explicit play loads the actual demo');
+  assert.ok((await page.locator('dialog img').getAttribute('src')).endsWith('visuallab-demo.gif'), 'Explicit play runs the actual demo');
   await page.getByRole('button', { name: '停止演示' }).click();
   assert.ok((await page.locator('dialog img').getAttribute('src')).endsWith('visuallab-poster.jpg'));
   await page.keyboard.press('Escape');
@@ -67,6 +79,14 @@ try {
     assert.ok(await page.locator('dialog').evaluate(el => el.scrollWidth <= el.clientWidth), `Dialog fits ${width}px`);
     await page.keyboard.press('Escape');
   }
+  const quiet = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 1080 } });
+  const quietPage = await quiet.newPage();
+  await quietPage.goto(base + '/projects');
+  await quietPage.getByRole('button', { name: '播放 VisualLab 循环演示', exact: true }).waitFor();
+  assert.ok((await quietPage.locator('.project-media img').first().getAttribute('src')).endsWith('visuallab-poster.jpg'), 'Reduced motion defaults to a still');
+  await quietPage.getByRole('button', { name: '播放 VisualLab 循环演示', exact: true }).click();
+  await quietPage.waitForFunction(() => document.querySelector('.project-media img')?.getAttribute('src')?.endsWith('visuallab-demo.gif'));
+  await quiet.close();
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.locator('.toggle-tools-list').click();
   await page.locator('.tool-dark-light-toggle').click();
@@ -78,7 +98,7 @@ try {
   await page.waitForURL('**/archives');
   assert.equal(await page.locator('.projects-page').count(), 0);
   await page.waitForFunction(() => document.body.style.overflow !== 'hidden');
-  console.log('Projects UI passed: four works during outage, media decode, manual animation, dialog focus/Escape, retry/cache, new repositories, responsive layouts, dark mode, reduced motion and navigation.');
+  console.log('Projects UI passed: four works during outage, media decode, looping/pause/reduced-motion override, real Nexus screenshot, dialog focus/Escape, retry/cache, new repositories, responsive layouts, dark mode, reduced motion and navigation.');
 } finally {
   await browser?.close();
   server.kill();

@@ -38,17 +38,6 @@
 .projects-more { margin-bottom: 40px; }
 .projects-more h2 { font-size: 1.1rem; margin-bottom: 12px; }
 .projects-more a { display: flex; align-items: center; gap: 8px; padding: 8px 0; color: var(--third-text-color); overflow-wrap: anywhere; }
-/* An explicitly labelled product-flow illustration, never a fabricated UI screenshot. */
-.nexus-cover { height: 100%; width: 100%; display: flex; flex-direction: column; justify-content: center; padding: 8%; background: #eeeae3; color: #403b38; position: relative; }
-.nexus-wordmark { font-size: clamp(1.5rem, 3vw, 2.8rem); font-weight: 600; letter-spacing: -.04em; }
-.nexus-wordmark > span { display: block; font-size: .78rem; font-weight: 400; letter-spacing: .08em; margin: 3px 0 25px; color: #655d56; }
-.nexus-path { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid #bcb3a8; gap: 10px; }
-.nexus-path > span { font-size: .72rem; padding-top: 12px; }
-.nexus-path small { display: block; color: #7c6b5e; font-size: .7rem; margin-bottom: 4px; }
-.nexus-caption { position: absolute; bottom: 12px; left: 8%; font-size: .7rem; color: #6b625a; }
-.dark .nexus-cover { background: #35332f; color: #ebe5db; }
-.dark .nexus-wordmark > span, .dark .nexus-caption, .dark .nexus-path small { color: #c1b5a6; }
-.dark .nexus-path { border-color: #776d60; }
 /* Native dialog supplies focus containment and Escape dismissal. */
 .project-dialog { color: var(--default-text-color); background: var(--background-color); width: min(880px, calc(100% - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 0; border: 1px solid var(--border-color); border-radius: 20px; overscroll-behavior: contain; }
 .project-dialog::backdrop { background: rgba(15, 20, 26, .66); }
@@ -76,7 +65,6 @@
   .projects-grid { grid-template-columns: 1fr; gap: 22px; }
   .project-copy { padding: 20px; }
   .project-summary { min-height: 0; }
-  .nexus-wordmark { font-size: 2rem; }
   .project-dialog { width: calc(100% - 20px); max-height: calc(100dvh - 24px); border-radius: 14px; }
   .project-dialog-copy { padding: 20px; }
   .project-dialog-header { padding: 8px 14px; }
@@ -89,3 +77,7 @@
   .project-shot, .project-work { transition: none; }
   .project-media:hover .project-shot { transform: none; }
 }
+
+.project-actions .project-primary-actions { display: flex; gap: 14px; align-items: center; }
+.project-animation-control { color: var(--third-text-color); cursor: pointer; background: none; border: 0; padding: 4px 0; }
+.project-animation-control:hover { color: var(--primary-color); }

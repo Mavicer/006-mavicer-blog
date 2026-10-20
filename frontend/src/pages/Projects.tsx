@@ -1,24 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, ArrowUpRight, Github, Play, Star, X } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Github, Pause, Play, Star, X } from "lucide-react";
+import { useReducedMotion } from "framer-motion";
 import { PageShell } from "@/components/PageShell";
 import { projects, repoUrl, type Project } from "@/data/projects";
 import { useProjectRepos } from "@/hooks/useProjectRepos";
 import "@/styles/projects.css";
 
 function ProjectMedia({ project, playing = false }: { project: Project; playing?: boolean }) {
-  if (!project.image) {
-    return (
-      <div className="nexus-cover" role="img" aria-label={project.imageAlt}>
-        <span className="nexus-wordmark">Nexus<span>把机会，连接成未来。</span></span>
-        <div className="nexus-path">
-          {["发现机会", "理解价值", "制定计划", "记录成长"].map((step, i) => (
-            <span key={step}><small>0{i + 1}</small>{step}</span>
-          ))}
-        </div>
-        <span className="nexus-caption">产品结构示意</span>
-      </div>
-    );
-  }
   return <img src={playing && project.demo ? project.demo : project.image} alt={project.imageAlt}
     width={project.demo ? 960 : 1280} height={project.demo ? 500 : 800}
     loading="lazy" decoding="async" className={project.demo ? "project-shot project-shot-contain" : "project-shot"} />;
@@ -28,6 +16,22 @@ export default function Projects() {
   const { repos, loading, error, retry } = useProjectRepos();
   const [selected, setSelected] = useState<Project | null>(null);
   const [playing, setPlaying] = useState(false);
+  const reducedMotion = useReducedMotion();
+  // A manual choice overrides the system default; otherwise respect reduced motion.
+  const [demoPreference, setDemoPreference] = useState<boolean | null>(null);
+  const [demoVisible, setDemoVisible] = useState(false);
+  const [tabVisible, setTabVisible] = useState(() => document.visibilityState === "visible");
+  const demoCover = useRef<HTMLButtonElement>(null);
+  const loopEnabled = demoPreference ?? !reducedMotion;
+  const demoPlaying = loopEnabled && demoVisible && tabVisible && !selected;
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => setDemoVisible(entry.isIntersecting), { threshold: 0.1 });
+    if (demoCover.current) observer.observe(demoCover.current);
+    const onVisibility = () => setTabVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => { observer.disconnect(); document.removeEventListener("visibilitychange", onVisibility); };
+  }, []);
   const dialog = useRef<HTMLDialogElement>(null);
   const extraRepos = repos.filter(repo => !projects.some(project => project.repo === repo.name));
 
@@ -61,9 +65,9 @@ export default function Projects() {
             const repo = repos.find(repo => repo.name === project.repo);
             return (
               <article className="project-work" key={project.repo}>
-                <button className="project-media" onClick={() => open(project)} aria-label={`查看 ${project.name} 项目`}>
-                  <ProjectMedia project={project} />
-                  <span className="project-preview-label">{project.demo ? <Play size={14} aria-hidden="true" /> : <ArrowUpRight size={15} aria-hidden="true" />}{project.demo ? "观看演示" : "查看项目"}</span>
+                <button ref={project.demo ? demoCover : undefined} className="project-media" onClick={() => open(project)} aria-label={`查看 ${project.name} 项目`}>
+                  <ProjectMedia project={project} playing={Boolean(project.demo && demoPlaying)} />
+                  <span className="project-preview-label">{project.demo ? <Play size={14} aria-hidden="true" /> : <ArrowUpRight size={15} aria-hidden="true" />}{project.demo ? (demoPlaying ? "循环演示" : "查看演示") : "查看项目"}</span>
                   {index === 0 && <span className="project-featured">精选实验</span>}
                 </button>
                 <div className="project-copy">
@@ -72,7 +76,8 @@ export default function Projects() {
                   <p className="project-summary">{project.summary}</p>
                   <ul className="project-tags" aria-label={`${project.name} 技术栈`}>{project.tags.map(tag => <li key={tag}>{tag}</li>)}</ul>
                   <div className="project-actions">
-                    <button onClick={() => open(project)} className="project-detail-link">了解项目 <ArrowRight size={15} aria-hidden="true" /></button>
+                    <div className="project-primary-actions"><button onClick={() => open(project)} className="project-detail-link">了解项目 <ArrowRight size={15} aria-hidden="true" /></button>
+                      {project.demo && <button type="button" className="project-animation-control" onClick={() => setDemoPreference(!loopEnabled)} aria-pressed={loopEnabled} aria-label={loopEnabled ? "暂停 VisualLab 循环演示" : "播放 VisualLab 循环演示"}>{loopEnabled ? <Pause size={14} aria-hidden="true" /> : <Play size={14} aria-hidden="true" />}{loopEnabled ? "暂停" : "播放"}</button>}</div>
                     <div>{project.website && <a href={project.website} target="_blank" rel="noopener noreferrer" aria-label={`访问 ${project.name} 网站`}>体验 <ArrowUpRight size={14} aria-hidden="true" /></a>}<a href={repoUrl(project.repo)} target="_blank" rel="noopener noreferrer" aria-label={`${project.name} 源码`}><Github size={15} aria-hidden="true" /> 源码</a></div>
                   </div>
                   <div className="project-caption"><span>{project.caption}</span>{repo && <span className="project-live-stat"><Star size={12} aria-hidden="true" />{repo.stars}<span className="sr-only"> Stars</span></span>}</div>

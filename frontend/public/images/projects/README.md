@@ -6,4 +6,4 @@
 - `visuallab-poster.jpg`: still captured from that demo.
 
 The VisualLab demo uses synthetic observations. It is not camera footage or model accuracy evidence. No local captures, model weights, personal accounts or unpublished screenshots are included.
-Nexus uses a code-rendered product-flow illustration, explicitly labelled as a diagram rather than a product screenshot.
+`nexus-home.png`: actual home page captured from an isolated local instance of 005_nexus at http://127.0.0.1:5195 on 2026-10-19. The app uses its original page code and repository seed data in a disposable PostgreSQL database. No private database, login or personal account is used. Only the Next.js development indicator was hidden for capture.

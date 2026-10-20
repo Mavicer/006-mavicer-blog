@@ -127,6 +127,6 @@ GitHub 提交成功不代表上线；Cloudflare 失败时保留提交链接与�
 ## Projects 作品展廊
 
 - 编辑 `frontend/src/data/projects.ts` 维护项目介绍、技术标签与体验地址；不要把未提供的功能写成已上线成果。
-- 封面与按需加载的演示位于 `frontend/public/images/projects/`，来源记录见该目录 README。VisualLab 动画使用合成观测点，Nexus 封面是产品结构示意。
+- 封面与按需加载的演示位于 `frontend/public/images/projects/`，来源记录见该目录 README。VisualLab 动画使用合成观测点，卡片进入视口时循环播放，可手动暂停并遵循系统减少动态效果设置。Nexus 封面为本地运行并加载项目演示数据后的真实首页截图。
 - `/api/projects` 继续提供缓存后的 GitHub 统计。作品资料独立于接口，失败时仍可浏览；新增公开仓库会显示在「更多公开仓库」。
 - 验证：先在 `frontend/` 执行 `npm run build`，再执行 `npm run test:projects-ui`。浏览器回归使用本机 Chrome，自动在 `127.0.0.1:5191` 启停预览；可通过 `PLAYWRIGHT_CHANNEL` 更换已安装浏览器通道。

@@ -7,7 +7,7 @@ export type Project = {
   number: string;
   category: string;
   summary: string;
-  image?: string;
+  image: string;
   imageAlt: string;
   caption: string;
   demo?: string;
@@ -42,12 +42,12 @@ export const projects: Project[] = [
   {
     repo: "005-nexus", name: "Nexus", number: "005", category: "STUDENT PLATFORM",
     summary: "发现机会、理解价值，把大学阶段的选择连接起来。",
-    imageAlt: "Nexus 产品结构示意：发现机会、理解价值、制定计划、记录成长",
-    caption: "大学生成长平台 · 产品结构示意",
+    image: "/images/projects/nexus-home.png", imageAlt: "Nexus 本地运行的真实首页：信息搜索、热门机会与竞赛卡片",
+    caption: "本地首页 · 真实页面截图",
     tags: ["Next.js", "TypeScript", "PostgreSQL"],
     story: "围绕大学生活中的信息差，探索可靠的信息检索与个人成长平台，逐步连接竞赛、科研和发展机会。",
     highlights: ["以竞赛信息检索作为 MVP 切入点", "关注来源可信度与搜索效率", "向计划管理和成长记录延伸的产品方向"],
-    note: "当前未提供公开在线体验。封面为产品方向示意，不是已上线功能截图；具体实现进度以仓库为准。",
+    note: "封面为项目本地运行的真实首页，使用项目自带的演示数据，不含个人账号。当前未提供公开在线体验；具体实现进度以仓库为准。",
   },
   {
     repo: "003-travel-website", name: "Wanderful", number: "003", category: "TRAVEL & WEB",
