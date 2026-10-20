@@ -55,8 +55,7 @@ export default function Projects() {
       <PageShell showSidebar={false}>
         <header className="projects-header">
           <p className="projects-eyebrow">LEARNING BY BUILDING</p>
-          <h1>Projects<span>把想法，做成作品。</span></h1>
-          <p className="projects-intro">从第一个网站，到本地视觉实验。这里记录可以看见的成果，也留下持续探索的过程。</p>
+          <h1>Projects</h1>
           <a href="https://github.com/Mavicer" target="_blank" rel="noopener noreferrer" className="projects-github"><Github size={16} aria-hidden="true" /> GitHub / Mavicer <ArrowUpRight size={15} aria-hidden="true" /></a>
         </header>
 
