@@ -8,7 +8,7 @@ export const password = "test-password-only-2026";
 const slug = "outside-the-classroom";
 const post = (route) => `/posts/${slug}/${route}`;
 
-export function fixture({ legacy = false, failMigration = false, env = {} } = {}) {
+export function fixture({ legacy = false, failMigration = false, env = {}, origin = "https://example.test" } = {}) {
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec(readFileSync(new URL("../../../backend-worker/schema.sql", import.meta.url), "utf8"));
   if (legacy) sqlite.exec(`INSERT INTO comment (post_slug, body, author_name, client_id) VALUES ('${slug}', '历史评论', '旧访客', 'known-client'); INSERT INTO favorite (post_slug, client_id) VALUES ('${slug}', 'known-client');`);
@@ -31,8 +31,8 @@ export function fixture({ legacy = false, failMigration = false, env = {} } = {}
     },
   };
   async function request(path, { method = "GET", body, cookie = "", headers = {} } = {}) {
-    const response = await onRequest({ request: new Request(`https://example.test/api${path}`, {
-      method, headers: { Cookie: cookie, ...(method !== "GET" ? { "Content-Type": "application/json", Origin: "https://example.test" } : {}), ...headers },
+    const response = await onRequest({ request: new Request(`${origin}/api${path}`, {
+      method, headers: { Cookie: cookie, ...(method !== "GET" ? { "Content-Type": "application/json", Origin: origin } : {}), ...headers },
       ...(method !== "GET" ? { body: typeof body === "string" ? body : JSON.stringify(body || {}) } : {}),
     }), env: { DB, ...env } });
     return { status: response.status, data: await response.json(), cookie: response.headers.get("Set-Cookie")?.split(";")[0] || "", headers: response.headers };

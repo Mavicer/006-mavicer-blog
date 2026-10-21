@@ -263,11 +263,17 @@ export async function trackPageView(path: string, postSlug?: string) {
   }
 }
 
-// ---- Visits (Cloudflare Analytics API via Pages Function, 5min cache) ----
-// Lifetime page views via archive+delta: a frozen base (site PV as of an
-// anchor date) plus the live pageViews fetched from Cloudflare since. Only PV
-// is surfaced — unique visitors can't be summed across periods on this plan.
-export type VisitStats = { pv: number };
+// ---- First-party visits and recent active browsers ----
+export type VisitStats = { pv: number; online: number };
 export async function getVisits(): Promise<VisitStats> {
-  return request("/visits");
+  return validateVisits(await request("/visits"));
+}
+export async function reportVisit(event: { kind: "start" | "pageview" | "heartbeat"; path: string; event_id?: string }): Promise<VisitStats> {
+  return validateVisits(await request("/visits", { method: "POST", body: JSON.stringify(event) }));
+}
+function validateVisits(value: unknown): VisitStats {
+  const data = value as Partial<VisitStats> | null;
+  if (!data || !Number.isSafeInteger(data.pv) || Number(data.pv) < 650 ||
+      !Number.isSafeInteger(data.online) || Number(data.online) < 0) throw new Error("访问统计暂时不可用");
+  return { pv: Number(data.pv), online: Number(data.online) };
 }
