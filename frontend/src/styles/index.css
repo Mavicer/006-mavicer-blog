@@ -776,13 +776,15 @@ a:hover {
     gap: 0.25rem 1rem;
   }
   @media (min-width: 1024px) {
-    .footer .footer-powered {
+    .footer .footer-visits {
       position: absolute;
+      width: auto;
       left: 20px;
       top: 50%;
       transform: translateY(-50%);
       text-align: left;
       flex-direction: column;
+      align-items: flex-start;
       gap: 0.1rem;
     }
   }
@@ -1699,7 +1701,6 @@ a:hover {
   .footer {
     font-size: 0.85rem;
   }
-  .footer .footer-powered,
   .footer .footer-runtime,
   .footer .footer-visits {
     font-size: 0.8rem;

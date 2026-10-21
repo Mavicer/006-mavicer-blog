@@ -13,10 +13,9 @@
  *   GET    /posts/:slug/interactions?client_id=
  *   POST   /posts/:slug/like                body: { client_id }
  *   PUT/DELETE /posts/:slug/favorite       (session required)
- *   GET    /visits                            → { pv, uv } (Cloudflare Analytics API, 5min D1 cache)
+ *   GET/POST /visits                          → { pv, online } (first-party D1 counter)
  *
  * D1 binding: env.DB.
- * Visits: env.CLOUDFLARE_API_TOKEN + env.CLOUDFLARE_ZONE_ID (Pages env vars).
  */
 
 import staticPostSlugs from "../../generated/static-post-slugs.json";
@@ -25,6 +24,7 @@ import { authRoute, currentUser, requireUser, type User } from "../../server/aut
 import { ensureAccounts } from "../../server/schema";
 import { publishingRoute } from "../../server/publishing";
 import { checkWrite, HttpError, json, readBody, rateLimit, type Context as ApiContext } from "../../server/http";
+import { visitsRoute } from "../../server/visits";
 
 const staticPosts = new Set(staticPostSlugs);
 
@@ -48,11 +48,12 @@ export const onRequest: PagesFunction<import("../../server/http").Env> = async (
     await ensureAccounts(ctx);
     if (method === "OPTIONS") return new Response(null, { status: 204 });
     if (path === "health" && method === "GET") return json({ ok: true });
+    if (path === "visits") return await visitsRoute(ctx);
 
-    // The older visits migration is independent of the accounts schema.
+    // Legacy comment indexes are independent of the accounts schema.
     if (!migrated) {
       try { await migrateCommentTable(ctx); migrated = true; }
-      catch { /* The visits route can retry on the next request. */ }
+      catch { /* Retry the legacy migration on the next request. */ }
     }
 
     const auth = await authRoute(ctx, path);
@@ -90,9 +91,6 @@ export const onRequest: PagesFunction<import("../../server/http").Env> = async (
     const fav = path.match(/^posts\/([^/]+)\/favorite$/);
     if (fav && ["POST", "PUT", "DELETE"].includes(method)) {
       return await saveFavorite(ctx, decodeURIComponent(fav[1]));
-    }
-    if (path === "visits" && method === "GET") {
-      return await getVisits(ctx);
     }
 
     return jsonError(404, "Not Found");
@@ -147,52 +145,7 @@ async function migrateCommentTable(ctx: ApiContext): Promise<void> {
     ctx.env.DB.prepare(
       `CREATE INDEX IF NOT EXISTS idx_fav_slug_client ON favorite(post_slug, client_id)`
     ),
-    ctx.env.DB.prepare(
-      `CREATE TABLE IF NOT EXISTS visits_cache (
-        id INTEGER PRIMARY KEY,
-        pv INTEGER NOT NULL DEFAULT 0,
-        uv INTEGER NOT NULL DEFAULT 0,
-        pv_base INTEGER NOT NULL DEFAULT 0,
-        pv_anchor_date TEXT NOT NULL DEFAULT '',
-        fetched_at TEXT NOT NULL DEFAULT ''
-      )`
-    ),
   ]);
-  // Add archive columns to a pre-existing visits_cache (idempotent). The table
-  // was originally created with only (id, pv, uv, fetched_at); pv_base /
-  // pv_anchor_date power the archive+delta counter and must be backfilled.
-  const vInfo = await ctx.env.DB.prepare(`PRAGMA table_info(visits_cache)`).all<{
-    name: string;
-  }>();
-  const vCols = new Set(vInfo.results.map((r) => r.name));
-  for (const [col, decl] of [
-    ["pv_base", "INTEGER NOT NULL DEFAULT 0"],
-    ["pv_anchor_date", "TEXT NOT NULL DEFAULT ''"],
-  ] as const) {
-    if (!vCols.has(col)) {
-      try {
-        await ctx.env.DB.prepare(
-          `ALTER TABLE visits_cache ADD COLUMN ${col} ${decl}`
-        ).run();
-      } catch {
-        // "duplicate column name" — another isolate beat us to it.
-      }
-    }
-  }
-  // Seed the archive base on the pre-existing cache row. The table predates the
-  // archive+delta counter: the row was written by the old rolling-window logic
-  // with a (bot-inflated) multi-day pageViews total in `pv`, and the ALTER
-  // TABLE above left pv_base=0 / pv_anchor_date=''. Stamp the user-provided
-  // lifetime baseline and invalidate the stale `pv`/`fetched_at` so the next
-  // request recomputes lifetime_pv = base + fresh delta instead of serving the
-  // wrong total. Idempotent: only touches rows still in the un-seeded state.
-  await ctx.env.DB.prepare(
-    `UPDATE visits_cache
-       SET pv_base = ?, pv_anchor_date = ?, pv = 0, fetched_at = ''
-     WHERE id = 1 AND pv_base = 0 AND pv_anchor_date = ''`
-  )
-    .bind(PV_BASE_INITIAL, PV_ANCHOR_DATE)
-    .run();
 }
 
 // ── endpoints ────────────────────────────────────────────────────────
@@ -420,150 +373,4 @@ async function myFavorites(ctx: ApiContext): Promise<Response> {
     if (local) return [local];
     return row.published ? [{ ...postOut(row), published: true, sortOrder: row.sort_order }] : [];
   }));
-}
-
-// ── visits (Cloudflare Analytics API, 5min D1 cache) ──────────────
-
-const VISITS_CACHE_TTL_MIN = 5;
-// Cloudflare Analytics retains ~52w1d1h (1 year) of daily HTTP data on this
-// plan — requesting older data returns a quota error. We only ever query a
-// recent window, so this is a safe, generous cap.
-const CF_LOOKBACK_DAYS = 360;
-const DAY_MS = 86_400_000;
-
-// Archive+delta counter: the site's lifetime page views (as of an anchor
-// date) are frozen as `pv_base` in D1. Each request adds Cloudflare's pageViews
-// for [anchor+1d .. today] on top, giving an unbounded-lifetime count from a
-// source that itself only retains ~1 year.
-//
-//   lifetime_pv = pv_base + Σ pageViews over (anchor_date, today]
-//
-// The anchor advances lazily: whenever we fetch fresh, if the current window
-// would re-count a day already inside `pv_base`, we roll the base forward and
-// re-anchor to yesterday. This keeps the delta window short and monotonic.
-const PV_BASE_INITIAL = 131; // user-provided lifetime PV as of the anchor date
-// Anchor date: the last day INCLUDED in pv_base. Delta starts the day after.
-const PV_ANCHOR_DATE = "2026-08-13";
-
-interface CacheRow {
-  id: number;
-  pv: number;
-  uv: number;
-  pv_base: number;
-  pv_anchor_date: string;
-  fetched_at: string;
-}
-
-async function getVisits(ctx: ApiContext): Promise<Response> {
-  const cacheHeaders = {
-    "Content-Type": "application/json",
-    "Cache-Control": "public, max-age=300",
-  };
-
-  // 1. Check D1 cache (5min TTL).
-  const cached = await ctx.env.DB.prepare(
-    `SELECT pv, uv, pv_base, pv_anchor_date, fetched_at FROM visits_cache WHERE id = 1`
-  ).first<CacheRow>();
-  const fresh =
-    cached &&
-    cached.fetched_at &&
-    new Date(cached.fetched_at).getTime() >
-      Date.now() - VISITS_CACHE_TTL_MIN * 60 * 1000;
-  if (fresh) {
-    return new Response(JSON.stringify({ pv: cached!.pv }), {
-      headers: cacheHeaders,
-    });
-  }
-
-  // 2. Resolve the archive base. If no row exists yet, or the row is still in
-  //    its un-seeded state (pv_base=0 / anchor='' from the ALTER TABLE default
-  //    on a pre-existing row), seed it with the built-in initial values;
-  //    otherwise reuse whatever was persisted.
-  const seededBase = cached && cached.pv_base > 0 ? cached.pv_base : PV_BASE_INITIAL;
-  const seededAnchor =
-    cached && cached.pv_anchor_date ? cached.pv_anchor_date : PV_ANCHOR_DATE;
-  let pvBase = seededBase;
-  let anchorDate = seededAnchor;
-
-  // 3. Fetch recent page views from Cloudflare GraphQL Analytics API.
-  const token = ctx.env.CLOUDFLARE_API_TOKEN;
-  const zoneId = ctx.env.CLOUDFLARE_ZONE_ID;
-  if (!token || !zoneId) {
-    // Not configured — serve stale cache if present, else the base alone.
-    const fallback = cached?.pv ?? pvBase;
-    return new Response(JSON.stringify({ pv: fallback }), {
-      headers: cacheHeaders,
-    });
-  }
-
-  try {
-    // Window starts the day AFTER the anchor (delta only) and ends today.
-    // If the anchor is today or in the future (e.g. just seeded), the window
-    // is empty and lifetime_pv == pv_base.
-    const anchorMs = new Date(anchorDate + "T00:00:00Z").getTime();
-    const deltaStartMs = anchorMs + DAY_MS; // day after anchor
-    const todayStartMs = new Date(
-      new Date().toISOString().slice(0, 10) + "T00:00:00Z"
-    ).getTime();
-
-    let pvDelta = 0;
-    if (deltaStartMs <= todayStartMs) {
-      const since = new Date(deltaStartMs).toISOString().slice(0, 10);
-      const until = new Date().toISOString().slice(0, 10);
-      const gqlRes = await fetch(
-        "https://api.cloudflare.com/client/v4/graphql",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            // httpRequests1dGroups: zone-level daily HTTP analytics.
-            // sum.pageViews = page views (访问量). Field name verified via
-            // GraphQL schema introspection.
-            query: `query($zoneTag:String!, $since:Date!, $until:Date!){
-              viewer { zones(filter:{zoneTag:$zoneTag}) {
-                httpRequests1dGroups(limit:1000, filter:{date_geq:$since, date_leq:$until}) {
-                  sum { pageViews }
-                }
-              }}
-            }`,
-            variables: { zoneTag: zoneId, since, until },
-          }),
-        }
-      );
-      const body: any = await gqlRes.json();
-      const groups =
-        body?.data?.viewer?.zones?.[0]?.httpRequests1dGroups || [];
-      for (const g of groups) {
-        pvDelta += Number(g?.sum?.pageViews || 0);
-      }
-    }
-
-    const lifetimePv = pvBase + pvDelta;
-
-    // 4. Persist cache. uv is no longer surfaced; keep the column for schema
-    //    continuity but store 0. Anchor/base stay as-is (they advance only if
-    //    we ever implement a roll-forward; see comment on PV_ANCHOR_DATE).
-    const now = new Date().toISOString();
-    await ctx.env.DB.prepare(
-      `INSERT INTO visits_cache (id, pv, uv, pv_base, pv_anchor_date, fetched_at)
-       VALUES (1, ?, 0, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET pv=excluded.pv, pv_base=excluded.pv_base,
-        pv_anchor_date=excluded.pv_anchor_date, fetched_at=excluded.fetched_at`
-    )
-      .bind(lifetimePv, pvBase, anchorDate, now)
-      .run();
-
-    return new Response(JSON.stringify({ pv: lifetimePv }), {
-      headers: cacheHeaders,
-    });
-  } catch {
-    // Upstream failure — serve stale cache if present, else the base alone.
-    const fallback = cached?.pv ?? pvBase;
-    return new Response(JSON.stringify({ pv: fallback }), {
-      headers: cacheHeaders,
-    });
-  }
 }

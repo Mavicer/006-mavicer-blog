@@ -3,10 +3,12 @@ import { site } from "@/config/site";
 import { useRuntime } from "@/hooks/useScroll";
 import { usePosts } from "@/hooks/usePosts";
 import { Odometer } from "@/components/Odometer";
+import { useVisitorStats } from "@/hooks/useVisitorStats";
 
 export function Footer() {
   const runtime = useRuntime(site.footerStart);
   const { posts } = usePosts();
+  const visits = useVisitorStats();
   const articleCount = posts.filter((p) => p.published !== false).length;
 
   return (
@@ -36,35 +38,10 @@ export function Footer() {
           秒
         </div>
 
-        {/* 访客计数数据有误，暂时下架 — 恢复见 footer-visits / getVisits */}
-
-        <div className="footer-side footer-powered text-center lg:absolute lg:left-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-left">
-          <span className="lg:block text-sm">
-            由{" "}
-            <svg
-              className="relative top-[2px] inline-block align-baseline"
-              width="1rem"
-              height="1rem"
-              viewBox="0 0 512 512"
-            >
-              <path
-                fill="#0E83CD"
-                d="M256.4,25.8l-200,115.5L56,371.5l199.6,114.7l200-115.5l0.4-230.2L256.4,25.8z M349,354.6l-18.4,10.7l-18.6-11V275H200v79.6l-18.4,10.7l-18.6-11v-197l18.5-10.6l18.5,10.8V237h112v-79.6l18.5-10.6l18.5,10.8V354.6z"
-              />
-            </svg>{" "}
-            React 驱动
-          </span>
-          <span className="lg:block text-sm">
-            主题&nbsp;
-            <a
-              className="text-base"
-              target="_blank"
-              rel="noopener noreferrer"
-              href="https://github.com/EvanNotFound/hexo-theme-redefine"
-            >
-              Redefine
-            </a>
-          </span>
+        <div className="footer-side footer-visits text-center" title={visits.unavailable ? "统计暂时无法更新" : undefined}>
+          <span className="text-sm">累计访问 {visits.stats ? visits.stats.pv.toLocaleString("zh-CN") : "—"} 次</span>
+          <span className="text-sm">当前在线 {visits.stats && !visits.unavailable ? visits.stats.online.toLocaleString("zh-CN") : "—"} 人</span>
+          {visits.unavailable && <button type="button" className="ml-2 underline underline-offset-2" onClick={visits.retry}>重试</button>}
         </div>
       </div>
     </footer>
