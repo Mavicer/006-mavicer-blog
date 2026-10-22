@@ -24,8 +24,10 @@ try {
   const started = posted('start');
   await page.goto(base + '/about', { waitUntil: 'domcontentloaded' });
   await started;
+  await page.waitForFunction(() => document.querySelector('.footer-visits')?.textContent.includes('当前在线 1 人'));
+  assert.deepEqual(await stats(), { pv: baseline, online: 1 }, 'Online immediately before qualification, without refresh');
   await page.waitForTimeout(9000);
-  assert.deepEqual(await stats(), { pv: baseline, online: 0 }, 'Nine seconds does not qualify');
+  assert.deepEqual(await stats(), { pv: baseline, online: 1 }, 'Nine seconds does not increase cumulative views');
   const qualified = await posted('pageview');
   assert.equal(qualified.status(), 200);
   assert.deepEqual(await stats(), { pv: baseline + 1, online: 1 });
@@ -78,6 +80,22 @@ try {
   await page.getByRole('button', { name: '重试', exact: true }).click();
   await page.waitForFunction(() => !document.querySelector('.footer-visits button'));
   assert.equal((await stats()).pv, baseline + 2, 'Retry does not add another page view');
+  const guest = await browser.newContext({ userAgent: await page.evaluate(() => navigator.userAgent) });
+  await guest.addInitScript(() => Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => window.testVisibility || 'visible' }));
+  const guestPage = await guest.newPage();
+  const guestStart = guestPage.waitForResponse(r => r.url().endsWith('/api/visits') && r.request().method() === 'POST' && r.request().postDataJSON()?.kind === 'start');
+  const observerURL = page.url();
+  let observerReloads = 0;
+  page.on('framenavigated', frame => { if (frame === page.mainFrame()) observerReloads++; });
+  await guestPage.goto(base + '/about', { waitUntil: 'domcontentloaded' });
+  await guestStart;
+  await guestPage.evaluate(() => { window.testVisibility = 'hidden'; document.dispatchEvent(new Event('visibilitychange')); });
+  assert.deepEqual(await stats(), { pv: baseline + 2, online: 2 }, 'A new browser is online immediately but has not qualified as a cumulative view');
+  await page.waitForFunction(() => document.querySelector('.footer-visits')?.textContent.includes('当前在线 2 人'), null, { timeout: 15_000 });
+  assert.equal(page.url(), observerURL);
+  assert.equal(observerReloads, 0, 'Existing observer updates automatically, without navigation or reload');
+  assert.equal((await stats()).pv, baseline + 2, 'Unqualified guest and presence heartbeats never add cumulative views');
+  await guest.close();
   assert.deepEqual(errors, []);
-  console.log('Visitor UI passed: real API/SQLite, ten-second threshold, hidden-time pause, SPA views, shared-tab presence, quick-refresh merge, desktop-left/mobile layout, dark mode, outage/retry and no browser errors.');
+  console.log('Visitor UI passed: immediate presence, automatic arrival updates in a separate browser without reload, ten-second cumulative threshold, hidden-time pause, shared tabs, failure/retry and responsive layout.');
 } finally { await browser.close(); }

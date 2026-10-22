@@ -25,16 +25,32 @@ test('counter starts at 650, ignores legacy inflated totals, and GET never count
   assert.equal(f.sqlite.prepare('SELECT pv FROM visits_cache').get().pv, 50000000);
 });
 
-test('qualification needs a server-issued start and ten seconds; a start alone is not online', async (t) => {
+test('presence starts immediately while cumulative views still require ten seconds', async (t) => {
   const f = setup(t), e = f.event();
   assert.equal((await f.send('pageview', e)).status, 409);
   const start = await f.send('start', e);
-  assert.deepEqual(start.data, { pv: 650, online: 0 });
+  assert.deepEqual(start.data, { pv: 650, online: 1 });
   assert.match(start.headers.get('Set-Cookie'), /HttpOnly; SameSite=Lax; Secure/);
   f.advance(9);
+  assert.deepEqual((await f.send('heartbeat', { path: '/' }, start.cookie)).data, { pv: 650, online: 1 });
   assert.equal((await f.send('pageview', e, start.cookie)).status, 409);
   f.advance(1);
   assert.deepEqual((await f.send('pageview', e, start.cookie)).data, { pv: 651, online: 1 });
+});
+
+test('an existing visitor sees new arrivals through heartbeats without a reload or qualification', async (t) => {
+  const f = setup(t), a = f.event(), b = f.event();
+  const first = await f.send('start', a);
+  assert.deepEqual(first.data, { pv: 650, online: 1 });
+  f.advance(1);
+  assert.deepEqual((await f.send('start', b)).data, { pv: 650, online: 2 });
+  assert.deepEqual((await f.send('heartbeat', { path: '/' }, first.cookie)).data, { pv: 650, online: 2 });
+  // Another tab/navigation in the first browser must not create a third person.
+  assert.deepEqual((await f.send('start', f.event('/about'), first.cookie)).data, { pv: 650, online: 2 });
+  f.advance(89);
+  await f.send('heartbeat', { path: '/' }, first.cookie);
+  f.advance(1);
+  assert.deepEqual((await f.request('/visits')).data, { pv: 650, online: 1 });
 });
 
 test('retries, rapid refreshes, tabs and heartbeats do not inflate counts; later pages do', async (t) => {

@@ -73,7 +73,7 @@ export async function visitsRoute(ctx: Context): Promise<Response> {
   const db = ctx.env.DB;
   const statements: D1PreparedStatement[] = [];
   if (body.kind === "start") {
-    // Starting alone never counts as online/a view. Time is server-issued.
+    // Presence starts immediately. Only cumulative page views wait ten seconds.
     statements.push(db.prepare(`INSERT OR IGNORE INTO blog_visit_pending (id, browser_id, path, started_at)
       VALUES (?, ?, ?, ?)`).bind(body.event_id, browserId, body.path, now));
   }
@@ -90,6 +90,8 @@ export async function visitsRoute(ctx: Context): Promise<Response> {
         SELECT 1 FROM blog_visit_event WHERE browser_id = ? AND path = ? AND counted = 1 AND created_at > ?)
       THEN 0 ELSE 1 END`)
       .bind(body.event_id, browserId, body.path, now, browserId, body.path, now - 30));
+  }
+  if (body.kind === "start" || body.kind === "pageview") {
     statements.push(db.prepare(`INSERT INTO blog_visit_presence (id, last_seen) VALUES (?, ?)
       ON CONFLICT(id) DO UPDATE SET last_seen = MAX(last_seen, excluded.last_seen)`).bind(browserId, now));
   }
