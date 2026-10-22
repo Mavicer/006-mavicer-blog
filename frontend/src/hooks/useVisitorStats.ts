@@ -28,10 +28,10 @@ export function useVisitorStats() {
       visibleSince = document.visibilityState === "visible" ? now : null;
     }
 
-    async function update() {
+    async function update(presenceOnly = false) {
       if (busy || stopped || document.visibilityState !== "visible" || performance.now() < nextAttempt) return;
       elapsed();
-      const kind = !current.started ? "start" : current.counted ? "heartbeat" : "pageview";
+      const kind = !current.started ? "start" : presenceOnly || current.counted ? "heartbeat" : "pageview";
       if (kind === "pageview" && current.visibleMs < 10_000) return;
       busy = true;
       try {
@@ -58,7 +58,7 @@ export function useVisitorStats() {
 
     function visibility() {
       elapsed();
-      if (document.visibilityState === "visible") void update();
+      if (document.visibilityState === "visible") void update(true);
     }
 
     void getVisits().then((result) => {
@@ -67,7 +67,8 @@ export function useVisitorStats() {
     // Cancel StrictMode's extra mount before any write starts.
     const start = setTimeout(() => { void update(); }, 100);
     const qualification = setInterval(() => { if (!current.counted) void update(); }, 1000);
-    const heartbeat = setInterval(() => { if (current.counted) void update(); }, 30_000);
+    // Keep presence and other visitors' counts current before qualification too.
+    const heartbeat = setInterval(() => { void update(true); }, 10_000);
     document.addEventListener("visibilitychange", visibility);
     return () => {
       elapsed();
