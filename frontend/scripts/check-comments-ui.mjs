@@ -87,7 +87,7 @@ try {
   await section.getByText("评论已更新", { exact: true }).waitFor();
   const editedCard = card;
   assert.match(await editedCard.innerText(), /author/);
-  await editedCard.getByText("博主已编辑").waitFor();
+  assert.equal(await editedCard.getByText("博主已编辑", { exact: true }).count(), 0);
   assert.equal(f.sqlite.prepare("SELECT body FROM comment WHERE id = ?").get(created.data.id).body, "博主修订后的评论\n第二行仍保留");
   if (output) await section.screenshot({ path: output + "/comments-owner-desktop.png" });
   await editedCard.getByRole("button", { name: "撤回评论", exact: true }).click();

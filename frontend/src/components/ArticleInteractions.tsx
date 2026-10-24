@@ -128,7 +128,6 @@ function ArticleInteractionContent({ slug }: { slug: string }) {
               <strong>{c.author_name}</strong>
               {c.is_own && <span className="aleph-online__own-tag">我</span>}
               <time dateTime={c.created_at}>{c.created_at ? new Date(c.created_at).toLocaleString() : ""}</time>
-              {c.updated_at && c.updated_at !== c.created_at && <span title={new Date(c.updated_at).toLocaleString()}>博主已编辑</span>}
               {editing?.id !== c.id && canManage && (c.is_own || user.is_owner) && (
                 <div className="aleph-online__comment-tools">
                   {user.is_owner && <button type="button" className="aleph-online__icon-button" aria-label="编辑评论" title="编辑评论"
