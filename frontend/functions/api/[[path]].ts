@@ -9,6 +9,7 @@
  *   GET    /posts/:slug
  *   GET    /posts/:slug/comments
  *   POST   /posts/:slug/comments            body: { body } (session required)
+ *   PATCH  /posts/:slug/comments/:id         body: { body } (owner only)
  *   DELETE /posts/:slug/comments/:id         (session required)
  *   GET    /posts/:slug/interactions?client_id=
  *   POST   /posts/:slug/like                body: { client_id }
@@ -75,9 +76,12 @@ export const onRequest: PagesFunction<import("../../server/http").Env> = async (
     if (cmts && method === "POST") {
       return await createComment(ctx, decodeURIComponent(cmts[1]));
     }
-    const del = path.match(/^posts\/([^/]+)\/comments\/(\d+)$/);
-    if (del && method === "DELETE") {
-      return await deleteComment(ctx, decodeURIComponent(del[1]), Number(del[2]));
+    const comment = path.match(/^posts\/([^/]+)\/comments\/(\d+)$/);
+    if (comment && method === "PATCH") {
+      return await updateComment(ctx, decodeURIComponent(comment[1]), Number(comment[2]));
+    }
+    if (comment && method === "DELETE") {
+      return await deleteComment(ctx, decodeURIComponent(comment[1]), Number(comment[2]));
     }
     const inter = path.match(/^posts\/([^/]+)\/interactions$/);
     if (inter && method === "GET") {
@@ -266,6 +270,22 @@ async function createComment(ctx: ApiContext, slug: string): Promise<Response> {
   );
 }
 
+async function updateComment(ctx: ApiContext, slug: string, commentId: number): Promise<Response> {
+  const user = await requireUser(ctx);
+  if (!user.is_owner) return jsonError(403, "仅博主可编辑评论");
+  await rateLimit(ctx, "comment-edit", user.id, 120, 3600);
+  const payload = await readBody(ctx.request);
+  const body = typeof payload.body === "string" ? payload.body.trim() : "";
+  if (!body || body.length > 3000) return jsonError(422, "评论需为 1–3000 个字符");
+
+  // Keep the original author and publication time; only the owner can edit.
+  const comment = await ctx.env.DB.prepare(
+    `UPDATE comment SET body = ?, updated_at = ? WHERE id = ? AND post_slug = ? RETURNING *`
+  ).bind(body, new Date().toISOString(), commentId, slug).first<CommentRow>();
+  if (!comment) return jsonError(404, "评论不存在");
+  return json(commentOut(comment, user));
+}
+
 async function deleteComment(
   ctx: ApiContext,
   slug: string,
@@ -281,12 +301,13 @@ async function deleteComment(
 
   if (!c) return jsonError(404, "评论不存在");
   if (!user.is_owner && c.user_id !== user.id) {
-    return jsonError(403, "无权删除这条评论");
+    return jsonError(403, "无权撤回这条评论");
   }
 
-  await ctx.env.DB.prepare(`DELETE FROM comment WHERE id = ?`)
-    .bind(commentId)
+  const result = await ctx.env.DB.prepare(`DELETE FROM comment WHERE id = ? AND post_slug = ?`)
+    .bind(commentId, slug)
     .run();
+  if (!result.meta.changes) return jsonError(404, "评论不存在");
   return json({ ok: true });
 }
 

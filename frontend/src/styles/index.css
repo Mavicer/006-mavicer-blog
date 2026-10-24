@@ -1291,6 +1291,8 @@ a:hover {
   .aleph-online__comment-meta {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    overflow-wrap: anywhere;
     gap: 0.6rem;
     margin-bottom: 0.35rem;
     font-size: 0.8rem;
@@ -1303,41 +1305,66 @@ a:hover {
   .aleph-online__comment-meta time {
     color: var(--third-text-color);
   }
-  .aleph-online__del {
+  .aleph-online__comment-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  .aleph-online__comment-tools {
+    display: flex;
+    gap: 0.15rem;
     margin-left: auto;
+  }
+  .aleph-online__icon-button {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    line-height: 1;
-    border: none;
-    background: transparent;
-    color: var(--third-text-color);
-    cursor: pointer;
-    font-size: 0.78rem;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
     padding: 0;
-  }
-  .aleph-online__del:hover {
-    color: var(--primary-color);
-  }
-  /* Desktop: small trash icon on own comments (icon-only, bottom-right) */
-  .aleph-online__del-icon {
-    position: absolute;
-    right: 0.6rem;
-    bottom: 0.6rem;
     border: none;
+    border-radius: 5px;
+    color: var(--third-text-color);
     background: transparent;
-    color: var(--second-text-color);
     cursor: pointer;
-    font-size: 0.8rem;
-    padding: 2px 4px;
-    border-radius: 4px;
-    transition: color 0.15s ease, background 0.15s ease;
   }
-  .aleph-online__del-icon:hover {
+  .aleph-online__icon-button:hover:not(:disabled) {
     color: var(--primary-color);
+    background: var(--third-background-color);
   }
-  /* "我" badge for the visitor's own comments — subtle marker so they know
-     they can long-press / right-click to delete. */
+  @media (pointer: coarse), (max-width: 640px) {
+    .aleph-online__icon-button {
+      width: 44px;
+      height: 44px;
+    }
+  }
+  .aleph-online__editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+  .aleph-online__editor textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--first-text-color);
+    background: var(--background-color);
+    resize: vertical;
+  }
+  .aleph-online__editor textarea:focus-visible,
+  .aleph-online__icon-button:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+  .aleph-online button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
   .aleph-online__own-tag {
     font-size: 0.65rem;
     font-weight: 600;
@@ -1351,49 +1378,12 @@ a:hover {
     border-left: 2px solid var(--primary-color);
   }
 
-  /* Floating delete popover — shown at long-press / right-click position.
-     Click the button to delete; click the transparent backdrop to dismiss. */
-  .aleph-online__menu-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 1099;
-  }
-  .aleph-online__menu-btn {
-    position: fixed;
-    z-index: 1100;
-    transform: translate(-50%, -50%);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.4rem 0.9rem;
-    font-size: 0.85rem;
-    font-weight: 500;
-    line-height: 1;
-    color: #fff;
-    background: var(--primary-color);
-    border: none;
-    border-radius: 8px;
-    box-shadow: var(--redefine-box-shadow);
-    cursor: pointer;
-    white-space: nowrap;
-    transition: opacity 0.15s ease;
-  }
-  .aleph-online__menu-btn:hover {
-    opacity: 0.9;
-  }
-
-  /* ── Desktop confirm dialog (custom, replaces window.confirm) ── */
-  .aleph-confirm-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1200;
+  .aleph-confirm-card::backdrop {
     background: rgba(0, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: aleph-fade-in 0.15s ease;
   }
   .aleph-confirm-card {
+    margin: auto;
+    width: calc(100% - 2rem);
     background: var(--background-color-transparent-80);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);

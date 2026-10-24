@@ -182,7 +182,7 @@ export async function searchPosts(q: string): Promise<Post[]> {
   return request(`/search?q=${encodeURIComponent(q)}`);
 }
 
-// ---- Comments / Interactions ---- (anonymous, browser-identified)
+// ---- Comments / Interactions ---- (account comments and favorites; visitor likes)
 export async function listComments(slug: string): Promise<Comment[]> {
   return request(`/posts/${slug}/comments`);
 }
@@ -197,8 +197,14 @@ export async function createComment(
     }),
   });
 }
+export async function updateComment(slug: string, id: number, body: string): Promise<Comment> {
+  return request(`/posts/${encodeURIComponent(slug)}/comments/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ body }),
+  });
+}
 export async function deleteComment(slug: string, id: number) {
-  return request(`/posts/${slug}/comments/${id}`, {
+  return request(`/posts/${encodeURIComponent(slug)}/comments/${id}`, {
     method: "DELETE",
     body: "{}",
   });

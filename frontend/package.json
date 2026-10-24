@@ -15,7 +15,8 @@
     "dev:api": "wrangler pages dev dist --port 8788",
     "db:local": "wrangler d1 execute mavicer-blog --local --file=../backend-worker/schema.sql",
     "test:projects-ui": "node scripts/check-projects-ui.mjs",
-    "test:visits-ui": "node scripts/check-visits-ui.mjs"
+    "test:visits-ui": "node scripts/check-visits-ui.mjs",
+    "test:comments-ui": "node scripts/check-comments-ui.mjs"
   },
   "dependencies": {
     "@types/dompurify": "^3.0.5",
