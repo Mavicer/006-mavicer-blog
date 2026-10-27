@@ -830,18 +830,18 @@ a:hover {
   /* Reading backdrop is scoped to article details and disappears on navigation.
      A fixed pseudo-element avoids JS scroll effects and mobile background-attachment bugs. */
   .article-reading-page {
-    --reading-wallpaper: url("/images/wallhaven-wqery6-light.webp");
+    --reading-wallpaper: var(--personal-wallpaper, url("/images/wallhaven-wqery6-light.webp"));
     --reading-veil: rgba(255, 255, 255, 0.68);
-    --reading-surface: rgba(255, 253, 250, 0.9);
+    --reading-surface: rgba(255, 253, 250, var(--personal-reading-opacity, 0.9));
     --reading-rim: rgba(255, 255, 255, 0.75);
     --reading-shadow: 0 8px 32px rgba(45, 57, 69, 0.08);
     isolation: isolate;
     min-height: 100dvh;
   }
   .dark .article-reading-page {
-    --reading-wallpaper: url("/images/wallhaven-wqery6-dark.webp");
+    --reading-wallpaper: var(--personal-wallpaper, url("/images/wallhaven-wqery6-dark.webp"));
     --reading-veil: rgba(25, 28, 35, 0.72);
-    --reading-surface: rgba(32, 33, 36, 0.92);
+    --reading-surface: rgba(32, 33, 36, max(0.92, var(--personal-reading-opacity, 0.92)));
     --reading-rim: rgba(255, 255, 255, 0.08);
     --reading-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
   }
@@ -855,6 +855,7 @@ a:hover {
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
+    filter: blur(var(--personal-blur, 0px)) brightness(var(--personal-brightness, 1));
   }
   .article-reading-page .article-reading-card,
   .article-reading-page .article-reading-toc {

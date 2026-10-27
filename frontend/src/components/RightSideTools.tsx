@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useTheme } from "@/hooks/useTheme";
 import { useScrollToTop, useScrollProgress } from "@/hooks/useScroll";
+import { Palette } from "lucide-react";
+import { useAppearance } from "@/hooks/useAppearance";
 
 /**
  * Right-side floating toolbar.
@@ -13,15 +15,16 @@ import { useScrollToTop, useScrollProgress } from "@/hooks/useScroll";
  *   [scroll-to-top]   appears after scrolling; shows % normally, arrow on hover
  *   [tools toggle]    always visible; chevron indicates expand state
  *        ┌─ expanded panel (slides DOWN) ─┐
- *        │  search                          │
+ *        │  personalization                 │
  *        │  theme (sun/moon)                │
  *        │  font +                          │
  *        │  font −                          │
  *        │  scroll to bottom                 │
  *        └──────────────────────────────────┘
  */
-export function RightSideTools({ onSearch }: { onSearch: () => void }) {
+export function RightSideTools({ onPersonalize }: { onPersonalize: () => void }) {
   const { effectiveMode, toggle } = useTheme();
+  const { settings, update } = useAppearance();
   const [expanded, setExpanded] = useState(false);
   const showTop = useScrollToTop(200);
   const { percent } = useScrollProgress();
@@ -34,10 +37,7 @@ export function RightSideTools({ onSearch }: { onSearch: () => void }) {
     });
 
   const adjustFont = (delta: number) => {
-    const root = document.documentElement;
-    const cur = parseFloat(getComputedStyle(root).fontSize) || 16;
-    const next = Math.min(22, Math.max(13, cur + delta));
-    root.style.fontSize = `${next}px`;
+    update({ fontSize: Math.min(22, Math.max(13, settings.fontSize + delta)) });
   };
 
   return (
@@ -57,6 +57,10 @@ export function RightSideTools({ onSearch }: { onSearch: () => void }) {
           <li
             className="right-bottom-tools toggle-tools-list flex justify-center items-center"
             onClick={() => setExpanded((v) => !v)}
+            role="button"
+            tabIndex={0}
+            aria-label="侧边工具"
+            onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setExpanded(value => !value); } }}
             aria-expanded={expanded}
           >
             {expanded ? <SvgChevronUp /> : <SvgChevronDown />}
@@ -65,12 +69,11 @@ export function RightSideTools({ onSearch }: { onSearch: () => void }) {
         </ul>
 
         <ul className={`hidden-tools-list ${expanded ? "show" : ""}`}>
-          <li
-            className="right-bottom-tools tool-search flex justify-center items-center"
-            onClick={() => { onSearch(); setExpanded(false); }}
-          >
-            <SvgSearch />
-            <span className="tool-label">搜索</span>
+          <li>
+            <button type="button" className="right-bottom-tools tool-personalization flex justify-center items-center" tabIndex={expanded ? 0 : -1} aria-label="个性化" aria-haspopup="dialog" onClick={() => { onPersonalize(); setExpanded(false); }}>
+              <Palette size={20} strokeWidth={1.5} />
+              <span className="tool-label">个性化</span>
+            </button>
           </li>
           <li
             className="right-bottom-tools tool-dark-light-toggle flex justify-center items-center"
@@ -134,15 +137,6 @@ function SvgChevronUp({ className = "" }: IconProps) {
   return (
     <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M6 15l6-6 6 6" />
-    </svg>
-  );
-}
-
-function SvgSearch({ className = "" }: IconProps) {
-  return (
-    <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="7" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   );
 }

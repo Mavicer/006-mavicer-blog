@@ -1,0 +1,104 @@
+.personalization {
+  --panel-accent: #a31f34;
+  --panel-text: #33383b;
+  --panel-muted: #85888b;
+  --panel-line: #eae8e5;
+  --panel-soft: #f5f4f2;
+  position: fixed;
+  inset: 0 0 0 auto;
+  margin: 0 0 0 auto;
+  padding: 0;
+  width: 440px;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  border: 0;
+  border-left: 1px solid var(--panel-line);
+  color: var(--panel-text);
+  background: #fdfcfb;
+  box-shadow: -12px 0 60px #1e24241a;
+  font: 14px/1.5 "Geist Variable", "Noto Sans SC", sans-serif;
+  overflow: hidden;
+}
+.personalization[open] { display: flex; flex-direction: column; animation: personalization-in 220ms ease-out; }
+.personalization::backdrop { background: #17222a26; }
+.dark .personalization {
+  --panel-text: #e5e3e0;
+  --panel-muted: #a3a19e;
+  --panel-line: #373737;
+  --panel-soft: #2b2b2e;
+  background: #222225;
+}
+.personalization button { font: inherit; cursor: pointer; transition: background 150ms ease, border-color 150ms ease; }
+.personalization button:disabled, .personalization input:disabled { opacity: .5; cursor: wait; }
+.personalization button:focus-visible, .personalization input:focus-visible { outline: 2px solid var(--panel-accent); outline-offset: 4px; }
+.personalization-header { padding: 27px 28px 21px; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--panel-line); flex-shrink: 0; }
+.personalization-eyebrow { display: flex; align-items: center; gap: 6px; color: var(--panel-muted); font-size: 10px; letter-spacing: 1.7px; margin-bottom: 7px; }
+.personalization-header h2 { margin: 0; color: var(--panel-text); font-size: 26px; font-weight: 600; letter-spacing: 1px; }
+.personalization-header p { margin: 6px 0 0; color: var(--panel-muted); font-size: 12px; }
+.personalization-close { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--panel-line); border-radius: 50%; color: var(--panel-muted); background: transparent; }
+.personalization-close:hover { background: var(--panel-soft); color: var(--panel-text); }
+.personalization-body { padding: 22px 28px 18px; overflow-y: auto; overscroll-behavior: contain; flex: 1; min-height: 0; scrollbar-width: thin; }
+.personalization-preview { position: relative; aspect-ratio: 2.1; border-radius: 13px; background-size: cover; background-position: center; overflow: hidden; color: #fff; }
+.personalization-preview::before { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, #0c243b63, transparent 80%); }
+.personalization-preview > div { position: absolute; left: 20px; bottom: 18px; font-size: 23px; letter-spacing: 1px; text-shadow: 0 1px 10px #0004; }
+.personalization-preview small { display: block; font-size: 10px; margin-top: 3px; letter-spacing: 1px; opacity: .9; }
+.personalization-preview-mode { position: absolute; right: 10px; top: 10px; display: flex; align-items: center; gap: 4px; padding: 3px 7px; border: 1px solid #ffffff60; border-radius: 20px; background: #10273b30; backdrop-filter: blur(6px); font-size: 10px; }
+.personalization-section { margin-top: 27px; }
+.personalization-section + .personalization-section { border-top: 1px solid var(--panel-line); padding-top: 23px; }
+.personalization-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.personalization-heading h3 { font-size: 14px; font-weight: 600; color: var(--panel-text); margin: 0; }
+.personalization-heading > span { font-size: 10px; color: var(--panel-muted); }
+.personalization-presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.personalization-preset { min-width: 0; padding: 3px 3px 6px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--panel-text); }
+.personalization-preset.selected { border-color: var(--panel-accent); background: #a31f3408; }
+.personalization-preset:hover { background: var(--panel-soft); }
+.personalization-preset > span:last-child { font-size: 11px; display: block; margin-top: 7px; }
+.personalization-preset > span:nth-child(2) { font-size: 11px; display: block; margin-top: 7px; }
+.personalization-preset small { display: block; color: var(--panel-muted); font-size: 8px; margin-top: 3px; }
+.personalization-pair { position: relative; display: flex; height: 66px; border-radius: 7px; overflow: hidden; background: var(--panel-soft); }
+.personalization-pair img { width: 50%; min-width: 0; height: 100%; object-fit: cover; }
+.personalization-pair-label { position: absolute; bottom: 4px; left: 6px; color: #fff; font-size: 9px; text-shadow: 0 1px 4px #000; }
+.personalization-check { position: absolute; top: 4px; right: 4px; width: 17px; height: 17px; display: grid; place-items: center; border-radius: 50%; background: var(--panel-accent); color: white; }
+.personalization-upload-heading { margin: 21px 0 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.personalization-upload-heading > span { display: flex; align-items: center; gap: 6px; }
+.personalization-text-button { padding: 0; border: 0; background: transparent; color: var(--panel-accent); font-size: 11px !important; }
+.personalization-uploads { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.personalization-upload { position: relative; min-width: 0; }
+.personalization-upload label { position: relative; display: grid; place-items: center; height: 67px; overflow: hidden; border: 1px dashed #bdbbb7; border-radius: 9px; color: var(--panel-muted); cursor: pointer; }
+.personalization-upload label:hover { border-color: var(--panel-accent); color: var(--panel-accent); }
+.personalization-upload label > span { display: flex; align-items: center; gap: 7px; font-size: 11px; pointer-events: none; }
+.personalization-upload label img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.personalization-upload label.has-image > span { z-index: 1; background: #0008; padding: 4px 8px; border-radius: 20px; color: white; }
+.personalization-upload input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.personalization-upload label:focus-within { outline: 2px solid var(--panel-accent); outline-offset: 3px; }
+.personalization-remove { position: absolute; right: -5px; top: -5px; display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--panel-line); border-radius: 50%; background: var(--panel-soft); color: var(--panel-text); }
+.personalization-hint { color: var(--panel-muted); font-size: 10px; margin: 9px 0 0; line-height: 1.7; }
+.personalization-modes { display: flex; gap: 4px; padding: 4px; border-radius: 9px; background: var(--panel-soft); }
+.personalization-modes button { display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1; border: 1px solid transparent; border-radius: 6px; padding: 7px 3px; font-size: 11px; background: transparent; color: var(--panel-muted); }
+.personalization-modes button[aria-pressed=true] { background: #fdfcfb; color: var(--panel-text); border-color: var(--panel-line); box-shadow: 0 1px 3px #00000006; }
+.dark .personalization-modes button[aria-pressed=true] { background: #414144; }
+.personalization-range { margin-top: 18px; }
+.personalization-range > div { display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+.personalization-range output { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--panel-muted); }
+.personalization-range input { display: block; width: 100%; margin: 11px 0 0; height: 4px; accent-color: var(--panel-accent); cursor: pointer; }
+.personalization-switch { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; color: var(--panel-muted); font-size: 11px; cursor: pointer; }
+.personalization-switch input { accent-color: var(--panel-accent); width: 14px; height: 14px; cursor: pointer; }
+.personalization-status { margin-top: 24px; font-size: 10px; color: var(--panel-muted); line-height: 1.7; }
+.personalization-footer { padding: 15px 28px max(15px, env(safe-area-inset-bottom)); border-top: 1px solid var(--panel-line); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 12px; background: inherit; }
+.personalization-reset { display: flex; align-items: center; gap: 6px; font-size: 11px !important; border: 0; color: var(--panel-muted); padding: 7px 0; background: transparent; }
+.personalization-done { padding: 8px 28px; border: 0; border-radius: 7px; color: #fff; background: var(--panel-accent); font-size: 12px !important; }
+.home-main-content :is(.home-article-item, .sidebar-links, .sidebar-content) { background: rgba(255,255,255,var(--personal-card-opacity,.5)); }
+.dark .home-main-content :is(.home-article-item, .sidebar-links, .sidebar-content) { background: rgba(40,42,48,var(--personal-card-opacity,.5)); }
+.right-bottom-tools:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 3px; }
+@keyframes personalization-in { from { transform: translateX(35px); opacity: .5; } to { transform: translateX(0); opacity: 1; } }
+@media (max-width: 480px) {
+  .personalization { width: min(100vw, 400px); }
+  .personalization-header { padding: 22px 22px 18px; }
+  .personalization-body { padding: 18px 22px; }
+  .personalization-footer { padding-left: 22px; padding-right: 22px; }
+}
+@media (prefers-reduced-motion: reduce) { .personalization[open] { animation: none; } }
+@media (prefers-reduced-transparency: reduce) {
+  .home-main-content :is(.home-article-item, .sidebar-links, .sidebar-content) { background: var(--background-color); }
+}
