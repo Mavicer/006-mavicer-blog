@@ -2,14 +2,14 @@ import { useRef } from "react";
 import { site } from "@/config/site";
 import { profile } from "@/data/profile";
 import { useTypedSubtitle } from "@/hooks/useTypedSubtitle";
-import { useTheme } from "@/hooks/useTheme";
+import { useAppearance } from "@/hooks/useAppearance";
 import { useHomeBannerBlur } from "@/hooks/useScroll";
 
 export function HomeBanner() {
   const subRef = useRef<HTMLSpanElement>(null);
   useTypedSubtitle(subRef, [site.subtitle]);
-  const { effectiveMode } = useTheme();
-  const blur = useHomeBannerBlur(15);
+  const { settings, wallpaper } = useAppearance();
+  const blur = useHomeBannerBlur(settings.scrollBlur ? 15 : 0);
 
   const scrollToMain = () => {
     const target = document.querySelector(".main-content-container");
@@ -20,16 +20,15 @@ export function HomeBanner() {
     <>
       {/* Full-screen background with parallax scale */}
       <div
-        className="home-banner-background fixed top-0 left-0 w-screen h-screen scale-125 sm:scale-110 box-border will-change-transform bg-cover transition-fade"
+        className="home-banner-background fixed top-0 left-0 w-screen h-screen box-border will-change-transform bg-cover transition-fade"
         style={{
-          backgroundImage: `url(/images/wallhaven-${
-            effectiveMode === "dark" ? "wqery6-dark" : "wqery6-light"
-          }.webp)`,
+          backgroundImage: `url("${wallpaper}")`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           zIndex: 0,
-          filter: `blur(${blur}px)`,
-          WebkitFilter: `blur(${blur}px)`,
+          transform: `scale(${Math.max(blur, settings.blur) > 0 ? 1.06 : 1})`,
+          filter: `blur(${Math.max(blur, settings.blur)}px) brightness(${settings.brightness / 100})`,
+          WebkitFilter: `blur(${Math.max(blur, settings.blur)}px) brightness(${settings.brightness / 100})`,
         }}
       />
       <div className="home-banner-container flex justify-center items-center transition-fade relative z-[1]">

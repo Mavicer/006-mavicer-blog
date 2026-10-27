@@ -58,7 +58,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     persistMode(m);
     setThemeMode(m);
   };
-  const toggle = () => setThemeMode((m) => nextMode(m));
+  const toggle = () => setMode(nextMode(themeMode));
 
   return (
     <Ctx.Provider
