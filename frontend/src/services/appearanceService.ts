@@ -37,3 +37,9 @@ export function readAppearance(): Appearance {
   try { return normalizeAppearance(JSON.parse(localStorage.getItem(APPEARANCE_KEY) || "null")); }
   catch { return { ...defaults }; }
 }
+
+export function syncAppearanceCookie(settings: Appearance, theme: string) {
+  if (typeof document === "undefined" || !(location.hostname === "mavicer.cc" || location.hostname.endsWith(".mavicer.cc"))) return;
+  const snapshot = { configured: true, settings, theme: theme === "light" || theme === "dark" ? theme : "auto" };
+  document.cookie = `MAVICER_APPEARANCE_SHARED=${encodeURIComponent(JSON.stringify(snapshot))}; Domain=mavicer.cc; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
+}

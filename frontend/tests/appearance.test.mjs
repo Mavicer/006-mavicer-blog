@@ -26,3 +26,22 @@ test("blocked browser storage falls back to usable default appearance", () => {
     else delete globalThis.localStorage;
   }
 });
+
+test("shared preset cookie is same-site, contains no login data, and excludes other domains", () => {
+  const previousDocument=Object.getOwnPropertyDescriptor(globalThis,"document");
+  const previousLocation=Object.getOwnPropertyDescriptor(globalThis,"location");
+  const doc={cookie:""};
+  Object.defineProperty(globalThis,"document",{configurable:true,value:doc});
+  Object.defineProperty(globalThis,"location",{configurable:true,value:{hostname:"mavicer.cc"}});
+  try {
+    service.syncAppearanceCookie({...service.defaults,background:"alpine"},"dark");
+    assert.match(doc.cookie,/Domain=mavicer.cc; Path=\/; Max-Age=31536000; SameSite=Lax; Secure/);
+    const value=JSON.parse(decodeURIComponent(doc.cookie.split(";")[0].split("=")[1]));
+    assert.equal(value.settings.background,"alpine");assert.equal(value.theme,"dark");
+    doc.cookie="";globalThis.location.hostname="evilmavicer.cc";
+    service.syncAppearanceCookie(service.defaults,"auto");assert.equal(doc.cookie,"");
+  } finally {
+    if(previousDocument)Object.defineProperty(globalThis,"document",previousDocument);else delete globalThis.document;
+    if(previousLocation)Object.defineProperty(globalThis,"location",previousLocation);else delete globalThis.location;
+  }
+});

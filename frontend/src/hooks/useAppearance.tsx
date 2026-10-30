@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTheme } from "./useTheme";
-import { APPEARANCE_KEY, backgrounds, defaults, normalizeAppearance, readAppearance, type Appearance } from "@/services/appearanceService";
+import { APPEARANCE_KEY, backgrounds, defaults, normalizeAppearance, readAppearance, syncAppearanceCookie, type Appearance } from "@/services/appearanceService";
 
 type AppearanceContext = {
   settings: Appearance;
@@ -31,6 +31,9 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
   const wallpaper = effectiveMode === "dark" ? preset.night : preset.day;
 
   useLayoutEffect(() => {
+    let theme = "auto";
+    try { theme = localStorage.getItem("MAVICER_THEME_MODE") || "auto"; } catch {}
+    syncAppearanceCookie(settings, theme);
     const root = document.documentElement;
     root.style.setProperty("--personal-wallpaper", `url("${wallpaper}")`);
     root.style.setProperty("--personal-brightness", String(settings.brightness / 100));
