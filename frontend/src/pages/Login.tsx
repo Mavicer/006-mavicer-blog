@@ -22,7 +22,9 @@ export default function Login({ registering = false }: { registering?: boolean }
       if (registering) await auth.register(username, password, displayName || username);
       else await auth.login(username, password);
       setPassword(""); setConfirm("");
-      navigate(api.currentUser()?.must_change_password ? "/account" : next);
+      const target = api.currentUser()?.must_change_password ? "/account" : next;
+      if (target.startsWith("/api/auth/nexus/authorize?")) window.location.assign(target);
+      else navigate(target);
     } catch (e: any) { setError(e?.message || "暂时无法完成操作，请重试"); }
   };
   const inputClass = "px-3 py-2 rounded-md border border-border bg-background";

@@ -24,6 +24,10 @@ export default defineConfig({
     sourcemap: false,
     chunkSizeWarningLimit: 1500,
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+        appearanceBridge: path.resolve(__dirname, "appearance-bridge.html"),
+      },
       output: {
         manualChunks: {
           react: ["react", "react-dom", "react-router-dom"],

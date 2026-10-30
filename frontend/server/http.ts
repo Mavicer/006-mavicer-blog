@@ -1,4 +1,6 @@
 export interface Env extends Cloudflare.Env {
+  NEXUS_ORIGIN?: string;
+  NEXUS_SSO_SECRET?: string;
   CLOUDFLARE_API_TOKEN?: string;
   CLOUDFLARE_ZONE_ID?: string;
   GITHUB_PUBLISH_TOKEN?: string;

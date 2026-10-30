@@ -1,3 +1,4 @@
+import { NEXUS_LAUNCHED, NEXUS_URL } from "./nexus";
 // Centralized layout constants mirroring the original theme config.
 export const LAYOUT = {
   contentMaxWidth: "1000px",
@@ -29,7 +30,7 @@ export type NavItem = {
   submenus?: { label: string; path: string; external?: boolean }[];
 };
 
-export const NAV_ITEMS: NavItem[] = [
+const BASE_NAV_ITEMS: NavItem[] = [
   { label: "首页", path: "/", svg: "home" },
   { label: "归档", path: "/archives", svg: "archive" },
   {
@@ -45,6 +46,18 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "分类", path: "/categories", svg: "folder" },
   { label: "账户", path: "/account", svg: "user" },
 ];
+
+export function buildNavItems(
+  nexusLaunched: boolean,
+  nexusUrl: string,
+): NavItem[] {
+  return BASE_NAV_ITEMS.map((item) =>
+    item.path === "/categories" && nexusLaunched
+      ? { label: "Nexus", path: nexusUrl, svg: "code", external: true }
+      : item,
+  );
+}
+export const NAV_ITEMS = buildNavItems(NEXUS_LAUNCHED, NEXUS_URL);
 
 export type SidebarLink = {
   label: string;

@@ -27,6 +27,8 @@ import { publishingRoute } from "../../server/publishing";
 import { checkWrite, HttpError, json, readBody, rateLimit, type Context as ApiContext } from "../../server/http";
 import { visitsRoute } from "../../server/visits";
 
+import { nexusSsoRoute } from "../../server/nexus-sso";
+
 const staticPosts = new Set(staticPostSlugs);
 
 async function postExists(ctx: ApiContext, slug: string): Promise<boolean> {
@@ -57,6 +59,8 @@ export const onRequest: PagesFunction<import("../../server/http").Env> = async (
       catch { /* Retry the legacy migration on the next request. */ }
     }
 
+    const sso = await nexusSsoRoute(ctx, path);
+    if (sso) return sso;
     const auth = await authRoute(ctx, path);
     if (auth) return auth;
     const publishing = await publishingRoute(ctx, path);

@@ -1,110 +1,70 @@
-import { useState } from "react";
+import { useFeatureNotice } from "@/hooks/useFeatureNotice";
+import { featureReleases } from "@/services/featureReleases";
+import "@/styles/feature-notices.css";
+import { useEffect, useState } from "react";
 import { useTheme } from "@/hooks/useTheme";
 import { useScrollToTop, useScrollProgress } from "@/hooks/useScroll";
 import { Palette } from "lucide-react";
 import { useAppearance } from "@/hooks/useAppearance";
 
-/**
- * Right-side floating toolbar.
- *
- * All icons are inline SVG (no icon-font dependency) so every button is
- * guaranteed to render a visible glyph. The aesthetic stays minimal:
- * thin-stroke, 20px, single-color, matching the Redefine theme.
- *
- * Layout (top → bottom):
- *   [scroll-to-top]   appears after scrolling; shows % normally, arrow on hover
- *   [tools toggle]    always visible; chevron indicates expand state
- *        ┌─ expanded panel (slides DOWN) ─┐
- *        │  personalization                 │
- *        │  theme (sun/moon)                │
- *        │  font +                          │
- *        │  font −                          │
- *        │  scroll to bottom                 │
- *        └──────────────────────────────────┘
- */
 export function RightSideTools({ onPersonalize }: { onPersonalize: () => void }) {
   const { effectiveMode, toggle } = useTheme();
   const { settings, update } = useAppearance();
+  const personalizationNotice = useFeatureNotice(featureReleases.personalization);
   const [expanded, setExpanded] = useState(false);
+  const [keyboardNavigation, setKeyboardNavigation] = useState(false);
+  useEffect(() => {
+    const keyboard = (event: KeyboardEvent) => {
+      if (event.key === "Tab") setKeyboardNavigation(true);
+      if (event.key === "Escape") setExpanded(false);
+    };
+    const pointer = () => setKeyboardNavigation(false);
+    document.addEventListener("keydown", keyboard);
+    document.addEventListener("pointerdown", pointer, true);
+    return () => {
+      document.removeEventListener("keydown", keyboard);
+      document.removeEventListener("pointerdown", pointer, true);
+    };
+  }, []);
   const showTop = useScrollToTop(200);
   const { percent } = useScrollProgress();
-
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
-  const scrollToBottom = () =>
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: "smooth",
-    });
-
-  const adjustFont = (delta: number) => {
-    update({ fontSize: Math.min(22, Math.max(13, settings.fontSize + delta)) });
-  };
-
+  const scrollToBottom = () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+  const adjustFont = (delta: number) => update({ fontSize: Math.min(22, Math.max(13, settings.fontSize + delta)) });
+  const tools = [
+    {label: "个性化", className: "tool-personalization", icon: <Palette size={20} strokeWidth={1.5} />, action: () => { onPersonalize(); personalizationNotice.markRead(); setExpanded(false); }, notice: personalizationNotice.unread},
+    {label: effectiveMode === "dark" ? "日间模式" : "夜间模式", className: "tool-dark-light-toggle", icon: effectiveMode === "dark" ? <SvgSun /> : <SvgMoon />, action: toggle},
+    {label: "放大字号", className: "tool-font-adjust-plus", icon: <SvgZoomIn />, action: () => adjustFont(1)},
+    {label: "缩小字号", className: "tool-font-adjust-minus", icon: <SvgZoomOut />, action: () => adjustFont(-1)},
+    {label: "滚动到底", className: "tool-scroll-to-bottom", icon: <SvgDoubleDown />, action: () => { scrollToBottom(); setExpanded(false); }},
+  ];
   return (
-    <div className="right-side-tools-container">
+    <div className="right-side-tools-container" data-input-mode={keyboardNavigation ? "keyboard" : "pointer"}>
       <div className="side-tools-container">
         <ul className="visible-tools-list">
-          <li
-            className={`right-bottom-tools tool-scroll-to-top ${
-              showTop ? "show" : ""
-            } flex justify-center items-center`}
-            onClick={scrollToTop}
-          >
-            <span className="percent">{percent}</span>
-            <SvgUp className="arrow-up" />
-            <span className="tool-label">回到顶部</span>
-          </li>
-          <li
-            className="right-bottom-tools toggle-tools-list flex justify-center items-center"
-            onClick={() => setExpanded((v) => !v)}
-            role="button"
-            tabIndex={0}
-            aria-label="侧边工具"
-            onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setExpanded(value => !value); } }}
-            aria-expanded={expanded}
-          >
-            {expanded ? <SvgChevronUp /> : <SvgChevronDown />}
-            <span className="tool-label">{expanded ? "收起" : "工具"}</span>
-          </li>
-        </ul>
-
-        <ul className={`hidden-tools-list ${expanded ? "show" : ""}`}>
           <li>
-            <button type="button" className="right-bottom-tools tool-personalization flex justify-center items-center" tabIndex={expanded ? 0 : -1} aria-label="个性化" aria-haspopup="dialog" onClick={() => { onPersonalize(); setExpanded(false); }}>
-              <Palette size={20} strokeWidth={1.5} />
-              <span className="tool-label">个性化</span>
+            <button type="button" className={`right-bottom-tools tool-scroll-to-top ${showTop ? "show" : ""}`} onClick={scrollToTop} aria-label="回到顶部">
+              <span className="percent">{percent}</span><SvgUp className="arrow-up" /><span className="tool-label">回到顶部</span>
             </button>
           </li>
-          <li
-            className="right-bottom-tools tool-dark-light-toggle flex justify-center items-center"
-            onClick={toggle}
-          >
-            {effectiveMode === "dark" ? <SvgSun /> : <SvgMoon />}
-            <span className="tool-label">
-              {effectiveMode === "dark" ? "日间模式" : "夜间模式"}
-            </span>
+          <li>
+            <button type="button" className="right-bottom-tools toggle-tools-list" onClick={() => setExpanded(v => !v)} aria-label="侧边工具" aria-expanded={expanded} aria-controls="side-tools-options" aria-describedby={personalizationNotice.unread ? "personalization-new-feature" : undefined}>
+              {expanded ? <SvgChevronUp /> : <SvgChevronDown />}
+              {personalizationNotice.unread && !expanded && <span className="feature-release-dot" aria-hidden="true" />}
+              {personalizationNotice.unread && <span id="personalization-new-feature" className="sr-only">个性化有新功能，展开后可查看</span>}
+              <span className="tool-label">{expanded ? "收起" : "工具"}</span>
+            </button>
           </li>
-          <li
-            className="right-bottom-tools tool-font-adjust-plus flex justify-center items-center"
-            onClick={() => adjustFont(1)}
-          >
-            <SvgZoomIn />
-            <span className="tool-label">放大字号</span>
-          </li>
-          <li
-            className="right-bottom-tools tool-font-adjust-minus flex justify-center items-center"
-            onClick={() => adjustFont(-1)}
-          >
-            <SvgZoomOut />
-            <span className="tool-label">缩小字号</span>
-          </li>
-          <li
-            className="right-bottom-tools tool-scroll-to-bottom flex justify-center items-center"
-            onClick={() => { scrollToBottom(); setExpanded(false); }}
-          >
-            <SvgDoubleDown />
-            <span className="tool-label">滚动到底</span>
-          </li>
+        </ul>
+        <ul id="side-tools-options" className={`hidden-tools-list ${expanded ? "show" : ""}`} aria-hidden={!expanded}>
+          {tools.map(tool => <li key={tool.className}>
+            <button type="button" className={`right-bottom-tools ${tool.className}`} tabIndex={expanded ? 0 : -1} aria-label={tool.label} aria-haspopup={tool.className === "tool-personalization" ? "dialog" : undefined} onClick={tool.action}>
+              {tool.icon}
+              {tool.notice && <span className="feature-release-dot" aria-hidden="true" />}
+              {tool.notice && <span className="sr-only">新功能</span>}
+              <span className="tool-label">{tool.label}</span>
+            </button>
+          </li>)}
         </ul>
       </div>
     </div>

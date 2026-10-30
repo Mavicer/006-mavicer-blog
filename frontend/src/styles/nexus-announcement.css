@@ -1,0 +1,172 @@
+.nexus-announcement {
+  width: min(420px, calc(100vw - 32px));
+  max-height: calc(100dvh - 40px);
+  margin: auto;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 32px;
+  background: #fbfbfd;
+  color: #1d1d1f;
+  box-shadow:
+    0 32px 100px #13203030,
+    0 4px 14px #00000010;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.nexus-announcement::backdrop {
+  background: #18232d40;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.nexus-announcement-card {
+  position: relative;
+  isolation: isolate;
+}
+.nexus-announcement-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #68686d;
+  background: #ffffffbf;
+  backdrop-filter: blur(8px);
+}
+.nexus-announcement-close:hover {
+  background: #fff;
+  color: #1d1d1f;
+}
+.nexus-announcement-media {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  background: #eef0f5;
+  overflow: hidden;
+}
+.nexus-announcement-media video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.nexus-announcement-playback {
+  position: absolute;
+  bottom: 14px;
+  right: 16px;
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #ffffffa8;
+  border-radius: 50%;
+  color: #61616a;
+  background: #ffffffb3;
+  cursor: pointer;
+}
+.nexus-announcement-content {
+  padding: 0 36px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.nexus-announcement-icon {
+  position: relative;
+  margin-top: -27px;
+  z-index: 1;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  color: white;
+  font:
+    700 34px -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #c1465a, #8d162b);
+  border: 4px solid #fbfbfd;
+  box-shadow: 0 5px 18px #9f273221;
+}
+.nexus-announcement-content h2 {
+  margin: 15px 0 10px;
+  font-size: 30px;
+  font-weight: 650;
+  letter-spacing: -0.8px;
+  line-height: 1.2;
+}
+.nexus-announcement-content p {
+  margin: 0 0 26px;
+  font-size: 14px;
+  line-height: 1.75;
+  color: #636369;
+}
+.nexus-announcement-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: 14px;
+  background: #a31f34;
+  color: #fff !important;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.nexus-announcement-primary:hover {
+  background: #89182b;
+}
+.nexus-announcement-later {
+  margin-top: 9px;
+  padding: 10px 20px;
+  color: #6e6e73;
+  font-size: 13px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.nexus-announcement :focus-visible {
+  outline: 3px solid #a31f3466;
+  outline-offset: 3px;
+}
+@media (max-width: 480px) {
+  .nexus-announcement {
+    border-radius: 28px;
+  }
+  .nexus-announcement-content {
+    padding: 0 28px 16px;
+  }
+  .nexus-announcement-content p {
+    margin-bottom: 22px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nexus-announcement[open] {
+    animation: nexus-announce-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @keyframes nexus-announce-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .nexus-announcement::backdrop {
+    background: #18232dcc;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

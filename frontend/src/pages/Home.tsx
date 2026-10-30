@@ -1,3 +1,4 @@
+import { NexusAnnouncement } from "@/components/announcements/NexusAnnouncement";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
@@ -14,6 +15,7 @@ export default function Home() {
   return (
     <>
       <HomeBanner />
+      <NexusAnnouncement />
       <div className="main-content-container home-main-content flex flex-col justify-between min-h-dvh">
         <div className="main-content-header" />
         <motion.div
