@@ -3,7 +3,7 @@ import math, os, shutil, subprocess
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-W, H, FPS, SECONDS = 960, 640, 60, 10
+W, H, FPS, SECONDS = 960, 640, 60, 8
 OUT = Path(__file__).resolve().parents[1] / 'public/media'
 FONT = '/System/Library/Fonts/STHeiti Medium.ttc'
 FONTS = {n: ImageFont.truetype(FONT, n) for n in [14, 16, 18, 20, 22, 28]}
@@ -62,31 +62,46 @@ FILTERED=scene(True)
 SAVED=scene(True,True)
 
 def blend(a,b,p): return Image.blend(a,b,smooth(p))
+def feature_scene(kind):
+    im=FIRST.copy(); d=ImageDraw.Draw(im)
+    rounded(d,(84,124,876,570),'#fafbfc',12)
+    if kind=='search':
+        text(d,(92,147),'搜索赛事',28)
+        rounded(d,(92,183,868,229),'#eceef2',10)
+        text(d,(112,206),'网络安全',20)
+        card(d,255,'TryHackMe 网络安全赛','CTF  ·  线上')
+        card(d,369,'香港网安夺旗赛','CTF  ·  线上初赛')
+    elif kind=='detail':
+        text(d,(92,147),'MoonBit 黑客松',28)
+        for y,label,value in [(215,'参与方式','线上'),(270,'参赛要求','查看组队与提交要求'),(325,'作品提交','源代码、文档与演示')]:
+            text(d,(92,y),label,18,MUTED);text(d,(300,y),value,18)
+            d.line((92,y+25,868,y+25),fill='#e7e8ec')
+        rounded(d,(92,400,450,452),'#eceef2',12);text(d,(271,426),'官方来源 ↗',18,INK,'mm')
+        rounded(d,(470,400,868,452),WINE,12);text(d,(669,426),'收藏赛事',18,'white','mm')
+    elif kind=='calendar':
+        text(d,(92,147),'赛事日历',28)
+        text(d,(868,147),'报名与比赛节点','18' if False else 18,MUTED,'rm')
+        for i in range(7):
+            x=92+i*111
+            text(d,(x+50,207),str(9+i),18,INK,'mm')
+            rounded(d,(x,235,x+100,516),'#f0f1f4',10)
+        for x,y,label in [(203,258,'报名截止'),(425,331,'比赛开始'),(647,406,'作品提交')]:
+            rounded(d,(x+4,y,x+96,y+60),'#f5e6eb',8);text(d,(x+50,y+30),label,16,WINE,'mm')
+    else:
+        text(d,(92,147),'我的收藏',28)
+        card(d,205,'MoonBit 黑客松','黑客松  ·  线上',True,True)
+        text(d,(92,350),'保存感兴趣的赛事，稍后继续查看。',18,MUTED)
+    return im
+SEARCH=feature_scene('search');DETAIL=feature_scene('detail');CALENDAR=feature_scene('calendar');BOOKMARKS=feature_scene('saved')
 def frame(t):
-    if t<1.4: im=FIRST.copy()
-    elif t<2.0: im=blend(FIRST,FILTERED,(t-1.4)/.6)
-    elif t<4.8: im=FILTERED.copy()
-    elif t<5.2: im=blend(FILTERED,SAVED,(t-4.8)/.4)
-    elif t<7.8: im=SAVED.copy()
-    elif t<9.2: im=blend(SAVED,FIRST,(t-7.8)/1.4)
-    else: im=FIRST.copy()
-    # A smooth pointer supplies motion without moving text or cards.
-    if .3<t<6.7:
-        if t<1.4:
-            p=smooth((t-.3)/1.1); x,y=630+(219-630)*p,390+(202-390)*p
-        elif t<2.6:x,y=219,202
-        elif t<4.8:
-            p=smooth((t-2.6)/2.2);x,y=219+(806-219)*p,202+(288-202)*p
-        else:x,y=806,288
-        alpha=smooth((t-.3)/.3)*smooth((6.7-t)/.5)
-        cursor=Image.new('RGBA',(W,H));cd=ImageDraw.Draw(cursor)
-        cd.polygon([(x,y),(x+3,y+24),(x+9,y+18),(x+16,y+28),(x+21,y+25),(x+14,y+15),(x+23,y+13)],fill=(40,43,49,int(230*alpha)),outline=(255,255,255,int(255*alpha)))
-        for moment in [1.5,4.9]:
-            p=(t-moment)/.55
-            if 0<p<1:
-                radius=10+22*p;cd.ellipse((x-radius,y-radius,x+radius,y+radius),outline=(163,31,52,int(120*(1-p))),width=2)
-        im=Image.alpha_composite(im,cursor)
+    scenes=[SEARCH,FILTERED,DETAIL,CALENDAR,BOOKMARKS]
+    starts=[0,1.35,2.7,4.05,5.4]
+    if t>=6.7:return blend(BOOKMARKS,SEARCH,(t-6.7)/1.0).convert('RGB')
+    index=max(i for i,start in enumerate(starts) if t>=start)
+    im=scenes[index]
+    if index and t<starts[index]+.18:im=blend(scenes[index-1],im,(t-starts[index])/.18)
     return im.convert('RGB')
+FIRST=SEARCH
 
 OUT.mkdir(exist_ok=True)
 FIRST.convert('RGB').save(OUT/'nexus-intro-poster.jpg',quality=94,subsampling=0)
@@ -100,6 +115,6 @@ process.stdin.close()
 if process.wait(): raise RuntimeError('ffmpeg failed')
 # Contact sheet makes the layout and the exact loop endpoints reviewable.
 proof=Image.new('RGB',(W*2,H*2),'white')
-for (x,y),t in zip([(0,0),(W,0),(0,H),(W,H)],[0,2.6,6.4,9.99]):proof.paste(frame(t),(x,y))
+for (x,y),t in zip([(0,0),(W,0),(0,H),(W,H)],[0,2,3.5,5]):proof.paste(frame(t),(x,y))
 if os.environ.get('NEXUS_VIDEO_PROOF'): proof.save(os.environ['NEXUS_VIDEO_PROOF'],quality=92)
-print(f'{W}x{H}, {FPS}fps, {SECONDS}s; loop endpoints identical: {frame(0).tobytes()==frame(9.99).tobytes()}; bytes: {(OUT/"nexus-intro.mp4").stat().st_size}')
+print(f'{W}x{H}, {FPS}fps, {SECONDS}s; loop endpoints identical: {frame(0).tobytes()==frame(7.99).tobytes()}; bytes: {(OUT/"nexus-intro.mp4").stat().st_size}')
