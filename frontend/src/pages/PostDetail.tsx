@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { getPost, isOnlinePost } from "@/hooks/usePosts";
+import { cachedPost as getPost, loadPost } from "@/lib/post-preload";
 import type { Post } from "@/hooks/usePosts";
-import { getPost as getApiPost } from "@/lib/api";
 import { renderMarkdown, extractToc, type TocItem } from "@/lib/markdown";
 import { useImageViewer } from "@/components/ImageViewer";
 import { useAuth } from "@/hooks/useAuth";
@@ -45,9 +43,9 @@ export default function PostDetail() {
       return;
     }
     // online post: fetch from backend
-    if (isOnlinePost(slug)) {
+    if (!staticPost) {
       setLoading(true);
-      getApiPost(slug)
+      loadPost(slug)
         .then((p) => {
           if (!active) return;
           setPost({
@@ -148,11 +146,8 @@ export default function PostDetail() {
 
   return (
     <div className="main-content-container article-reading-page !pt-[140px]">
-      <motion.div
+      <div
         className="main-content-body flex flex-row flex-wrap justify-center"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
       >
         {toc.length > 1 && (
           <aside className="hidden lg:block w-[210px] ml-[38px] sticky top-[90px] self-start">
@@ -256,7 +251,7 @@ export default function PostDetail() {
             </article>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

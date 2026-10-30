@@ -1,3 +1,4 @@
+import { HomeBackdrop } from "./HomeBackdrop";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { RightSideTools } from "./RightSideTools";
@@ -16,6 +17,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
       <ImageViewerProvider>
+        <HomeBackdrop />
         <ProgressBar />
         <Navbar onSearch={() => search.open()} />
         <main id="swup">{children}</main>

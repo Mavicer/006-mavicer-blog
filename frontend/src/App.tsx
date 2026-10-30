@@ -1,5 +1,4 @@
 import { Routes, Route, useLocation } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
 import Layout from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Home from "./pages/Home";
@@ -22,29 +21,27 @@ export default function App() {
   const location = useLocation();
   return (
     <Layout>
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<Home />} />
-          <Route path="/archives" element={<Archives />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/tags" element={<Tags />} />
-          <Route path="/tags/:tag" element={<Tags />} />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/gallery/admin" element={<ProtectedRoute requireOwner><GalleryAdmin /></ProtectedRoute>} />
-          <Route path="/categories/:cat" element={<Categories />} />
-          <Route path="/posts/:slug" element={<PostDetail />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Login registering />} />
-          <Route path="/admin/users" element={<ProtectedRoute requireOwner><UserAdmin /></ProtectedRoute>} />
-          <Route path="/account" element={<Account />} />
-          <Route path="/admin/articles/new" element={<ProtectedRoute requireOwner><ArticleEditor /></ProtectedRoute>} />
-          <Route path="/admin/articles/:slug/edit" element={<ProtectedRoute requireOwner><ArticleEditor /></ProtectedRoute>} />
-          <Route path="/admin" element={<ProtectedRoute requireOwner><Admin /></ProtectedRoute>} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </AnimatePresence>
+      <Routes location={location}>
+        <Route path="/" element={<Home />} />
+        <Route path="/archives" element={<Archives />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/categories" element={<Categories />} />
+        <Route path="/tags" element={<Tags />} />
+        <Route path="/tags/:tag" element={<Tags />} />
+        <Route path="/gallery" element={<Gallery />} />
+        <Route path="/gallery/admin" element={<ProtectedRoute requireOwner><GalleryAdmin /></ProtectedRoute>} />
+        <Route path="/categories/:cat" element={<Categories />} />
+        <Route path="/posts/:slug" element={<PostDetail key={location.pathname} />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Login registering />} />
+        <Route path="/admin/users" element={<ProtectedRoute requireOwner><UserAdmin /></ProtectedRoute>} />
+        <Route path="/account" element={<Account />} />
+        <Route path="/admin/articles/new" element={<ProtectedRoute requireOwner><ArticleEditor /></ProtectedRoute>} />
+        <Route path="/admin/articles/:slug/edit" element={<ProtectedRoute requireOwner><ArticleEditor /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute requireOwner><Admin /></ProtectedRoute>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </Layout>
   );
 }

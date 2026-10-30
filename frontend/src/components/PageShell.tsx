@@ -1,13 +1,7 @@
-import { motion } from "framer-motion";
 import { Sidebar } from "@/sections/Sidebar";
 import { usePosts } from "@/hooks/usePosts";
 
-/**
- * PageShell — shared layout for non-home pages.
- * Uses a short, smooth fade-in (opacity only, no y-translate) so the
- * transition feels alive without the "double flash" that comes from
- * `mode="wait"` + y-displacement.
- */
+// Shared page layout stays fully visible during route changes.
 export function PageShell({
   children,
   showSidebar = true,
@@ -19,17 +13,14 @@ export function PageShell({
   return (
     <div className="main-content-container flex flex-col min-h-dvh !pt-[100px]">
       <div className="main-content-header" />
-      <motion.div
+      <div
         className="main-content-body flex flex-row flex-wrap justify-center"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
       >
         {showSidebar && <Sidebar />}
         <div className="main-content">
           <div className="home-content-container">{children}</div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

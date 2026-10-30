@@ -8,6 +8,22 @@
     <link rel="icon" type="image/png" href="/images/favicon.png" />
     <link rel="apple-touch-icon" href="/images/favicon.jpg" />
     <meta name="theme-color" content="#A31F34" />
+    <!-- Apply the stored theme and start only the selected wallpaper before React. -->
+    <script>
+      try {
+        const mode = localStorage.getItem("MAVICER_THEME_MODE") || "auto";
+        const dark = mode === "dark" || (mode !== "light" && (new Date().getHours() < 6 || new Date().getHours() >= 18));
+        document.documentElement.classList.toggle("dark", dark);
+        const settings = JSON.parse(localStorage.getItem("MAVICER_APPEARANCE_V1") || "null");
+        const paths = { default: ["/images/wallhaven-wqery6-light.webp", "/images/wallhaven-wqery6-dark.webp"], alpine: ["/images/backgrounds/alpine-day.webp", "/images/backgrounds/alpine-evening.webp"], reflection: ["/images/backgrounds/reflection-day.webp", "/images/backgrounds/reflection-evening.webp"] };
+        const pair = Object.hasOwn(paths, settings?.background) ? paths[settings.background] : paths.default;
+        const url = pair[dark ? 1 : 0];
+        document.documentElement.style.setProperty("--personal-wallpaper", 'url("' + url + '")');
+        const preload = document.createElement("link");
+        preload.rel = "preload"; preload.as = "image"; preload.href = url;
+        document.head.append(preload);
+      } catch {}
+    </script>
     <!-- Security headers -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net api.fontshare.com fonts.googleapis.com; font-src 'self' cdn.jsdelivr.net api.fontshare.com fonts.googleapis.com; img-src 'self' data: blob: https:; connect-src 'self' api.github.com mavicer.cc;" />
     <meta http-equiv="X-Frame-Options" content="DENY" />

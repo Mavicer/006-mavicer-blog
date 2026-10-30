@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
 /**
@@ -97,9 +97,9 @@ export function useScrollReset() {
     };
   }, []);
 
-  // On route change: scroll to top.
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "auto" });
+  // Reset before paint so the new page never appears at the previous scroll offset.
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [pathname]);
 }
 

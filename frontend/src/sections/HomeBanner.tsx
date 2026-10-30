@@ -2,15 +2,10 @@ import { useRef } from "react";
 import { site } from "@/config/site";
 import { profile } from "@/data/profile";
 import { useTypedSubtitle } from "@/hooks/useTypedSubtitle";
-import { useAppearance } from "@/hooks/useAppearance";
-import { useHomeBannerBlur } from "@/hooks/useScroll";
 
 export function HomeBanner() {
   const subRef = useRef<HTMLSpanElement>(null);
   useTypedSubtitle(subRef, [site.subtitle]);
-  const { settings, wallpaper } = useAppearance();
-  const blur = useHomeBannerBlur(settings.scrollBlur ? 15 : 0);
-
   const scrollToMain = () => {
     const target = document.querySelector(".main-content-container");
     target?.scrollIntoView({ behavior: "smooth" });
@@ -18,19 +13,6 @@ export function HomeBanner() {
 
   return (
     <>
-      {/* Full-screen background with parallax scale */}
-      <div
-        className="home-banner-background fixed top-0 left-0 w-screen h-screen box-border will-change-transform bg-cover transition-fade"
-        style={{
-          backgroundImage: `url("${wallpaper}")`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          zIndex: 0,
-          transform: `scale(${Math.max(blur, settings.blur) > 0 ? 1.06 : 1})`,
-          filter: `blur(${Math.max(blur, settings.blur)}px) brightness(${settings.brightness / 100})`,
-          WebkitFilter: `blur(${Math.max(blur, settings.blur)}px) brightness(${settings.brightness / 100})`,
-        }}
-      />
       <div className="home-banner-container flex justify-center items-center transition-fade relative z-[1]">
         {/* Centered hero text block — title + subtitle sit at the visual
             centre of the full-viewport hero, accounting for the navbar. */}
