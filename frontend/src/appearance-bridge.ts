@@ -2,7 +2,6 @@ import {
   APPEARANCE_KEY,
   defaults,
   normalizeAppearance,
-  readCustomImages,
 } from "./services/appearanceService";
 import { NEXUS_URL } from "./config/nexus";
 
@@ -42,31 +41,20 @@ export function acceptsAppearanceRequest(
 if (typeof window !== "undefined" && window.parent !== window) {
   const trustedOrigin = new URL(NEXUS_URL).origin;
   let nonce: string | null = null;
-  let generation = 0;
   let pending: ReturnType<typeof setTimeout> | undefined;
-  async function send() {
+  function send() {
     if (!nonce) return;
-    const serial = ++generation;
     let snapshot: ReturnType<typeof savedSnapshot>;
     try {
       snapshot = savedSnapshot(window.localStorage);
     } catch {
       snapshot = { configured: false, settings: null, theme: "auto" };
     }
-    let images = {};
-    if (snapshot.settings?.background === "custom") {
-      try {
-        images = await readCustomImages();
-      } catch {
-        /* Receiver falls back to the default image. */
-      }
-    }
-    if (serial !== generation) return;
     window.parent.postMessage(
       {
         type: "BLOG_APPEARANCE_SNAPSHOT",
         nonce,
-        snapshot: { ...snapshot, images },
+        snapshot,
       },
       trustedOrigin,
     );
@@ -78,7 +66,7 @@ if (typeof window !== "undefined" && window.parent !== window) {
     )
       return;
     nonce = event.data.nonce;
-    void send();
+    send();
   });
   window.addEventListener("storage", (event) => {
     if (
@@ -87,6 +75,6 @@ if (typeof window !== "undefined" && window.parent !== window) {
     )
       return;
     if (pending) clearTimeout(pending);
-    pending = setTimeout(() => void send(), 100);
+    pending = setTimeout(() => send(), 100);
   });
 }
