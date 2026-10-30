@@ -28,7 +28,15 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     return () => removeEventListener("storage", onStorage);
   }, []);
   const preset = backgrounds.find(item => item.id === settings.background) || backgrounds[0];
-  const wallpaper = effectiveMode === "dark" ? preset.night : preset.day;
+  const requestedWallpaper = effectiveMode === "dark" ? preset.night : preset.day;
+  const [wallpaper, setWallpaper] = useState<string>(requestedWallpaper);
+  useEffect(() => {
+    let active = true;
+    const image = new Image();
+    image.src = requestedWallpaper;
+    void image.decode().then(() => { if (active) setWallpaper(requestedWallpaper); }).catch(() => {});
+    return () => { active = false; };
+  }, [requestedWallpaper]);
 
   useLayoutEffect(() => {
     let theme = "auto";

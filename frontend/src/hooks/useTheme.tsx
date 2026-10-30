@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
 import {
   getMode,
   setMode as persistMode,
@@ -39,8 +39,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return subscribeEffective((eff) => setEffectiveMode(eff));
   }, []);
 
-  // Apply to <html> + highlight.js + persist preference.
-  useEffect(() => {
+  // Apply before paint to avoid showing the opposite theme first.
+  useLayoutEffect(() => {
     const root = document.documentElement;
     if (effectiveMode === "dark") root.classList.add("dark");
     else root.classList.remove("dark");

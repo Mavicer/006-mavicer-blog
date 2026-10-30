@@ -155,7 +155,11 @@ const PURIFY_CONFIG = {
   FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur"],
 };
 
+// Reuse sanitized output when visible cards are prepared before a click.
+const rendered = new Map<string, string>();
 export function renderMarkdown(markdown: string): string {
+  const cached = rendered.get(markdown);
+  if (cached !== undefined) return cached;
   const { text, blocks } = protectMath(markdown);
   let html = marked.parse(text) as string;
   html = html.replace(MATH_BLOCK, (_, i) => blocks[Number(i)] || "");
@@ -163,6 +167,8 @@ export function renderMarkdown(markdown: string): string {
   // dangerouslySetInnerHTML. This strips <script> tags, on* event
   // handlers, javascript: URLs, and other injection vectors.
   html = DOMPurify.sanitize(html, PURIFY_CONFIG);
+  if (rendered.size >= 16) rendered.delete(rendered.keys().next().value!);
+  rendered.set(markdown, html);
   return html;
 }
 

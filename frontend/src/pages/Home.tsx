@@ -1,7 +1,5 @@
-import { NexusAnnouncement } from "@/components/announcements/NexusAnnouncement";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { motion } from "framer-motion";
 import { HomeBanner } from "@/sections/HomeBanner";
 import { Sidebar } from "@/sections/Sidebar";
 import { MobileProfileCard } from "@/components/MobileProfileCard";
@@ -15,14 +13,10 @@ export default function Home() {
   return (
     <>
       <HomeBanner />
-      <NexusAnnouncement />
       <div className="main-content-container home-main-content flex flex-col justify-between min-h-dvh">
         <div className="main-content-header" />
-        <motion.div
+        <div
           className="main-content-body flex flex-row flex-wrap justify-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
         >
           <Sidebar />
           <div className="main-content w-full md:w-auto">
@@ -48,7 +42,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </>
   );

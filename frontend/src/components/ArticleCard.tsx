@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+import { preloadPost } from "@/lib/post-preload";
 import { Link } from "react-router-dom";
 import type { Post } from "@/hooks/usePosts";
 import { ICONS } from "@/components/icons";
@@ -14,9 +16,22 @@ const TAG_LIMIT = 4;
 
 export function ArticleCard({ post }: { post: Post }) {
   const tags = post.tags.slice(0, TAG_LIMIT);
+  const card = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    let idle: number | undefined;
+    const observer = new IntersectionObserver(entries => {
+      if (!entries.some(entry => entry.isIntersecting)) return;
+      observer.disconnect();
+      if ("requestIdleCallback" in window) idle = window.requestIdleCallback(() => preloadPost(post.slug), { timeout: 1500 });
+      else timer = setTimeout(() => preloadPost(post.slug), 120);
+    }, { rootMargin: "200px" });
+    if (card.current) observer.observe(card.current);
+    return () => { observer.disconnect(); clearTimeout(timer); if (idle !== undefined) window.cancelIdleCallback(idle); };
+  }, [post.slug]);
 
   return (
-    <li className="home-article-item">
+    <li ref={card} className="home-article-item" onPointerEnter={() => preloadPost(post.slug)} onFocus={() => preloadPost(post.slug)}>
       <div className="flex flex-col gap-5 px-7 pb-7 pt-7 no-underline text-inherit">
         {/* Title — click trigger #1 */}
         <h3 className="home-article-title">

@@ -1736,3 +1736,6 @@ a:hover {
   height: 1em;
   line-height: 1;
 }
+
+/* Reserve the scrollbar lane across short pages and modal scroll locks. */
+html { scrollbar-gutter: stable; }
