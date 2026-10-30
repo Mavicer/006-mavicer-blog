@@ -10,11 +10,8 @@ import {
 
 export function NexusAnnouncement() {
   const [open, setOpen] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const [blocked, setBlocked] = useState(false);
   const evaluated = useRef(false);
   const dialog = useRef<HTMLDialogElement>(null);
-  const video = useRef<HTMLVideoElement>(null);
   const close = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
@@ -50,39 +47,6 @@ export function NexusAnnouncement() {
     };
   }, [open]);
 
-  const startVideo = useCallback(() => {
-    const element = video.current;
-    if (!element || !open || paused || document.visibilityState !== "visible") return;
-    element.muted = true;
-    element.defaultMuted = true;
-    void element.play().then(() => setBlocked(false)).catch(() => setBlocked(true));
-  }, [open, paused]);
-
-  useEffect(() => {
-    const sync = () => {
-      if (!open || paused || document.visibilityState !== "visible") video.current?.pause();
-      else startVideo();
-    };
-    sync();
-    document.addEventListener("visibilitychange", sync);
-    return () => document.removeEventListener("visibilitychange", sync);
-  }, [open, paused, startVideo]);
-
-  const togglePlayback = () => {
-    if (paused || blocked) {
-      setPaused(false);
-      const element = video.current;
-      if (element) {
-        element.muted = true;
-        element.defaultMuted = true;
-        void element.play().then(() => setBlocked(false)).catch(() => setBlocked(true));
-      }
-    } else {
-      video.current?.pause();
-      setPaused(true);
-    }
-  };
-
   if (!enabled || !open) return null;
   return createPortal(
     <dialog
@@ -117,45 +81,12 @@ export function NexusAnnouncement() {
           </svg>
         </button>
         <div className="nexus-announcement-media">
-          <video
-            ref={video}
-            src="/media/nexus-intro.mp4"
-            poster="/media/nexus-intro-poster.jpg"
-            muted
-            loop
-            playsInline
-            autoPlay
-            preload="auto"
-            onLoadedData={startVideo}
-            onCanPlay={startVideo}
-            aria-label="Nexus 赛事筛选与收藏功能演示"
+          <img
+            src="/media/nexus-home.jpg"
+            alt="Nexus 首页：赛事搜索、筛选与数学建模赛事列表"
+            width={2462}
+            height={1666}
           />
-          <button
-            type="button"
-            className="nexus-announcement-playback"
-            onClick={togglePlayback}
-            aria-label={paused || blocked ? "播放演示" : "暂停演示"}
-          >
-            {paused || blocked ? (
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path d="m6 3 11 7-11 7z" />
-              </svg>
-            ) : (
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path d="M5 4h3v12H5zm7 0h3v12h-3z" />
-              </svg>
-            )}
-          </button>
         </div>
         <div className="nexus-announcement-content">
           <div className="nexus-announcement-icon" aria-hidden="true">
