@@ -16,6 +16,6 @@ test('opening the feature persists read status; a different release remains inde
 test('blocked storage or invalid release date cannot cause a persistent red dot',()=>{
  const blocked={getItem(){throw Error('blocked')},setItem(){throw Error('blocked')}};assert.equal(service.isFeatureUnread(release,blocked,start),false);assert.equal(service.markFeatureRead(release,blocked),false);assert.equal(service.isFeatureUnread({...release,releasedAt:'invalid'},makeStore(),start),false);
 });
-test('Nexus replaces category in its existing slot only after launch',()=>{
- const before=nav.buildNavItems(false,'https://nexus.mavicer.cc/');const after=nav.buildNavItems(true,'https://nexus.mavicer.cc/');const i=before.findIndex(x=>x.label==='分类');assert(i>=0);assert.equal(after.length,before.length);assert.equal(after[i].label,'Nexus');assert.equal(after[i].external,true);assert(!after.some(x=>x.label==='分类'));assert.deepEqual(before.filter((_,j)=>i!==j),after.filter((_,j)=>i!==j));
+test('Nexus sits at the end of desktop and mobile navigation after launch',()=>{
+ const before=nav.buildNavItems(false,'https://nexus.mavicer.cc/');const after=nav.buildNavItems(true,'https://nexus.mavicer.cc/');assert(before.some(x=>x.label==='分类'));assert.equal(after.length,before.length);assert.equal(after.at(-1).label,'Nexus');assert.equal(after.at(-1).external,true);assert(!after.some(x=>x.label==='分类'));assert.deepEqual(before.filter(x=>x.label!=='分类'),after.slice(0,-1));
 });
