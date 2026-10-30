@@ -90,7 +90,13 @@
 .personalization-done { padding: 8px 28px; border: 0; border-radius: 7px; color: #fff; background: var(--panel-accent); font-size: 12px !important; }
 .home-main-content :is(.home-article-item, .sidebar-links, .sidebar-content) { background: rgba(255,255,255,var(--personal-card-opacity,.5)); }
 .dark .home-main-content :is(.home-article-item, .sidebar-links, .sidebar-content) { background: rgba(40,42,48,var(--personal-card-opacity,.5)); }
-.right-bottom-tools:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 3px; }
+ .right-side-tools-container .right-bottom-tools { -webkit-tap-highlight-color: transparent; appearance: none; padding: 0; }
+.right-side-tools-container .right-bottom-tools:focus { outline: none; }
+.right-side-tools-container[data-input-mode="keyboard"] .right-bottom-tools:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 3px; }
+@media (hover: none) {
+  .right-side-tools-container .right-bottom-tools:hover { color: var(--default-text-color); background: var(--background-color-transparent-80); }
+  .right-side-tools-container .right-bottom-tools:hover .tool-label { opacity: 0; }
+}
 @keyframes personalization-in { from { transform: translateX(35px); opacity: .5; } to { transform: translateX(0); opacity: 1; } }
 @media (max-width: 480px) {
   .personalization { width: min(100vw, 400px); }

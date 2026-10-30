@@ -1,8 +1,8 @@
 # Nexus 接入
 
-本目录为独立的本地实现副本，没有更改线上博客，也没有修改之前的博客工作目录。
+本目录为博客与 Nexus 的正式接入实现。
 
-博客导航入口暂不加入；仅保留接入代码供功能完善后使用。未来入口可指向 `https://nexus.mavicer.cc/api/auth/blog/start?next=/&prompt=none`。已登录时同步身份，匿名时返回 Nexus 公开目录。登录页支持完成认证后跳回授权接口。
+博客右上角原分类入口替换为 Nexus，首页一次性视频公告的按钮也指向 `https://nexus.mavicer.cc/api/auth/blog/start?next=/&prompt=none`。已登录时同步身份，匿名时返回 Nexus 公开目录。登录页支持完成认证后跳回授权接口。
 
 Cloudflare Pages 的服务端环境变量：
 
@@ -13,4 +13,4 @@ Cloudflare Pages 的服务端环境变量：
 
 新增接口位于 `frontend/server/nexus-sso.ts`。定向测试：在 frontend 内运行 `node --test tests/nexus-sso.test.mjs`。已通过授权码防重放、PKCE、客户端认证、回调限制、两站退出及密码重置后的会话校验；已通过前后端类型检查。
 
-正式发布顺序：先准备 Nexus 的运行环境及 HTTPS 域名，再配置两端服务端密钥并发布博客接口，最后在 Nexus 设置 `AUTH_PROVIDER=blog`。当前 Nexus 仍为本地 Next.js + PostgreSQL，尚未完成 Cloudflare Workers 运行适配、生产数据库接入或 DNS 配置，不能把本地实现完成称为已经上线。发布前应将此补丁应用到博客最新 main，并处理可能出现的并行修改。
+正式发布顺序：先准备 Nexus 的运行环境及 HTTPS 域名，再配置两端服务端密钥并发布博客接口，最后在 Nexus 设置 `AUTH_PROVIDER=blog`。Nexus 已适配 OpenNext + Workers 和独立 D1 数据库，绑定 nexus.mavicer.cc。博客补丁已合并最新 main。正式构建开关保存在 frontend/.env.production。
