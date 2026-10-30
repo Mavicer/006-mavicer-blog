@@ -11,7 +11,7 @@ import {
 export function NexusAnnouncement() {
   const [open, setOpen] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(true);
+  const [blocked, setBlocked] = useState(false);
   const evaluated = useRef(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const video = useRef<HTMLVideoElement>(null);
@@ -37,17 +37,6 @@ export function NexusAnnouncement() {
   }, []);
 
   useEffect(() => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => {
-      setReducedMotion(media.matches);
-      setPaused(media.matches);
-    };
-    sync();
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
-  }, []);
-
-  useEffect(() => {
     if (!open || !dialog.current) return;
     const element = dialog.current;
     const previous = document.activeElement as HTMLElement | null;
@@ -61,17 +50,38 @@ export function NexusAnnouncement() {
     };
   }, [open]);
 
+  const startVideo = useCallback(() => {
+    const element = video.current;
+    if (!element || !open || paused || document.visibilityState !== "visible") return;
+    element.muted = true;
+    element.defaultMuted = true;
+    void element.play().then(() => setBlocked(false)).catch(() => setBlocked(true));
+  }, [open, paused]);
+
   useEffect(() => {
     const sync = () => {
-      if (!video.current) return;
-      if (!open || paused || document.visibilityState !== "visible")
-        video.current.pause();
-      else void video.current.play().catch(() => setPaused(true));
+      if (!open || paused || document.visibilityState !== "visible") video.current?.pause();
+      else startVideo();
     };
     sync();
     document.addEventListener("visibilitychange", sync);
     return () => document.removeEventListener("visibilitychange", sync);
-  }, [open, paused]);
+  }, [open, paused, startVideo]);
+
+  const togglePlayback = () => {
+    if (paused || blocked) {
+      setPaused(false);
+      const element = video.current;
+      if (element) {
+        element.muted = true;
+        element.defaultMuted = true;
+        void element.play().then(() => setBlocked(false)).catch(() => setBlocked(true));
+      }
+    } else {
+      video.current?.pause();
+      setPaused(true);
+    }
+  };
 
   if (!enabled || !open) return null;
   return createPortal(
@@ -114,17 +124,19 @@ export function NexusAnnouncement() {
             muted
             loop
             playsInline
-            autoPlay={!reducedMotion}
-            preload="metadata"
-            aria-label="Nexus 赛事筛选、查看要求与收藏功能演示"
+            autoPlay
+            preload="auto"
+            onLoadedData={startVideo}
+            onCanPlay={startVideo}
+            aria-label="Nexus 赛事筛选与收藏功能演示"
           />
           <button
             type="button"
             className="nexus-announcement-playback"
-            onClick={() => setPaused((p) => !p)}
-            aria-label={paused ? "播放演示" : "暂停演示"}
+            onClick={togglePlayback}
+            aria-label={paused || blocked ? "播放演示" : "暂停演示"}
           >
-            {paused ? (
+            {paused || blocked ? (
               <svg
                 width="14"
                 height="14"

@@ -51,11 +51,11 @@ export function buildNavItems(
   nexusLaunched: boolean,
   nexusUrl: string,
 ): NavItem[] {
-  return BASE_NAV_ITEMS.map((item) =>
-    item.path === "/categories" && nexusLaunched
-      ? { label: "Nexus", path: nexusUrl, svg: "code", external: true }
-      : item,
-  );
+  if (!nexusLaunched) return BASE_NAV_ITEMS;
+  return [
+    ...BASE_NAV_ITEMS.filter(item => item.path !== "/categories"),
+    { label: "Nexus", path: nexusUrl, svg: "code", external: true },
+  ];
 }
 export const NAV_ITEMS = buildNavItems(NEXUS_LAUNCHED, NEXUS_URL);
 
