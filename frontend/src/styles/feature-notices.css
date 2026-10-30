@@ -1,0 +1,14 @@
+.feature-release-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #eb4355;
+  box-shadow: 0 0 0 2px var(--background-color, white);
+  pointer-events: none;
+}
+.tool-personalization {
+  position: relative;
+}

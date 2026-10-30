@@ -50,7 +50,7 @@ function usernameInput(value: unknown): string {
 function cookie(token: string, maxAge = SESSION_SECONDS): string {
   return `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 }
-function sessionToken(request: Request): string {
+export function sessionToken(request: Request): string {
   const value = request.headers.get("Cookie")?.split(";").map((part) => part.trim()).find((part) => part.startsWith(COOKIE + "="))?.slice(COOKIE.length + 1) || "";
   return /^[A-Za-z0-9_-]{43}$/.test(value) ? value : "";
 }

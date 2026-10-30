@@ -1,30 +1,16 @@
+import { useFeatureNotice } from "@/hooks/useFeatureNotice";
+import { featureReleases } from "@/services/featureReleases";
+import "@/styles/feature-notices.css";
 import { useState } from "react";
 import { useTheme } from "@/hooks/useTheme";
 import { useScrollToTop, useScrollProgress } from "@/hooks/useScroll";
 import { Palette } from "lucide-react";
 import { useAppearance } from "@/hooks/useAppearance";
 
-/**
- * Right-side floating toolbar.
- *
- * All icons are inline SVG (no icon-font dependency) so every button is
- * guaranteed to render a visible glyph. The aesthetic stays minimal:
- * thin-stroke, 20px, single-color, matching the Redefine theme.
- *
- * Layout (top → bottom):
- *   [scroll-to-top]   appears after scrolling; shows % normally, arrow on hover
- *   [tools toggle]    always visible; chevron indicates expand state
- *        ┌─ expanded panel (slides DOWN) ─┐
- *        │  personalization                 │
- *        │  theme (sun/moon)                │
- *        │  font +                          │
- *        │  font −                          │
- *        │  scroll to bottom                 │
- *        └──────────────────────────────────┘
- */
 export function RightSideTools({ onPersonalize }: { onPersonalize: () => void }) {
   const { effectiveMode, toggle } = useTheme();
   const { settings, update } = useAppearance();
+  const personalizationNotice = useFeatureNotice(featureReleases.personalization);
   const [expanded, setExpanded] = useState(false);
   const showTop = useScrollToTop(200);
   const { percent } = useScrollProgress();
@@ -62,16 +48,21 @@ export function RightSideTools({ onPersonalize }: { onPersonalize: () => void })
             aria-label="侧边工具"
             onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setExpanded(value => !value); } }}
             aria-expanded={expanded}
+            aria-describedby={personalizationNotice.unread ? "personalization-new-feature" : undefined}
           >
             {expanded ? <SvgChevronUp /> : <SvgChevronDown />}
+            {personalizationNotice.unread && !expanded && <span className="feature-release-dot" aria-hidden="true" />}
+            {personalizationNotice.unread && <span id="personalization-new-feature" className="sr-only">个性化有新功能，展开后可查看</span>}
             <span className="tool-label">{expanded ? "收起" : "工具"}</span>
           </li>
         </ul>
 
         <ul className={`hidden-tools-list ${expanded ? "show" : ""}`}>
           <li>
-            <button type="button" className="right-bottom-tools tool-personalization flex justify-center items-center" tabIndex={expanded ? 0 : -1} aria-label="个性化" aria-haspopup="dialog" onClick={() => { onPersonalize(); setExpanded(false); }}>
+            <button type="button" className="right-bottom-tools tool-personalization flex justify-center items-center" tabIndex={expanded ? 0 : -1} aria-label="个性化" aria-haspopup="dialog" onClick={() => { onPersonalize(); personalizationNotice.markRead(); setExpanded(false); }}>
               <Palette size={20} strokeWidth={1.5} />
+              {personalizationNotice.unread && <span className="feature-release-dot" aria-hidden="true" />}
+              {personalizationNotice.unread && <span className="sr-only">新功能</span>}
               <span className="tool-label">个性化</span>
             </button>
           </li>

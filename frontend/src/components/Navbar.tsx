@@ -74,7 +74,9 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
                 const Icon = ICONS[item.svg];
                 return (
                   <li key={item.label} className="navbar-item">
-                    {item.path ? (
+                    {item.external ? (
+                      <a href={item.path} className="navbar-link"><Icon /><span>{item.label}</span></a>
+                    ) : item.path ? (
                       <Link
                         to={item.path}
                         className={`navbar-link ${isActive(item) ? "active" : ""}`}
@@ -187,7 +189,9 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
         <ul className="drawer-navbar-list flex flex-col px-4 justify-center items-start pt-20">
           {NAV_ITEMS.map((item) => {
             const Icon = ICONS[item.svg];
-            return item.path ? (
+            return item.external ? (
+              <li key={item.label} className="drawer-navbar-item text-base my-1.5 w-full"><a href={item.path} className="py-1.5 px-2 text-2xl font-semibold" onClick={() => setDrawerOpen(false)}>{item.label}</a></li>
+            ) : item.path ? (
               <li
                 key={item.label}
                 className="drawer-navbar-item text-base my-1.5 flex flex-col w-full"
