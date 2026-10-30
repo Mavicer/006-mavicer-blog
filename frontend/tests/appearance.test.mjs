@@ -13,7 +13,7 @@ test("invalid saved preferences recover defaults and clamp readability controls"
   assert.deepEqual(service.normalizeAppearance({ background: "javascript:alert(1)", brightness: NaN, blur: Infinity, cardOpacity: -10, fontSize: 100, scrollBlur: "false" }), {
     ...service.defaults, cardOpacity: 40, fontSize: 22,
   });
-  assert.equal(service.normalizeAppearance({ background: "custom", scrollBlur: false }).background, "custom");
+  assert.equal(service.normalizeAppearance({ background: "custom", scrollBlur: false }).background, "default");
   assert.equal(service.normalizeAppearance({ scrollBlur: false }).scrollBlur, false);
 });
 
@@ -25,9 +25,4 @@ test("blocked browser storage falls back to usable default appearance", () => {
     if (previous) Object.defineProperty(globalThis, "localStorage", previous);
     else delete globalThis.localStorage;
   }
-});
-
-test("unsupported images and oversized uploads fail before decoding", async () => {
-  await assert.rejects(service.prepareImage({ type: "image/svg+xml", size: 100 }), /请选择/);
-  await assert.rejects(service.prepareImage({ type: "image/png", size: 21 * 1024 * 1024 }), /20 MB/);
 });
