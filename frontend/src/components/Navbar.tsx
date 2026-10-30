@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, type MouseEvent } from "react";
+import { NexusAnnouncement } from "@/components/announcements/NexusAnnouncement";
 import { Link, useLocation } from "react-router-dom";
 import { NAV_ITEMS, type NavItem } from "@/config/nav";
 import { site } from "@/config/site";
@@ -11,6 +12,14 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [dragX, setDragX] = useState(0);
   const isHome = pathname === "/";
+  const [nexusRequest, setNexusRequest] = useState(0);
+  function openNexus(event: MouseEvent<HTMLAnchorElement>, item: NavItem) {
+    if (item.label !== "Nexus" || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    setDrawerOpen(false);
+    setNexusRequest(value => value + 1);
+  }
+
 
   const isActive = (item: NavItem) =>
     item.path ? pathname === item.path : false;
@@ -52,6 +61,7 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
 
   return (
     <>
+      <NexusAnnouncement autoShow={isHome} openRequest={nexusRequest} />
       <div
         className={`navbar-container ${shrink ? "navbar-shrink" : ""}`}
       >
@@ -75,7 +85,7 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
                 return (
                   <li key={item.label} className="navbar-item">
                     {item.external ? (
-                      <a href={item.path} className="navbar-link"><Icon /><span>{item.label}</span></a>
+                      <a href={item.path} className="navbar-link" onClick={(event) => openNexus(event, item)}><Icon /><span>{item.label}</span></a>
                     ) : item.path ? (
                       <Link
                         to={item.path}
@@ -190,7 +200,7 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
           {NAV_ITEMS.map((item) => {
             const Icon = ICONS[item.svg];
             return item.external ? (
-              <li key={item.label} className="drawer-navbar-item text-base my-1.5 w-full"><a href={item.path} className="py-1.5 px-2 text-2xl font-semibold" onClick={() => setDrawerOpen(false)}>{item.label}</a></li>
+              <li key={item.label} className="drawer-navbar-item text-base my-1.5 w-full"><a href={item.path} className="py-1.5 px-2 text-2xl font-semibold" onClick={(event) => { setDrawerOpen(false); openNexus(event, item); }}>{item.label}</a></li>
             ) : item.path ? (
               <li
                 key={item.label}

@@ -20,3 +20,5 @@ VITE_NEXUS_URL=https://nexus.mavicer.cc/api/auth/blog/start?next=/&prompt=none
 
 
 Nexus 公告现使用用户提供的首页截图 `/media/nexus-home.jpg`，替代演示视频与播放控件；一次性展示键仍为 `MAVICER_NEXUS_ANNOUNCEMENT_V1`。
+
+点击桌面或手机导航 Nexus 可随时打开截图公告，再点击“查看赛事”进入；首页自动展示仍仅一次。修饰键点击保留浏览器原生开新标签行为。

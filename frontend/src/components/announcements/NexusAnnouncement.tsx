@@ -8,14 +8,14 @@ import {
   NEXUS_URL as nexusUrl,
 } from "@/config/nexus";
 
-export function NexusAnnouncement() {
+export function NexusAnnouncement({ autoShow = false, openRequest = 0 }: { autoShow?: boolean; openRequest?: number }) {
   const [open, setOpen] = useState(false);
   const evaluated = useRef(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const close = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !autoShow) return;
     const reveal = () => {
       if (evaluated.current || document.visibilityState !== "visible") return;
       evaluated.current = true;
@@ -31,7 +31,14 @@ export function NexusAnnouncement() {
     reveal();
     document.addEventListener("visibilitychange", reveal);
     return () => document.removeEventListener("visibilitychange", reveal);
-  }, []);
+  }, [autoShow]);
+
+  useEffect(() => {
+    if (openRequest <= 0) return;
+    evaluated.current = true;
+    try { localStorage.setItem(SEEN_KEY, "seen"); } catch { /* Manual opening works without storage. */ }
+    setOpen(true);
+  }, [openRequest]);
 
   useEffect(() => {
     if (!open || !dialog.current) return;
@@ -47,7 +54,7 @@ export function NexusAnnouncement() {
     };
   }, [open]);
 
-  if (!enabled || !open) return null;
+  if (!open) return null;
   return createPortal(
     <dialog
       ref={dialog}
