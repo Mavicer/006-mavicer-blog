@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "@/styles/nexus-announcement.css";
 
+const PREVIEW_URL = "/media/nexus-home-preview.webp";
 const SEEN_KEY = "MAVICER_NEXUS_ANNOUNCEMENT_V1";
 import {
   NEXUS_ANNOUNCEMENT_ENABLED as enabled,
@@ -13,6 +14,15 @@ export function NexusAnnouncement({ autoShow = false, openRequest = 0 }: { autoS
   const evaluated = useRef(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const close = useCallback(() => setOpen(false), []);
+
+  // Warm the small preview before a manual opening; never await it to show the dialog.
+  useEffect(() => {
+    if (!enabled) return;
+    const preview = new Image();
+    preview.decoding = "async";
+    preview.fetchPriority = "low";
+    preview.src = PREVIEW_URL;
+  }, []);
 
   useEffect(() => {
     if (!enabled || !autoShow) return;
@@ -89,10 +99,13 @@ export function NexusAnnouncement({ autoShow = false, openRequest = 0 }: { autoS
         </button>
         <div className="nexus-announcement-media">
           <img
-            src="/media/nexus-home.jpg"
+            src={PREVIEW_URL}
             alt="Nexus 首页：赛事搜索、筛选与数学建模赛事列表"
-            width={2462}
-            height={1666}
+            width={840}
+            height={568}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
           />
         </div>
         <div className="nexus-announcement-content">
