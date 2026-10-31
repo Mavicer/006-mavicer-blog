@@ -1737,16 +1737,11 @@ a:hover {
 html { scrollbar-gutter: stable; }
 
 
-/* Desktop hero actions keep static compositing and symmetric placement. */
-.desktop-hero-actions { display: none; }
-@media (min-width: 769px) {
-  .desktop-hero-actions { display: block; }
-  .hero-action { position: absolute; bottom: 16px; display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border: 1px solid var(--home-banner-icons-container-border-color); border-radius: 50%; background: var(--home-banner-icons-container-background-color); color: var(--home-banner-text-color); transition: color 150ms ease, background-color 150ms ease; }
-  .hero-action-feedback { left: 48px; }
-  .hero-action-github { right: 48px; }
-  .hero-action:hover { background: var(--primary-color); color: white; }
-  .hero-action:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 3px; }
-}
+/* Compact contact buttons replace the secondary sidebar navigation. */
+.sidebar-contact-actions { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 12px; padding: 14px 0 4px; border-top: 1px solid var(--border-color); }
+.sidebar-contact-action { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid var(--border-color); border-radius: 50%; background: var(--third-background-color); color: var(--second-text-color); transition: background-color 150ms ease, color 150ms ease; }
+@media (hover: hover) { .sidebar-contact-action:hover { background: var(--primary-color); color: white; } }
+.sidebar-contact-action:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 3px; }
 .feedback-picker { position: relative; display: flex; flex-direction: column; gap: 8px; }
 .feedback-picker-trigger { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--background-color); text-align: left; }
 .feedback-picker-menu { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 30; padding: 6px; border: 1px solid var(--border-color); border-radius: 14px; background: var(--background-color); box-shadow: var(--redefine-box-shadow); }
