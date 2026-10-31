@@ -1,3 +1,4 @@
+import { FeedbackLabel, FeedbackUnreadDot, useFeedbackNotifications } from "@/hooks/useFeedbackNotifications";
 import { useState, useRef, useCallback, type MouseEvent } from "react";
 import { NexusAnnouncement } from "@/components/announcements/NexusAnnouncement";
 import { Link, useLocation } from "react-router-dom";
@@ -8,6 +9,7 @@ import { ICONS } from "@/components/icons";
 
 export function Navbar({ onSearch }: { onSearch: () => void }) {
   const shrink = useNavbarShrink(40);
+  const { unread } = useFeedbackNotifications();
   const { pathname } = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [dragX, setDragX] = useState(0);
@@ -85,19 +87,19 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
                 return (
                   <li key={item.label} className="navbar-item">
                     {item.external ? (
-                      <a href={item.path} className="navbar-link" onClick={(event) => openNexus(event, item)}><Icon /><span>{item.label}</span></a>
+                      <a href={item.path} className="navbar-link" onClick={(event) => openNexus(event, item)}><Icon /><span>{item.path === "/feedback" ? <FeedbackLabel /> : <>{item.label}{item.path === "/account" && <FeedbackUnreadDot />}</>}</span></a>
                     ) : item.path ? (
                       <Link
                         to={item.path}
                         className={`navbar-link ${isActive(item) ? "active" : ""}`}
                       >
                         <Icon />
-                        <span>{item.label}</span>
+                        <span>{item.path === "/feedback" ? <FeedbackLabel /> : <>{item.label}{item.path === "/account" && <FeedbackUnreadDot />}</>}</span>
                       </Link>
                     ) : (
                       <a className="navbar-link navbar-link-dropdown" href="#" onClick={(e) => e.preventDefault()}>
                         <Icon />
-                        <span>{item.label}</span>
+                        <span>{item.path === "/feedback" ? <FeedbackLabel /> : <>{item.label}{item.path === "/account" && <FeedbackUnreadDot />}</>}</span>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "2px" }}>
                           <path d="M6 9l6 6 6-6" />
                         </svg>
@@ -145,7 +147,7 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
               <i className="fa-solid fa-magnifying-glass" />
             </div>
             <div
-              className="icon-item navbar-bar cursor-pointer flex flex-col justify-center w-6 h-5"
+              className="icon-item navbar-bar relative cursor-pointer flex flex-col justify-center w-6 h-5"
               onClick={() => setDrawerOpen((v) => !v)}
             >
               <span
@@ -163,6 +165,7 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
                   drawerOpen ? "-translate-y-[7px] -rotate-45" : ""
                 }`}
               />
+              {unread > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500" aria-label="有未读留言" />}
             </div>
           </div>
         </div>
@@ -213,7 +216,7 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
                   to={item.path}
                   onClick={() => setDrawerOpen(false)}
                 >
-                  <span>{item.label}</span>
+                  <span>{item.path === "/feedback" ? <FeedbackLabel /> : <>{item.label}{item.path === "/account" && <FeedbackUnreadDot />}</>}</span>
                   <Icon className="shrink-0" />
                 </Link>
               </li>
@@ -223,7 +226,7 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
                 className="drawer-navbar-item text-base my-1.5 flex flex-col w-full"
               >
                 <div className="py-1.5 px-2 flex flex-row items-center justify-between gap-1 cursor-pointer text-2xl font-semibold group border-b border-border w-full">
-                  <span>{item.label}</span>
+                  <span>{item.path === "/feedback" ? <FeedbackLabel /> : <>{item.label}{item.path === "/account" && <FeedbackUnreadDot />}</>}</span>
                   <i className="fa-solid fa-chevron-right fa-sm fa-fw" />
                 </div>
                 <div className="flex-col items-start px-2 py-2">
