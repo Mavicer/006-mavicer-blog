@@ -221,7 +221,8 @@ a:hover {
   }
 
   .home-banner-background {
-    transition: filter 0.3s ease;
+    /* Blur follows scroll directly; never animate the background geometry. */
+    transition: none;
   }
 
   .navbar-container {
