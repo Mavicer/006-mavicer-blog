@@ -1739,3 +1739,7 @@ a:hover {
 
 /* Reserve the scrollbar lane across short pages and modal scroll locks. */
 html { scrollbar-gutter: stable; }
+
+@media (max-width: 768px) {
+  .home-banner-feedback { left: 1rem !important; right: auto !important; }
+}
