@@ -5,6 +5,7 @@ import { RightSideTools } from "./RightSideTools";
 import { SearchPopup, useSearchPopup } from "./SearchPopup";
 import { ImageViewerProvider } from "./ImageViewer";
 import { ProgressBar } from "./ProgressBar";
+import { FeedbackNotificationsProvider } from "@/hooks/useFeedbackNotifications";
 import { AuthProvider } from "@/hooks/useAuth";
 import { useScrollReset } from "@/hooks/useScroll";
 import { useState } from "react";
@@ -16,6 +17,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [personalizationOpen, setPersonalizationOpen] = useState(false);
   return (
     <AuthProvider>
+      <FeedbackNotificationsProvider>
       <ImageViewerProvider>
         <HomeBackdrop />
         <ProgressBar />
@@ -26,6 +28,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <Personalization open={personalizationOpen} onClose={() => setPersonalizationOpen(false)} />
         <SearchPopup popup={search} />
       </ImageViewerProvider>
+      </FeedbackNotificationsProvider>
     </AuthProvider>
   );
 }

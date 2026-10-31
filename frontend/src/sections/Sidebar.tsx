@@ -1,3 +1,4 @@
+import { FeedbackLabel } from "@/hooks/useFeedbackNotifications";
 import { MessageSquare } from "lucide-react";
 import { GitHubIcon } from "@/components/GitHubIcon";
 import { Link } from "react-router-dom";
@@ -32,7 +33,7 @@ export function Sidebar() {
           </a>
           <Link to="/feedback" className="links">
             <MessageSquare size={22} strokeWidth={1.5} aria-hidden="true" />
-            <span className="link-name">留言板</span>
+            <span className="link-name"><FeedbackLabel /></span>
           </Link>
         </div>
 
