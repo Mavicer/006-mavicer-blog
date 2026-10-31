@@ -41,7 +41,7 @@ try {
   await page.getByRole('button', { name: '播放 VisualLab 循环演示', exact: true }).click();
   await page.waitForFunction(() => document.querySelector('.project-media img')?.getAttribute('src')?.endsWith('visuallab-demo.gif'));
   const nexus = page.locator('.project-work').filter({ has: page.getByRole('heading', { name: 'Nexus', exact: true }) });
-  assert.ok((await nexus.locator('img').getAttribute('src')).endsWith('nexus-home.png'));
+  assert.ok((await nexus.locator('img').getAttribute('src')).endsWith('nexus-home-preview.webp'));
   const trigger = page.getByRole('button', { name: '查看 VisualLab 项目', exact: true });
   await trigger.click();
   await page.getByRole('dialog').waitFor();
