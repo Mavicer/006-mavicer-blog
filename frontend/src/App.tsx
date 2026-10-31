@@ -13,6 +13,8 @@ import PostDetail from "./pages/PostDetail";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Account from "./pages/Account";
+import Feedback from "./pages/Feedback";
+import FeedbackAdmin from "./pages/FeedbackAdmin";
 import Admin from "./pages/Admin";
 import UserAdmin from "./pages/UserAdmin";
 import ArticleEditor from "./pages/ArticleEditor";
@@ -23,6 +25,8 @@ export default function App() {
     <Layout>
       <Routes location={location}>
         <Route path="/" element={<Home />} />
+        <Route path="/feedback" element={<Feedback />} />
+        <Route path="/admin/feedback" element={<ProtectedRoute requireOwner><FeedbackAdmin /></ProtectedRoute>} />
         <Route path="/archives" element={<Archives />} />
         <Route path="/about" element={<About />} />
         <Route path="/projects" element={<Projects />} />

@@ -25,6 +25,7 @@ import { authRoute, currentUser, requireUser, type User } from "../../server/aut
 import { ensureAccounts } from "../../server/schema";
 import { publishingRoute } from "../../server/publishing";
 import { checkWrite, HttpError, json, readBody, rateLimit, type Context as ApiContext } from "../../server/http";
+import { feedbackRoute } from "../../server/feedback";
 import { visitsRoute } from "../../server/visits";
 
 import { nexusSsoRoute } from "../../server/nexus-sso";
@@ -51,6 +52,8 @@ export const onRequest: PagesFunction<import("../../server/http").Env> = async (
     await ensureAccounts(ctx);
     if (method === "OPTIONS") return new Response(null, { status: 204 });
     if (path === "health" && method === "GET") return json({ ok: true });
+    const feedback = await feedbackRoute(ctx, path);
+    if (feedback) return feedback;
     if (path === "visits") return await visitsRoute(ctx);
 
     // Legacy comment indexes are independent of the accounts schema.

@@ -1,3 +1,5 @@
+import { MessageSquare } from "lucide-react";
+import { GitHubIcon } from "@/components/GitHubIcon";
 import { Link } from "react-router-dom";
 import { SIDEBAR_LINKS } from "@/config/nav";
 import { site } from "@/config/site";
@@ -15,7 +17,7 @@ export function Sidebar() {
             <div className="site-name">{site.name}</div>
             <div className="announcement">{site.announcement}</div>
           </div>
-          {SIDEBAR_LINKS.map((l) => {
+          {SIDEBAR_LINKS.filter(link => link.path === "/about").map((l) => {
             const Icon = ICONS[l.svg];
             return (
               <Link key={l.path} className="links" to={l.path}>
@@ -24,6 +26,14 @@ export function Sidebar() {
               </Link>
             );
           })}
+          <a href={profile.github.url} target="_blank" rel="noopener noreferrer" className="links">
+            <GitHubIcon className="w-[22px] h-[22px]" />
+            <span className="link-name">GitHub</span>
+          </a>
+          <Link to="/feedback" className="links">
+            <MessageSquare size={22} strokeWidth={1.5} aria-hidden="true" />
+            <span className="link-name">留言板</span>
+          </Link>
         </div>
 
         <div className="sidebar-content">

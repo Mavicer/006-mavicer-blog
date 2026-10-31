@@ -20,7 +20,8 @@ export type NavIcon =
   | "folder"
   | "camera"
   | "search"
-  | "calendar";
+  | "calendar"
+  | "message";
 
 export type NavItem = {
   label: string;
@@ -58,6 +59,11 @@ export function buildNavItems(
   ];
 }
 export const NAV_ITEMS = buildNavItems(NEXUS_LAUNCHED, NEXUS_URL);
+export const MOBILE_NAV_ITEMS: NavItem[] = NAV_ITEMS.flatMap(item =>
+  item.path === "/account"
+    ? [item, { label: "留言板", path: "/feedback", svg: "message" as const }]
+    : [item],
+);
 
 export type SidebarLink = {
   label: string;

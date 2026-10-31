@@ -23,23 +23,29 @@ export function useScrollProgress() {
   return { progress, percent };
 }
 
-/**
- * useHomeBannerBlur — progressively blurs the fixed home banner background as the
- * user scrolls down from the hero, mirroring the original Redefine theme's
- * updateHomeBannerBlur() logic. The blur amount is 0 until the user has scrolled
- * past ~half the viewport height, then snaps to maxBlur. Returns the blur px.
- */
+/** Blur the stationary background continuously as the hero scrolls away. */
 export function useHomeBannerBlur(maxBlur = 15) {
   const [blur, setBlur] = useState(0);
   useEffect(() => {
-    const trigger = window.innerHeight * 0.5;
-    const onScroll = () => {
-      const y = window.scrollY || window.pageYOffset;
-      setBlur(y >= trigger ? maxBlur : 0);
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const height = Math.max(1, window.innerHeight);
+      const progress = Math.min(1, Math.max(0, (window.scrollY / height - 0.35) / 0.4));
+      // Smoothstep joins the clear and fully blurred states without a sharp onset.
+      setBlur(maxBlur * progress * progress * (3 - 2 * progress));
     };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      window.cancelAnimationFrame(frame);
+    };
   }, [maxBlur]);
   return blur;
 }

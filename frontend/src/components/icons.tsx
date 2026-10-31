@@ -17,6 +17,7 @@ const base: IconProps = {
 };
 
 export const ICONS: Record<NavIcon, React.FC<IconProps>> = {
+  message: (p) => <svg {...base} {...p}><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-3 3V11.5A8.5 8.5 0 0 1 9.5 3h3a8.5 8.5 0 0 1 8.5 8.5Z" /></svg>,
   home: (p) => (
     <svg {...base} {...p}>
       <path d="M3 12l9-9 9 9" />
