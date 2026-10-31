@@ -1,18 +1,6 @@
-import { Link } from "react-router-dom";
-import { MessageSquare } from "lucide-react";
-import { profile } from "@/data/profile";
-
-/** Shared by the desktop and mobile personal cards. */
-export function ProfileActions() {
-  return <div className="profile-actions" aria-label="联系与反馈">
-    <Link to="/feedback" className="profile-action" aria-label="匿名留言板" title="匿名留言板"><MessageSquare size={19} aria-hidden="true" /></Link>
-    <a href={profile.github.url} target="_blank" rel="noopener noreferrer" className="profile-action" aria-label="GitHub" title="GitHub"><GitHubIcon className="w-[19px] h-[19px]" /></a>
-  </div>;
-}
-
 /** Inline GitHub mark SVG — keeps the pill self-contained, no icon-font
  *  dependency that could render off-centre or with the wrong weight. */
-function GitHubIcon({ className = "" }: { className?: string }) {
+export function GitHubIcon({ className = "" }: { className?: string }) {
   return (
     <svg
       className={className}

@@ -1,3 +1,7 @@
+import { Link } from "react-router-dom";
+import { MessageSquare } from "lucide-react";
+import { GitHubIcon } from "@/components/GitHubIcon";
+import { profile } from "@/data/profile";
 import { useRef } from "react";
 import { site } from "@/config/site";
 import { useTypedSubtitle } from "@/hooks/useTypedSubtitle";
@@ -20,8 +24,10 @@ export function HomeBanner() {
             </p>
           </div>
         </div>
-
-
+        <div className="desktop-hero-actions">
+          <Link to="/feedback" className="hero-action hero-action-feedback" aria-label="匿名留言板" title="匿名留言板"><MessageSquare size={20} aria-hidden="true" /></Link>
+          <a href={profile.github.url} target="_blank" rel="noopener noreferrer" className="hero-action hero-action-github" aria-label="GitHub" title="GitHub"><GitHubIcon className="w-5 h-5" /></a>
+        </div>
       </div>
     </>
   );

@@ -1,4 +1,3 @@
-import { ProfileActions } from "@/components/ProfileActions";
 import { Link } from "react-router-dom";
 import { SIDEBAR_LINKS } from "@/config/nav";
 import { site } from "@/config/site";
@@ -88,7 +87,6 @@ export function Sidebar() {
               </span>
             ))}
           </div>
-          <ProfileActions />
         </div>
       </div>
     </div>

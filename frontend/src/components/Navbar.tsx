@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, type MouseEvent } from "react";
 import { NexusAnnouncement } from "@/components/announcements/NexusAnnouncement";
 import { Link, useLocation } from "react-router-dom";
-import { NAV_ITEMS, type NavItem } from "@/config/nav";
+import { NAV_ITEMS, MOBILE_NAV_ITEMS, type NavItem } from "@/config/nav";
 import { site } from "@/config/site";
 import { useNavbarShrink } from "@/hooks/useScroll";
 import { ICONS } from "@/components/icons";
@@ -197,7 +197,7 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
         onTouchEnd={onTouchEnd}
       >
         <ul className="drawer-navbar-list flex flex-col px-4 justify-center items-start pt-20">
-          {NAV_ITEMS.map((item) => {
+          {MOBILE_NAV_ITEMS.map((item) => {
             const Icon = ICONS[item.svg];
             return item.external ? (
               <li key={item.label} className="drawer-navbar-item text-base my-1.5 w-full"><a href={item.path} className="py-1.5 px-2 text-2xl font-semibold" onClick={(event) => { setDrawerOpen(false); openNexus(event, item); }}>{item.label}</a></li>
