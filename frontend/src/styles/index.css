@@ -1737,13 +1737,11 @@ a:hover {
 html { scrollbar-gutter: stable; }
 
 
-/* Keep hover changes local: no animated backdrop blur, transform or shadow. */
-.home-banner-bottom-bar { position: absolute; bottom: 12px; display: flex; }
-.home-banner-feedback { left: 12px; right: auto; }
-.home-banner-github { right: 12px; left: auto; }
-.home-banner-circle { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: var(--home-banner-icons-container-background-color); border: 1px solid var(--home-banner-icons-container-border-color); color: var(--home-banner-text-color); transition: background-color 150ms ease, color 150ms ease; }
-@media (hover: hover) { .home-banner-circle:hover { background: var(--primary-color); color: white; } }
-.home-banner-circle:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 3px; }
+/* Keep the card actions local: no backdrop, transform or shadow animation. */
+.profile-actions { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-color); }
+.profile-action { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--border-color); border-radius: 50%; color: var(--second-text-color); background: var(--third-background-color); transition: color 150ms ease, background-color 150ms ease; }
+@media (hover: hover) { .profile-action:hover { background: var(--primary-color); color: white; } }
+.profile-action:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 3px; }
 .feedback-picker { position: relative; display: flex; flex-direction: column; gap: 8px; }
 .feedback-picker-trigger { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--background-color); text-align: left; }
 .feedback-picker-menu { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 30; padding: 6px; border: 1px solid var(--border-color); border-radius: 14px; background: var(--background-color); box-shadow: var(--redefine-box-shadow); }

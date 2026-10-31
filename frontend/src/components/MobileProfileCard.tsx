@@ -1,3 +1,4 @@
+import { ProfileActions } from "@/components/ProfileActions";
 import { Link } from "react-router-dom";
 import { site } from "@/config/site";
 import { profile } from "@/data/profile";
@@ -65,6 +66,7 @@ export function MobileProfileCard() {
           </span>
         ))}
       </div>
+      <ProfileActions />
     </div>
   );
 }
