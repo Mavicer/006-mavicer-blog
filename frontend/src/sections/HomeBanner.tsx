@@ -27,22 +27,22 @@ export function HomeBanner() {
           </div>
         </div>
 
-        <div className="home-banner-bottom-bar home-banner-feedback absolute bottom-4 left-8 sm:left-12 flex items-center">
-          <Link to="/feedback" aria-label="匿名留言板" title="匿名留言板" className="group flex items-center justify-center w-12 h-12 rounded-full bg-gray-300/50 dark:bg-gray-500/40 backdrop-blur-lg border border-white/20 dark:border-gray-500/30 shadow-redefine-flat hover:shadow-redefine-flat-hover transition-all hover:scale-105">
-            <MessageSquare className="w-5 h-5 transition-transform group-hover:scale-110" aria-hidden="true" />
+        <div className="home-banner-bottom-bar home-banner-feedback">
+          <Link to="/feedback" aria-label="匿名留言板" title="匿名留言板" className="home-banner-circle">
+            <MessageSquare className="w-5 h-5" aria-hidden="true" />
           </Link>
         </div>
         {/* Bottom-right GitHub pill — circular, transparent, minimal.
             Sits just above the main content section with comfortable spacing. */}
-        <div className="home-banner-bottom-bar absolute bottom-4 right-8 sm:right-12 flex items-center">
+        <div className="home-banner-bottom-bar home-banner-github">
           <a
             href={profile.github.url}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="GitHub"
-            className="group flex items-center justify-center w-12 h-12 rounded-full bg-gray-300/50 dark:bg-gray-500/40 backdrop-blur-lg border border-white/20 dark:border-gray-500/30 shadow-redefine-flat hover:shadow-redefine-flat-hover transition-all hover:scale-105"
+            className="home-banner-circle"
           >
-            <GitHubIcon className="w-5 h-5 transition-transform group-hover:scale-110" />
+            <GitHubIcon className="w-5 h-5" />
           </a>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { FeedbackTypePicker } from "@/components/FeedbackTypePicker";
 import { PageShell } from "@/components/PageShell";
 
 export default function Feedback() {
@@ -26,7 +27,7 @@ export default function Feedback() {
     <h1 className="text-3xl font-bold mb-4">匿名留言板</h1>
     <p className="text-third-text mb-6">发现 Bug、有建议，或有什么想告诉我，都可以写在这里。无需登录，留言仅博主可见。</p>
     {!sent && <form onSubmit={submit} className="flex flex-col gap-4">
-      <label className="flex flex-col gap-2">留言类型<select value={category} onChange={e => setCategory(e.target.value)} disabled={busy} className="p-3 border border-border rounded-md bg-background"><option value="bug">报告 Bug</option><option value="suggestion">提出建议</option><option value="other">其他留言</option></select></label>
+      <FeedbackTypePicker value={category} onChange={setCategory} disabled={busy} />
       <label className="flex flex-col gap-2">留言内容<textarea required maxLength={2000} rows={8} value={body} disabled={busy} onChange={e => setBody(e.target.value)} placeholder="如果是 Bug，可以写下出现问题的页面、操作步骤和设备情况。" className="p-3 border border-border rounded-md bg-background resize-y" /></label>
       <span className="text-sm text-third-text">{body.length} / 2000</span>
       <button type="submit" disabled={busy || !body.trim()} className="self-start px-5 py-2 rounded-md bg-primary text-white disabled:opacity-50">{busy ? "正在提交…" : "匿名提交"}</button>
