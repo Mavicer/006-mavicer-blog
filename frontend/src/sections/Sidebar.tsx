@@ -7,6 +7,7 @@ import { site } from "@/config/site";
 import { profile } from "@/data/profile";
 import { usePosts } from "@/hooks/usePosts";
 import { ICONS } from "@/components/icons";
+import { ProfileAvatar } from "@/components/ProfileAvatar";
 
 export function Sidebar() {
   const { posts, categories } = usePosts();
@@ -39,19 +40,7 @@ export function Sidebar() {
 
         <div className="sidebar-content">
           <div className="avatar flex justify-center">
-            <Link
-              to="/about"
-              aria-label="查看个人简介"
-              title="查看个人简介"
-              className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            >
-              <img
-                src="/images/avatar.jpg"
-                alt="avatar"
-                loading="lazy"
-                className="w-[110px] h-[110px] rounded-full object-cover"
-              />
-            </Link>
+            <ProfileAvatar />
           </div>
           <div className="author flex flex-col justify-center my-2.5 mx-0">
             <div className="name text-center text-lg font-semibold text-first-text">

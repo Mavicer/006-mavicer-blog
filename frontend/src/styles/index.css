@@ -1559,6 +1559,44 @@ a:hover {
   }
 }
 
+.profile-avatar-link {
+  position: relative;
+}
+
+.profile-avatar-tooltip {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--second-background-color);
+  color: var(--first-text-color);
+  box-shadow: 0 4px 16px var(--shadow-color-2);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 140ms ease, visibility 140ms ease;
+}
+
+.profile-avatar-link:focus-visible:not([data-tooltip-dismissed]) .profile-avatar-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .profile-avatar-link:hover:not([data-tooltip-dismissed]) .profile-avatar-tooltip {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
 /* Mobile profile card — shown only on <768px, replaces hidden Sidebar */
 .mobile-profile-card {
   display: none; /* hidden by default, shown in mobile media query */
