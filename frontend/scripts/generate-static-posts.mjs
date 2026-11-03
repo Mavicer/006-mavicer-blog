@@ -26,13 +26,32 @@ export function publishedPosts(directory) {
 
 export function publishedSlugs(directory) { return publishedPosts(directory).map((post) => post.slug).sort(); }
 
+// Keep draft slugs in the deployed API's denylist, even if old D1 rows still say published.
+export function unpublishedSlugs(directory) {
+  const slugs = [];
+  for (const file of readdirSync(directory).filter((name) => name.endsWith(".md"))) {
+    const raw = readFileSync(new URL(file, directory), "utf8");
+    const frontmatter = raw.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)?.[1] || "";
+    const data = parse(frontmatter, { maxAliasCount: 0 }) || {};
+    if (data.published === false) slugs.push(data.slug || file.slice(0, -3));
+  }
+  return slugs.sort();
+}
+
 export function generate() {
-  const posts = publishedPosts(new URL("../src/data/posts/", import.meta.url));
+  const directory = new URL("../src/data/posts/", import.meta.url);
+  const posts = publishedPosts(directory);
+  const drafts = unpublishedSlugs(directory);
   const slugs = posts.map((post) => post.slug).sort();
   const output = new URL("../generated/", import.meta.url);
   mkdirSync(output, { recursive: true });
   writeFileSync(new URL("static-post-slugs.json", output), JSON.stringify(slugs, null, 2) + "\n");
   writeFileSync(new URL("static-posts.json", output), JSON.stringify(posts, null, 2) + "\n");
+  writeFileSync(new URL("unpublished-static-post-slugs.json", output), JSON.stringify(drafts, null, 2) + "\n");
+  // Only published Markdown goes into the public Vite bundle; draft files stay in Git.
+  const publicSources = Object.fromEntries(posts.map(({ file }) =>
+    [`../data/posts/${file}`, readFileSync(new URL(file, directory), "utf8")]));
+  writeFileSync(new URL("published-post-raw.json", output), JSON.stringify(publicSources) + "\n");
   writeFileSync(new URL("../public/_publication.json", import.meta.url), JSON.stringify({
     commit: process.env.CF_PAGES_COMMIT_SHA || "local", articles: posts.map(({ slug, sha }) => ({ slug, sha }))
   }) + "\n");
