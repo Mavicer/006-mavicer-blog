@@ -1,4 +1,5 @@
 import { parseArticle } from "../../shared/articles";
+import modules from "../../generated/published-post-raw.json";
 
 export type Post = {
   slug: string;
@@ -19,12 +20,7 @@ export type Post = {
 
 type Term = { name: string; count: number };
 
-// Static module registry: add new posts here AND drop a .md file in src/data/posts/.
-const modules = import.meta.glob("../data/posts/*.md", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-}) as Record<string, string>;
+// Generated from published Markdown only; drafts are not included in the browser bundle.
 
 function excerptFrom(body: string): string {
   const text = body
