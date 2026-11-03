@@ -20,6 +20,7 @@
  */
 
 import staticPostSlugs from "../../generated/static-post-slugs.json";
+import staticPostDetails from "../../generated/static-post-details.json";
 import staticPostCatalog from "../../generated/static-posts.json";
 import unpublishedStaticPostSlugs from "../../generated/unpublished-static-post-slugs.json";
 import { authRoute, currentUser, requireUser, type User } from "../../server/auth";
@@ -32,7 +33,7 @@ import { visitsRoute } from "../../server/visits";
 import { nexusSsoRoute } from "../../server/nexus-sso";
 
 const staticPosts = new Set(staticPostSlugs);
-const unpublishedPosts = new Set(unpublishedStaticPostSlugs);
+const unpublishedPosts = new Set<string>(unpublishedStaticPostSlugs);
 
 async function postExists(ctx: ApiContext, slug: string): Promise<boolean> {
   if (unpublishedPosts.has(slug)) return false;
@@ -200,11 +201,15 @@ async function listPosts(ctx: ApiContext): Promise<Response> {
   const { results } = await ctx.env.DB.prepare(
     `SELECT slug, title, date, excerpt, source, category, tags, published, sort_order, created_at, updated_at FROM post WHERE published = 1 ORDER BY sort_order ASC, date DESC`
   ).all<PostRow>();
-  return json(results.filter((p) => !unpublishedPosts.has(p.slug)).map(postOut));
+  const catalog = new Map(staticPostCatalog.map((p) => [p.slug, { ...p, source: "static" }]));
+  return json([...catalog.values(), ...results.filter((p) => !unpublishedPosts.has(p.slug) && !staticPosts.has(p.slug)).map(postOut)]);
 }
 
 async function getPost(ctx: ApiContext, slug: string): Promise<Response> {
   if (unpublishedPosts.has(slug)) return jsonError(404, "文章不存在");
+  // Markdown is authoritative for static articles, including when D1 has stale text.
+  const local = staticPostDetails.find((post) => post.slug === slug);
+  if (local) return json({ ...local, source: "static" });
   const p = await ctx.env.DB.prepare(`SELECT * FROM post WHERE slug = ?`)
     .bind(slug)
     .first<PostRow>();

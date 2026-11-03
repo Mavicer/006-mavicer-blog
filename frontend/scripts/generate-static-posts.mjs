@@ -19,7 +19,8 @@ export function publishedPosts(directory) {
     const tags = Array.isArray(data.tags) ? data.tags.filter((tag) => typeof tag === "string") : [];
     const sha = createHash("sha1").update(`blob ${Buffer.byteLength(raw)}\0`).update(raw).digest("hex");
     posts.push({ slug, file, sha, title: data.title || slug, date: data.date || "", category: data.category || "未分类",
-      excerpt: data.excerpt || "", tags, published: true, sortOrder: Number(data.sort_order || 10) });
+      excerpt: data.excerpt || "", tags, published: true, sortOrder: Number(data.sort_order || 10),
+      updated_at: data.updated_at || "", body: raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "") });
   }
   return posts.sort((a, b) => a.slug.localeCompare(b.slug));
 }
@@ -46,7 +47,8 @@ export function generate() {
   const output = new URL("../generated/", import.meta.url);
   mkdirSync(output, { recursive: true });
   writeFileSync(new URL("static-post-slugs.json", output), JSON.stringify(slugs, null, 2) + "\n");
-  writeFileSync(new URL("static-posts.json", output), JSON.stringify(posts, null, 2) + "\n");
+  writeFileSync(new URL("static-posts.json", output), JSON.stringify(posts.map(({ body, ...post }) => post), null, 2) + "\n");
+  writeFileSync(new URL("static-post-details.json", output), JSON.stringify(posts, null, 2) + "\n");
   writeFileSync(new URL("unpublished-static-post-slugs.json", output), JSON.stringify(drafts, null, 2) + "\n");
   // Only published Markdown goes into the public Vite bundle; draft files stay in Git.
   const publicSources = Object.fromEntries(posts.map(({ file }) =>
