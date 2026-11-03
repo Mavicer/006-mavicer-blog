@@ -21,6 +21,7 @@
 
 import staticPostSlugs from "../../generated/static-post-slugs.json";
 import staticPostCatalog from "../../generated/static-posts.json";
+import unpublishedStaticPostSlugs from "../../generated/unpublished-static-post-slugs.json";
 import { authRoute, currentUser, requireUser, type User } from "../../server/auth";
 import { ensureAccounts } from "../../server/schema";
 import { publishingRoute } from "../../server/publishing";
@@ -31,8 +32,10 @@ import { visitsRoute } from "../../server/visits";
 import { nexusSsoRoute } from "../../server/nexus-sso";
 
 const staticPosts = new Set(staticPostSlugs);
+const unpublishedPosts = new Set(unpublishedStaticPostSlugs);
 
 async function postExists(ctx: ApiContext, slug: string): Promise<boolean> {
+  if (unpublishedPosts.has(slug)) return false;
   if (staticPosts.has(slug)) return true;
   const row = await ctx.env.DB.prepare(
     `SELECT slug FROM post WHERE slug = ? AND published = 1`
@@ -197,10 +200,11 @@ async function listPosts(ctx: ApiContext): Promise<Response> {
   const { results } = await ctx.env.DB.prepare(
     `SELECT slug, title, date, excerpt, source, category, tags, published, sort_order, created_at, updated_at FROM post WHERE published = 1 ORDER BY sort_order ASC, date DESC`
   ).all<PostRow>();
-  return json(results.map(postOut));
+  return json(results.filter((p) => !unpublishedPosts.has(p.slug)).map(postOut));
 }
 
 async function getPost(ctx: ApiContext, slug: string): Promise<Response> {
+  if (unpublishedPosts.has(slug)) return jsonError(404, "文章不存在");
   const p = await ctx.env.DB.prepare(`SELECT * FROM post WHERE slug = ?`)
     .bind(slug)
     .first<PostRow>();
@@ -235,6 +239,7 @@ async function listComments(
   ctx: ApiContext,
   slug: string
 ): Promise<Response> {
+  if (!(await postExists(ctx, slug))) return jsonError(404, "文章不存在");
   const user = await currentUser(ctx);
   const { results } = await ctx.env.DB.prepare(
     `SELECT * FROM comment WHERE post_slug = ? ORDER BY created_at DESC LIMIT 500`
@@ -397,6 +402,7 @@ async function myFavorites(ctx: ApiContext): Promise<Response> {
     .bind(user.id).all<PostRow & { post_slug: string }>();
   const catalog = new Map(staticPostCatalog.map((p) => [p.slug, p]));
   return json(results.flatMap<Record<string, unknown>>((row) => {
+    if (unpublishedPosts.has(row.post_slug)) return [];
     const local = catalog.get(row.post_slug);
     if (local) return [local];
     return row.published ? [{ ...postOut(row), published: true, sortOrder: row.sort_order }] : [];
