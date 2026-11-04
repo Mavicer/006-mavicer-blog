@@ -1,7 +1,6 @@
 import { getPost } from "@/hooks/usePosts";
 import { getPost as fetchPost } from "./api";
 import type { Post } from "@/hooks/usePosts";
-import { renderMarkdown } from "./markdown";
 
 const ready = new Map<string, { post: Post; expires: number }>();
 const pending = new Map<string, Promise<Post>>();
@@ -26,5 +25,6 @@ export function loadPost(slug: string): Promise<Post> {
   return request;
 }
 export function preloadPost(slug: string) {
-  void loadPost(slug).then(post => { renderMarkdown(post.body); }).catch(() => {});
+  void Promise.all([loadPost(slug), import("./markdown")])
+    .then(([post, { renderMarkdown }]) => { renderMarkdown(post.body); }).catch(() => {});
 }

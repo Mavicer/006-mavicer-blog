@@ -49,6 +49,7 @@ function makeContent(body: Record<string, unknown>, slug: string, original = "")
   if (!Array.isArray(body.tags) || body.tags.length > 12 || body.tags.some((tag) => typeof tag !== "string" || !tag.trim() || tag.length > 40)) throw new HttpError(422, "标签格式无效，每个标签最多 40 字");
   const data: Record<string, unknown> = original ? parseArticle(original).data : {};
   const content = serializeArticle({ ...data, title, slug, date: data.date || new Date().toISOString().slice(0, 10),
+    ...(original ? { updated_at: new Date().toISOString() } : {}),
     category, tags: [...new Set((body.tags as string[]).map((tag) => tag.trim()))],
     excerpt: excerpt || source.replace(/\s+/g, " ").slice(0, 150), published: true, sort_order: data.sort_order ?? 10 },
     body.mode === "plain" ? plainToMarkdown(source) : source);

@@ -21,8 +21,10 @@ export function resolveTimeMode(date: Date = new Date()): EffectiveMode {
 
 export function getMode(): ThemeMode {
   if (typeof window === "undefined") return "auto";
-  const v = localStorage.getItem(KEY);
-  return v === "light" || v === "dark" || v === "auto" ? v : "auto";
+  try {
+    const v = localStorage.getItem(KEY);
+    return v === "light" || v === "dark" || v === "auto" ? v : "auto";
+  } catch { return "auto"; }
 }
 
 export function setMode(mode: ThemeMode): void {

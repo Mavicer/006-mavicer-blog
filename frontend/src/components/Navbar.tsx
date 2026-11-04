@@ -75,7 +75,7 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
           {/* Left: logo */}
           <div className="left">
             <Link className="logo-title" to="/">
-              <h1>{site.name}</h1>
+              <span className="site-logo-text">{site.name}</span>
             </Link>
           </div>
 
@@ -97,12 +97,14 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
                         <span>{item.path === "/feedback" ? <FeedbackLabel /> : <>{item.label}{item.path === "/account" && <FeedbackUnreadDot />}</>}</span>
                       </Link>
                     ) : (
-                      <a className="navbar-link navbar-link-dropdown" href="#" onClick={(e) => e.preventDefault()}>
+                      <>
+                      <button type="button" className="navbar-link navbar-link-dropdown">
                         <Icon />
                         <span>{item.path === "/feedback" ? <FeedbackLabel /> : <>{item.label}{item.path === "/account" && <FeedbackUnreadDot />}</>}</span>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "2px" }}>
                           <path d="M6 9l6 6 6-6" />
                         </svg>
+                      </button>
                         {item.submenus && (
                           <ul className="sub-menu">
                             {item.submenus.map((sub) => (
@@ -123,7 +125,7 @@ export function Navbar({ onSearch }: { onSearch: () => void }) {
                             ))}
                           </ul>
                         )}
-                      </a>
+                      </>
                     )}
                   </li>
                 );

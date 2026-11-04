@@ -14,7 +14,7 @@ export function HomeBanner() {
             centre of the full-viewport hero, accounting for the navbar. */}
         <div className="content flex flex-col justify-center items-center transition-fade-down px-4">
           <div className="description flex flex-col justify-center items-center font-medium text-center">
-            {site.name}
+            <h1 className="m-0 text-inherit font-inherit text-[inherit] leading-[inherit]">{site.name}</h1>
             <p>
               <i id="subtitle" ref={subRef} />
             </p>

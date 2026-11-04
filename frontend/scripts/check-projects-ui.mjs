@@ -41,19 +41,19 @@ try {
   await page.getByRole('button', { name: '播放 VisualLab 循环演示', exact: true }).click();
   await page.waitForFunction(() => document.querySelector('.project-media img')?.getAttribute('src')?.endsWith('visuallab-demo.gif'));
   const nexus = page.locator('.project-work').filter({ has: page.getByRole('heading', { name: 'Nexus', exact: true }) });
-  assert.ok((await nexus.locator('img').getAttribute('src')).endsWith('nexus-home-preview.webp'));
+  assert.ok((await nexus.locator('img').getAttribute('src')).endsWith('nexus-home.png'));
   const trigger = page.getByRole('button', { name: '查看 VisualLab 项目', exact: true });
   await trigger.click();
   await page.getByRole('dialog').waitFor();
   assert.equal(await page.getByRole('button', { name: '关闭项目详情' }).evaluate(el => el === document.activeElement), true);
-  assert.ok((await page.locator('dialog img').getAttribute('src')).endsWith('visuallab-poster.jpg'), 'Details start with a static poster');
+  assert.ok((await page.locator('dialog[open] img').getAttribute('src')).endsWith('visuallab-poster.jpg'), 'Details start with a static poster');
   assert.ok((await page.locator('.project-media img').first().getAttribute('src')).endsWith('visuallab-poster.jpg'), 'Background animation pauses while details are open');
   assert.match(await page.getByRole('dialog').innerText(), /不代表模型准确率/);
   await page.getByRole('button', { name: '播放拖尾演示' }).click();
-  await page.locator('dialog img').evaluate(image => image.decode());
-  assert.ok((await page.locator('dialog img').getAttribute('src')).endsWith('visuallab-demo.gif'), 'Explicit play runs the actual demo');
+  await page.locator('dialog[open] img').evaluate(image => image.decode());
+  assert.ok((await page.locator('dialog[open] img').getAttribute('src')).endsWith('visuallab-demo.gif'), 'Explicit play runs the actual demo');
   await page.getByRole('button', { name: '停止演示' }).click();
-  assert.ok((await page.locator('dialog img').getAttribute('src')).endsWith('visuallab-poster.jpg'));
+  assert.ok((await page.locator('dialog[open] img').getAttribute('src')).endsWith('visuallab-poster.jpg'));
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('dialog[open]').count(), 0);
   assert.equal(await trigger.evaluate(el => el === document.activeElement), true, 'Escape restores trigger focus');
@@ -76,7 +76,7 @@ try {
     await page.setViewportSize({ width, height: 900 });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Gallery fits ${width}px`);
     await page.getByRole('button', { name: '查看 Nexus 项目', exact: true }).click();
-    assert.ok(await page.locator('dialog').evaluate(el => el.scrollWidth <= el.clientWidth), `Dialog fits ${width}px`);
+    assert.ok(await page.locator('dialog[open]').evaluate(el => el.scrollWidth <= el.clientWidth), `Dialog fits ${width}px`);
     await page.keyboard.press('Escape');
   }
   const quiet = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 1080 } });

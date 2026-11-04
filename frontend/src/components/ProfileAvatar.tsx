@@ -18,7 +18,9 @@ export function ProfileAvatar({ mobile = false }: { mobile?: boolean }) {
     >
       <img
         src="/images/avatar.jpg"
-        alt=""
+        alt="Mavicer 的头像"
+        width={110}
+        height={110}
         loading="lazy"
         className={mobile ? "w-14 h-14 rounded-full object-cover" : "w-[110px] h-[110px] rounded-full object-cover"}
       />

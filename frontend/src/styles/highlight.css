@@ -1,5 +1,5 @@
 /* highlight.js themes: github (light) / vs2015 (dark), matching original Redefine config.
-   Loaded via CDN at runtime in index.html, this file just provides a base. */
+   Served locally from public/vendor/highlight via index.html, this file just provides a base. */
 
 .hljs {
   display: block;

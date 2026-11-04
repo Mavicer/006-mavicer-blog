@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation } from "react-router-dom";
+import { lazy, Suspense, type ComponentType } from "react";
 import Layout from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Home from "./pages/Home";
@@ -8,21 +9,42 @@ import Projects from "./pages/Projects";
 import Categories from "./pages/Categories";
 import Tags from "./pages/Tags";
 import Gallery from "./pages/Gallery";
-import GalleryAdmin from "./pages/GalleryAdmin";
-import PostDetail from "./pages/PostDetail";
 import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
-import Account from "./pages/Account";
 import Feedback from "./pages/Feedback";
-import FeedbackAdmin from "./pages/FeedbackAdmin";
-import Admin from "./pages/Admin";
-import UserAdmin from "./pages/UserAdmin";
-import ArticleEditor from "./pages/ArticleEditor";
+import { SeoMetadata } from "./components/SeoMetadata";
+import { publicPaths, normalizePath } from "../shared/seo";
+import { usePosts } from "./hooks/usePosts";
+
+const LazyPostDetail = lazy(() => import("./pages/PostDetail"));
+let PostDetail: ComponentType = LazyPostDetail;
+// Resolve the initial article before hydration. Otherwise a theme/auth update
+// can interrupt a still-suspended boundary and cause React to replace its HTML.
+export async function prepareInitialRoute(path: string) {
+  if (path.startsWith("/posts/")) PostDetail = (await import("./pages/PostDetail")).default;
+}
+const Login = lazy(() => import("./pages/Login"));
+const Account = lazy(() => import("./pages/Account"));
+const Admin = lazy(() => import("./pages/Admin"));
+const UserAdmin = lazy(() => import("./pages/UserAdmin"));
+const ArticleEditor = lazy(() => import("./pages/ArticleEditor"));
+const FeedbackAdmin = lazy(() => import("./pages/FeedbackAdmin"));
+const GalleryAdmin = lazy(() => import("./pages/GalleryAdmin"));
+
+function RouteBoundary({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  const isPublic = publicPaths(usePosts().posts).includes(normalizePath(pathname));
+  // Initial public pages are already loaded on both server and client, so no
+  // dehydrated Suspense boundary can be interrupted by live theme/auth effects.
+  if (isPublic && (!pathname.startsWith("/posts/") || PostDetail !== LazyPostDetail)) return <>{children}</>;
+  return <Suspense fallback={<div className="main-content-container !pt-[140px] text-center text-third-text py-20">正在加载页面</div>}>{children}</Suspense>;
+}
 
 export default function App() {
   const location = useLocation();
   return (
     <Layout>
+      <SeoMetadata />
+      <RouteBoundary>
       <Routes location={location}>
         <Route path="/" element={<Home />} />
         <Route path="/feedback" element={<Feedback />} />
@@ -46,6 +68,7 @@ export default function App() {
         <Route path="/admin" element={<ProtectedRoute requireOwner><Admin /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </RouteBoundary>
     </Layout>
   );
 }

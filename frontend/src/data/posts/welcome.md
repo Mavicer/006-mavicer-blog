@@ -1,6 +1,7 @@
 ---
 title: "欢迎来到我的 Blog"
 date: "2026-07-26"
+updated_at: "2026-11-04"
 category: "随笔"
 tags: ["公告", "博客"]
 excerpt: "关于这个站点的诞生、设计思路与技术选型——一个 React 驱动的 Hexo Redefine 主题复刻。"
@@ -35,45 +36,53 @@ sort_order: 40
 - **右下角工具栏**：回到顶部（带实时百分比）、字号调节、明暗切换、搜索，从折叠按钮向下展开
 - **Footer 运行时计数器**：滚动数字动画，精确到秒
 
-## 技术栈
+## 最初的设计
+
+刚开始搭建时，我先把重点放在页面和阅读体验上：文章放在静态 Markdown 文件里，部分管理和交互状态存在浏览器的 localStorage 中。当时还没有现在这套动态后端，我也考虑过以后接入 FastAPI + PostgreSQL。
+
+那时的数据服务层，是为了让页面和数据来源尽量分开。后来真正接入后端时，除了替换数据读取方式，账号、权限和交互流程也需要重新处理，并不是换一个 `fetch` 就能完成。
+
+## 后来的迭代
+
+随着站点慢慢完善，我把登录、评论、点赞和收藏接到了真正的服务端。部署方案也逐渐收敛到 Cloudflare：前端由 Pages 提供，API 运行在 Pages Functions 上，动态数据保存在 D1 中。早期的 FastAPI 实现没有进入目前的生产部署。
+
+文章仍然保留为 GitHub 仓库中的 Markdown。现在我可以在后台编辑文章，由服务端提交到仓库，再触发构建和部署。GitHub 提交成功与正式站上线是两个阶段，后台会继续检查部署后的文章版本。这样，在线编辑和本地写 Markdown 最终走的是同一套内容来源。
+
+## 现在的架构
+
+> 2026 年 11 月 4 日更新：这一节记录目前的实现，原始发布日期仍为 2026 年 7 月 26 日。
 
 | 层 | 技术 | 说明 |
 |---|---|---|
-| 前端框架 | React 18 + TypeScript | SPA，BrowserRouter |
-| 构建工具 | Vite 5 | 极速 HMR |
-| 样式 | Tailwind CSS v3 + 原生 CSS 变量 | 主题变量驱动昼夜切换 |
-| 动画 | Framer Motion | 页面切换淡入上滑 |
-| Markdown | marked + highlight.js + KaTeX | 代码高亮、数学公式、TOC、图片查看器 |
-| 字体 | Chillax + Geist Variable | 标题用 Chillax，正文用 Geist |
-| 数据 | localStorage + 静态 .md 文件 | 未来可无缝切换到 FastAPI + PostgreSQL |
-| 部署 | Vite 静态构建 | 未来接入后端 API |
+| 前端框架 | React 18 + TypeScript | 保留 BrowserRouter 和现有交互 |
+| 构建工具 | Vite 5 | 开发热更新，构建时预渲染公开页面 |
+| 样式 | Tailwind CSS v3 + 原生 CSS 变量 | 明暗主题、毛玻璃和响应式布局 |
+| 动画 | Framer Motion + CSS | 页面与局部交互动画 |
+| Markdown | marked + highlight.js + KaTeX + DOMPurify | 正文、代码、公式、目录与 HTML 清洗 |
+| 文章 | GitHub 仓库中的 Markdown | 构建时生成公开文章清单、HTML 和 Sitemap |
+| 动态后端 | Cloudflare Pages Functions | 账号、互动、访问统计和管理员发布接口 |
+| 动态数据 | Cloudflare D1 | 评论、点赞、收藏、账号与会话等 |
+| 部署 | Cloudflare Pages | 静态页面与 Functions 一起发布 |
 
-## 架构设计
+公开文章的标题和正文会在构建时写入 HTML，浏览器加载后由 React 接管，评论、点赞、收藏和登录状态仍然通过 API 获取。文章不需要等 JavaScript 执行完才能读到主要内容。
 
-项目刻意做了数据与视图的分层，方便未来从「纯前端 mock」迁移到「真实后端」：
+localStorage 还在使用，但用途已经变了：它保存主题、外观偏好和当前设备上的编辑草稿等，不再作为正式文章、账号或评论的主要数据来源。权限检查也放到了服务端，不能靠浏览器里保存的角色判断。
+
+现在主要的代码目录是这样：
 
 ```
-src/
-├── data/           # 静态数据源
-│   ├── posts/      # Markdown 文章
-│   └── profile.ts  # 个人信息（标签、GitHub 等）
-├── services/       # 数据服务层（可替换为 API 调用）
-│   ├── themeService.ts
-│   └── articlesService.ts
-├── auth/           # 认证服务（当前 mock，未来接 JWT）
-│   ├── types.ts
-│   ├── storage.ts
-│   └── auth.ts
-├── hooks/          # React 适配层
-│   ├── useTheme.tsx
-│   ├── useAuth.tsx
-│   └── usePosts.ts
-├── components/     # UI 组件
-├── sections/       # 页面区块
-└── pages/          # 路由页面
+frontend/
+├── src/data/posts/  # Markdown 文章
+├── src/pages/       # React 路由页面
+├── src/hooks/       # 页面状态与交互
+├── src/services/    # 主题、外观等浏览器服务
+├── functions/api/   # Pages API 入口
+├── server/          # 账号、会话、发布与数据库迁移
+├── shared/          # 文章格式与 SEO 规则
+└── scripts/         # 文章清单、预渲染与回归检查
 ```
 
-`services/` 和 `auth/` 层的接口形状已经按未来后端契约设计。切换到 FastAPI 时，只需要把 `articlesService.ts` 内部的 `localStorage` 调用换成 `fetch("/api/...")`，React 层零改动。
+最初想做一个自己的写作空间，这一点没有变。技术方案会继续调整，我更希望这些调整能让文章保存得稳、读起来顺，也让我在实际维护中一点点补上工程基础。
 
 ## 关于内容
 

@@ -7,7 +7,8 @@ import { useImageViewer } from "@/components/ImageViewer";
 import { useAuth } from "@/hooks/useAuth";
 import { ArticleInteractions } from "@/components/ArticleInteractions";
 
-const BILINGUAL_SLUGS = ["python-to-ai-journey"];
+import bilingualSlugs from "../../generated/bilingual-slugs.json";
+const BILINGUAL_SLUGS: string[] = bilingualSlugs;
 
 export default function PostDetail() {
   const { slug = "" } = useParams();
@@ -26,9 +27,9 @@ export default function PostDetail() {
   useEffect(() => {
     if (!isBilingual || lang !== "zh") return;
     let cancelled = false;
-    import(`../data/bilingual/${slug}-zh.md?raw`)
+    import("../../generated/published-translations.json")
       .then((mod) => {
-        if (!cancelled) setZhBody(mod.default);
+        if (!cancelled) setZhBody((mod.default as Record<string, string>)[slug] || "");
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -192,8 +193,9 @@ export default function PostDetail() {
                 </span>
                 <span className="article-meta-item">
                   <i className="fa-regular fa-calendar" />
-                  {post.date.slice(0, 10)}
+                  <time dateTime={post.date}>{post.date.slice(0, 10)}</time>
                 </span>
+                {post.updated_at && <span className="article-meta-item">更新于 <time dateTime={post.updated_at}>{post.updated_at.slice(0, 10)}</time></span>}
                 <span className="article-meta-item">
                   <i className="fa-regular fa-folder" />
                   <Link to={`/categories/${encodeURIComponent(post.category)}`}>
@@ -238,6 +240,7 @@ export default function PostDetail() {
               )}
 
               <div
+                aria-label="文章正文"
                 className="markdown-body lang-transition"
                 ref={bodyRef}
                 style={{

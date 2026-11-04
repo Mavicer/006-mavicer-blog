@@ -34,11 +34,11 @@ export function ArticleCard({ post }: { post: Post }) {
     <li ref={card} className="home-article-item" onPointerEnter={() => preloadPost(post.slug)} onFocus={() => preloadPost(post.slug)}>
       <div className="flex flex-col gap-5 px-7 pb-7 pt-7 no-underline text-inherit">
         {/* Title — click trigger #1 */}
-        <h3 className="home-article-title">
+        <h2 className="home-article-title">
           <Link to={`/posts/${post.slug}`} className="no-underline text-inherit">
             {post.title}
           </Link>
-        </h3>
+        </h2>
 
         {/* Excerpt — non-clickable */}
         <p className="home-article-content markdown-body">{post.excerpt}</p>
