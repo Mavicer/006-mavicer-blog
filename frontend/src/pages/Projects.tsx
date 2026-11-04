@@ -20,7 +20,7 @@ export default function Projects() {
   // A manual choice overrides the system default; otherwise respect reduced motion.
   const [demoPreference, setDemoPreference] = useState<boolean | null>(null);
   const [demoVisible, setDemoVisible] = useState(false);
-  const [tabVisible, setTabVisible] = useState(() => document.visibilityState === "visible");
+  const [tabVisible, setTabVisible] = useState(true);
   const demoCover = useRef<HTMLButtonElement>(null);
   const loopEnabled = demoPreference ?? !reducedMotion;
   const demoPlaying = loopEnabled && demoVisible && tabVisible && !selected;
@@ -29,6 +29,7 @@ export default function Projects() {
     const observer = new IntersectionObserver(([entry]) => setDemoVisible(entry.isIntersecting), { threshold: 0.1 });
     if (demoCover.current) observer.observe(demoCover.current);
     const onVisibility = () => setTabVisible(document.visibilityState === "visible");
+    onVisibility();
     document.addEventListener("visibilitychange", onVisibility);
     return () => { observer.disconnect(); document.removeEventListener("visibilitychange", onVisibility); };
   }, []);

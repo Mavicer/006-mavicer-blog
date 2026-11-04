@@ -1,10 +1,11 @@
-import { parseArticle } from "../../shared/articles";
-import modules from "../../generated/published-post-raw.json";
+import details from "../../generated/static-post-details.json";
 
 export type Post = {
   slug: string;
   title: string;
   date: string; // ISO
+  updated_at?: string;
+  cover?: string;
   excerpt: string;
   category: string;
   // Tag convention: 2–4 tags per article. Avoid over-generalization — a
@@ -34,28 +35,7 @@ function excerptFrom(body: string): string {
 }
 
 function loadStaticPosts(): Post[] {
-  const posts: Post[] = [];
-  let order = 10;
-  for (const [path, raw] of Object.entries(modules)) {
-    const { data, body } = parseArticle(raw);
-    const slug =
-      (data.slug as string) || path.split("/").pop()!.replace(/\.md$/, "");
-    posts.push({
-      slug,
-      title: typeof data.title === "string" ? data.title : slug,
-      date: typeof data.date === "string" ? data.date : new Date().toISOString(),
-      excerpt: typeof data.excerpt === "string" ? data.excerpt : excerptFrom(body),
-      category: typeof data.category === "string" ? data.category : "未分类",
-      tags: Array.isArray(data.tags) ? data.tags.filter((tag): tag is string => typeof tag === "string") : [],
-      body,
-      published: data.published !== false,
-      sortOrder: Number(data.sort_order ?? order),
-      source: "static",
-      readingTime: data.reading_time as string | undefined,
-    });
-    order += 10;
-  }
-  return posts;
+  return details.map(post => ({ ...post, excerpt: post.excerpt || excerptFrom(post.body), source: "static" }));
 }
 
 function taxonomy(posts: Post[], key: "category" | "tags"): Term[] {

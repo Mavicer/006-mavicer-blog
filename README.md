@@ -1,11 +1,10 @@
 # Mavicer's Blog
 
-React + Vite 前端，Cloudflare Pages Functions + D1 后端。文章从 Markdown
-加载；点赞支持访客，评论和收藏使用服务器账号登录。
+React + Vite 前端，Cloudflare Pages Functions + D1 后端。文章从 GitHub 仓库中的 Markdown 构建，公开页面预渲染为 HTML，浏览器通过 React Hydration 接管；点赞支持访客，评论和收藏使用服务器账号登录。
 
 ## 本地运行
 
-使用 Node.js 22.13+（测试使用内置 SQLite）：
+使用 Node.js 22.22.2+（或 24.15+、26+；版本固定见 frontend/.node-version）（测试使用内置 SQLite）：
 
 ```bash
 cd frontend
@@ -18,14 +17,14 @@ npm run dev:api
 
 如需前端热更新，另开终端在 `frontend/` 运行 `npm run dev`。
 Vite 将 `/api` 代理到 8788 的同一套 Pages 后端。本地 D1 与线上数据库隔离。
-`backend/` 是早期 FastAPI 实现，当前部署不使用它。
+早期 FastAPI 与浏览器 localStorage 文章服务已退出生产并移除；历史版本可从 Git 历史查阅。
 
 ## 写文章与构建
 
 在 `frontend/src/data/posts/` 添加带 frontmatter 的 Markdown。用 `npm run build`
 构建；生成脚本会同时建立前端文章与 API 所需的 slug/元数据清单。
 新增文章无需向 D1 的 `post` 表重复录入。`published: false` 的静态文章不会发布。
-新增或修改 slug 后，需要重新运行生成步骤或重启开发服务。
+已有文章不要修改 slug。新增文章后重新构建即可同步页面、API 清单与 Sitemap。
 
 ```bash
 npm run typecheck
@@ -98,7 +97,7 @@ D1 绑定名为 `DB`，数据库 ID 在 `frontend/wrangler.toml` 中。
 `/api/auth/me`、`/api/me/favorites` 或发表评论返回 401 是预期行为。
 观察 Cloudflare 日志中的 `api_error` 与 requestId 可排查数据库/运行时故障。
 后续结构性改动前，先使用 Cloudflare D1 的导出或 Time Travel 功能留存恢复点。
-回滚代码不会删除新增账号和收藏表；不要通过重跑旧 seed.sql 覆盖真实数据。
+回滚代码不会删除新增账号和收藏表；不要向正式库导入历史 seed 数据。基础 schema 仅供空数据库初始化。
 
 ### 初始化博主账号
 
@@ -146,7 +145,11 @@ GitHub 提交成功不代表上线；Cloudflare 失败时保留提交链接与�
 - `frontend/functions/api/[[path]].ts`：路由、文章和互动接口
 - `frontend/server/`：账号、会话、迁移、同源与限流
 - `frontend/src/pages/`：注册、登录、账户及页面
-- `frontend/scripts/generate-static-posts.mjs`：构建时文章清单
+- `frontend/scripts/generate-static-posts.mjs`：构建时公开文章清单
+- `frontend/scripts/prerender.mjs`：静态 HTML、Sitemap 和 robots
+- `frontend/shared/seo.ts`：公开 URL、逐页元数据与 JSON-LD
+- `frontend/functions/_middleware.ts`：预览域名 noindex、私有 SPA 入口与历史文章路由
+- `docs/history/initial-design.md`：已归档的早期设计记录
 - `frontend/tests/interactions.test.mjs`：真实 SQL 回归测试
 - `backend-worker/schema.sql`：首次创建旧基础表（仅用于空数据库初始化）
 
@@ -156,3 +159,49 @@ GitHub 提交成功不代表上线；Cloudflare 失败时保留提交链接与�
 - 封面与按需加载的演示位于 `frontend/public/images/projects/`，来源记录见该目录 README。VisualLab 动画使用合成观测点，卡片进入视口时循环播放，可手动暂停并遵循系统减少动态效果设置。Nexus 封面为本地运行并加载项目演示数据后的真实首页截图。
 - `/api/projects` 继续提供缓存后的 GitHub 统计。作品资料独立于接口，失败时仍可浏览；新增公开仓库会显示在「更多公开仓库」。
 - 验证：先在 `frontend/` 执行 `npm run build`，再执行 `npm run test:projects-ui`。浏览器回归使用本机 Chrome，自动在 `127.0.0.1:5191` 启停预览；可通过 `PLAYWRIGHT_CHANNEL` 更换已安装浏览器通道。
+
+
+## SEO 与静态页面
+
+构建顺序为 Markdown 清单 → TypeScript 检查 → Vite 浏览器资源 → React 服务端构建 → 公开页面 HTML。
+不需要生产凭据或 D1 数据；服务端构建产物保存在被忽略的临时目录，完成后删除，只有 `dist/` 进入部署。
+`jsdom` 只用于构建与测试的 DOMPurify 清洗，不进入浏览器 Bundle 或 Pages Functions。
+框架仍是 React + Vite，无常驻 SSR 服务。文章与页面共用原组件，React 在构建时等待组件完成，浏览器预先加载当前文章组件，再通过 `hydrateRoot` 接管已有内容；首次公开渲染不保留会被主题/账号状态打断的待接管 Suspense 边界。
+
+首页、归档、分类及其详情、标签及其详情、About、Projects 和已发布文章自动进入 Sitemap。
+`/login`、`/register`、`/account`、`/admin/*`、反馈及尚未上线的展示页不参与索引。
+私有入口在服务器返回的 HTML 和响应头中设置 noindex；权限仍由服务端账号系统核验。
+未知 URL 返回真正的 404；历史已发布 D1-only 文章仍使用原 SPA/API 兼容入口，不删除或改写数据库。
+目前正式站的公开文章全部来自仓库 Markdown。预览域名返回 `X-Robots-Tag: noindex`，robots 禁止抓取，canonical 始终使用 `https://mavicer.cc`。
+不按 User-Agent 区分正文。Cloudflare 控制台的 Managed robots 可能在仓库生成的内容前附加爬虫策略，独立于本仓库维护。
+
+文章 frontmatter 使用原始 `date`，实质修改正文时更新 `updated_at`（`YYYY-MM-DD` 或含时区的 ISO 时间）。
+lastmod 优先使用 `updated_at`，没有显式更新时间时使用完整 Git 历史中该源文件的最后提交时间。
+浅克隆、未提交文件或无法查到可靠历史时省略 lastmod，不取构建时间、文件 mtime，也不把发布日期当成修改日期。
+后台在线编辑会在服务端记录真实的 `updated_at`，同时保留原始 `date`；本地编辑时由作者维护该字段。
+新发布或修改文章经过同一个构建入口，自动更新 HTML、Sitemap、结构化数据及上线版本标记。
+草稿 `published: false` 在生成 HTML、公开目录和浏览器数据前即被过滤；API 还会拒绝其 slug，即使 D1 留有旧的 published 行。
+
+验证命令（在 `frontend/`）：
+
+```bash
+npm test
+npm run build
+npm run test:seo-ui
+npm run test:comments-ui
+npm run test:projects-ui
+```
+
+SEO 浏览器回归依赖已安装的 Chrome，测试使用本地 Pages 与本地 D1，不向正式库写入。
+生产 Pages 项目仍为 `blog`，Git 集成监听 `main`；合并后 Cloudflare 自动执行 `npm run build` 并发布 `dist` 与 Functions。
+上线后检查 `/sitemap.xml`、`/robots.txt`、`/posts/welcome` 的初始 HTML、随机不存在路径的 404，以及 `/api/health`。
+回滚使用 Cloudflare Pages 的历史部署或回退 Git 提交，不回滚数据库记录。
+
+## 本次技术债清理边界
+
+`backend/` 的 FastAPI 实现、`frontend/src/services/articlesService.ts` 的 mock CMS 和无人调用的旧文章 `backend-worker/seed.sql` 已移除。
+依赖核查覆盖 package scripts、测试、Functions、发布链路和文档；移除不执行任何正式数据库操作。
+`backend-worker/schema.sql` 仍被 `db:local` 和 SQLite 回归测试使用，因此保留原路径与兼容字段。
+`frontend/server/schema.ts` 的生产增量迁移、旧匿名互动表、D1-only 文章兼容逻辑、图库管理入口及浏览器草稿均保留。
+
+GitHub Actions 在 PR 和 main 提交上运行隔离 SQLite 回归及完整构建（包括类型检查与预渲染），不使用生产 Secrets。

@@ -89,7 +89,7 @@ test("plain text preserves paragraphs; duplicate requests write one commit; depl
 
 test("editing preserves original metadata and indented Markdown; stale versions never overwrite", async (t) => {
   const f = await setup(t), path = "frontend/src/data/posts/publishing-test.md";
-  const original = '---\ntitle: Before\ndate: "2024-01-02"\ncustom: { nested: true }\n---\n\nOriginal\n';
+  const original = '---\ntitle: Before\ndate: "2024-01-02"\nupdated_at: "2024-01-03"\ncustom: { nested: true }\n---\n\nOriginal\n';
   f.files.set(path, { type: "file", encoding: "base64", content: Buffer.from(original).toString("base64"), sha: blob(original), size: original.length, path });
   const bad = await f.send({ ...input(), action: "update", sha: "stale" });
   assert.equal(bad.status, 409); assert.equal(f.commits.length, 0);
@@ -97,6 +97,8 @@ test("editing preserves original metadata and indented Markdown; stale versions 
   assert.equal((await f.send(body)).data.state, "submitted");
   const text = Buffer.from(f.files.get(path).content, "base64").toString("utf8");
   assert.match(text, /date: "2024-01-02"/); assert.match(text, /custom: \{"nested":true\}/);
+  const modified = text.match(/updated_at: "([^"]+)"/)[1];
+  assert(Date.now() - Date.parse(modified) < 10_000 && Date.parse(modified) <= Date.now());
   assert.ok(text.endsWith("    code()\n\nParagraph\n"));
   assert.equal((await f.send({ ...body, request_id: crypto.randomUUID() })).status, 409);
   assert.equal(f.commits.length, 1);

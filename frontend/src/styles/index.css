@@ -341,7 +341,8 @@ a:hover {
     transition: all 0.2s ease;
     z-index: 1010;
   }
-  .navbar-item:hover .sub-menu {
+  .navbar-item:hover .sub-menu,
+  .navbar-item:focus-within .sub-menu {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);

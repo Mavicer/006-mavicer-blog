@@ -1,6 +1,7 @@
--- D1 schema for mavicer-blog — mirrors backend/blog.db (anonymous-interaction model).
+-- Historical base schema retained for empty local databases and regression tests.
 -- Only the 4 tables the public-interaction API needs (posts/comments/likes/favorites).
--- Run with: wrangler d1 execute mavicer-blog --file=backend-worker/schema.sql
+-- Run locally from frontend/: npm run db:local
+-- Production upgrades use frontend/server/schema.ts; never reseed real data.
 
 CREATE TABLE IF NOT EXISTS post (
   slug TEXT NOT NULL PRIMARY KEY,

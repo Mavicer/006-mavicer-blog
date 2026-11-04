@@ -13,8 +13,9 @@ const Context = createContext<AppearanceContext>(null!);
 export const useAppearance = () => useContext(Context);
 
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState(readAppearance);
+  const [settings, setSettings] = useState<Appearance>({ ...defaults });
   const settingsRef = useRef(settings);
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
   const { effectiveMode } = useTheme();
   useEffect(() => {
@@ -30,6 +31,14 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
   const preset = backgrounds.find(item => item.id === settings.background) || backgrounds[0];
   const requestedWallpaper = effectiveMode === "dark" ? preset.night : preset.day;
   const [wallpaper, setWallpaper] = useState<string>(requestedWallpaper);
+  useLayoutEffect(() => {
+    const stored = readAppearance();
+    const selected = backgrounds.find(item => item.id === stored.background) || backgrounds[0];
+    settingsRef.current = stored;
+    setSettings(stored);
+    setWallpaper(document.documentElement.classList.contains("dark") ? selected.night : selected.day);
+    setReady(true);
+  }, []);
   useEffect(() => {
     let active = true;
     const image = new Image();
@@ -39,6 +48,7 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
   }, [requestedWallpaper]);
 
   useLayoutEffect(() => {
+    if (!ready) return;
     let theme = "auto";
     try { theme = localStorage.getItem("MAVICER_THEME_MODE") || "auto"; } catch {}
     syncAppearanceCookie(settings, theme);
@@ -49,7 +59,7 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     root.style.setProperty("--personal-card-opacity", String(settings.cardOpacity / 100));
     root.style.setProperty("--personal-reading-opacity", String(0.8 + settings.cardOpacity / 500));
     root.style.fontSize = `${settings.fontSize}px`;
-  }, [settings, wallpaper]);
+  }, [settings, wallpaper, ready]);
 
   const update = (patch: Partial<Appearance>) => {
     const next = normalizeAppearance({ ...settingsRef.current, ...patch });

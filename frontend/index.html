@@ -25,8 +25,7 @@
       } catch {}
     </script>
     <!-- Security headers -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net api.fontshare.com fonts.googleapis.com; font-src 'self' cdn.jsdelivr.net api.fontshare.com fonts.googleapis.com; img-src 'self' data: blob: https:; connect-src 'self' api.github.com mavicer.cc;" />
-    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net api.fontshare.com fonts.googleapis.com; font-src 'self' data: cdn.jsdelivr.net api.fontshare.com fonts.googleapis.com; img-src 'self' data: blob: https:; connect-src 'self' api.github.com mavicer.cc;" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
     <!-- FontAwesome 6 (matches original fa-* class names) -->
@@ -34,38 +33,11 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css"
     />
-    <!-- highlight.js themes (light/dark) -->
-    <link
-      id="hljs-light"
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/styles/github.min.css"
-      disabled
-    />
-    <link
-      id="hljs-dark"
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/styles/vs2015.min.css"
-      disabled
-    />
-    <!-- Chillax + Geist Variable fonts (same families the original site uses) -->
-    <link
-      rel="preload"
-      as="style"
-      href="https://api.fontshare.com/v2/css?f[]=chillax@400,500,600,700&display=swap"
-    />
-    <link
-      rel="stylesheet"
-      href="https://api.fontshare.com/v2/css?f[]=chillax@400,500,600,700&display=swap"
-    />
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
-    />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
-    />
+    <link id="hljs-light" rel="stylesheet" href="/vendor/highlight/github.min.css" disabled />
+    <link id="hljs-dark" rel="stylesheet" href="/vendor/highlight/vs2015.min.css" disabled />
+    <!-- Fonts are declared once in styles/fonts.css; avoid duplicate families
+         and extra blocking Google/Fontshare stylesheets. -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
     <title>Mavicer's Blog</title>
   </head>
   <body>
