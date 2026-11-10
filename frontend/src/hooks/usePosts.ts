@@ -7,6 +7,7 @@ export type Post = {
   updated_at?: string;
   cover?: string;
   excerpt: string;
+  showHomeExcerpt?: boolean;
   category: string;
   // Tag convention: 2–4 tags per article. Avoid over-generalization — a
   // tag should identify the post's core topic, not enumerate every entity

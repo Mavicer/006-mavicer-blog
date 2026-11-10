@@ -32,7 +32,8 @@ export function publishedPosts(directory) {
     const tags = Array.isArray(data.tags) ? data.tags.filter((tag) => typeof tag === "string") : [];
     const sha = createHash("sha1").update(`blob ${Buffer.byteLength(raw)}\0`).update(raw).digest("hex");
     posts.push({ slug, file, sha, title: data.title || slug, date: data.date || "", category: data.category || "未分类",
-      excerpt: data.excerpt || "", tags, published: true, sortOrder: Number(data.sort_order || 10),
+      excerpt: data.excerpt || "", showHomeExcerpt: data.show_home_excerpt !== false,
+      tags, published: true, sortOrder: Number(data.sort_order || 10),
       updated_at: data.updated_at || sourceLastmod(fileURLToPath(new URL(file, directory))),
       cover: typeof data.cover === "string" ? data.cover : undefined,
       readingTime: typeof data.reading_time === "string" ? data.reading_time : undefined,

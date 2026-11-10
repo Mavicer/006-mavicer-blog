@@ -40,8 +40,9 @@ export function ArticleCard({ post }: { post: Post }) {
           </Link>
         </h2>
 
-        {/* Excerpt — non-clickable */}
-        <p className="home-article-content markdown-body">{post.excerpt}</p>
+        {post.showHomeExcerpt !== false && (
+          <p className="home-article-content markdown-body">{post.excerpt}</p>
+        )}
 
         {/* Second-to-last row: date(+icon) + category(+icon) LEFT, 阅读全文 RIGHT */}
         <div className="home-article-meta-info-container">
