@@ -41,8 +41,13 @@ renderer.code = ({ text, lang }: { text: string; lang?: string }) => {
   </div>`;
 };
 
-renderer.codespan = ({ text }: { text: string }) =>
-  `<code>${text}</code>`;
+renderer.codespan = ({ raw, text }) => {
+  // A {c} prefix inside the backticks opts into C highlighting.
+  const cCode = raw.match(/^(`+)\{c\} (.+)\1$/)?.[2];
+  return cCode
+    ? `<code class="language-c">${hljs.highlight(cCode, { language: "c" }).value}</code>`
+    : `<code>${text}</code>`;
+};
 
 // Only allow http(s) and mailto URLs in links/images — blocks javascript:.
 const SAFE_URL = /^(https?:|mailto:|\/|#|data:image\/)/i;

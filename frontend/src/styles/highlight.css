@@ -17,14 +17,17 @@
 /* VS Code–style C syntax colors in both reading themes. */
 .markdown-body .language-c {
   --c-keyword: #0000ff;
+  --c-identifier: #001080;
   --c-function: #795e26;
   --c-string: #a31515;
   --c-number: #098658;
   --c-comment: #008000;
+  color: var(--c-identifier);
 }
 
 .dark .markdown-body .language-c {
   --c-keyword: #569cd6;
+  --c-identifier: #9cdcfe;
   --c-function: #dcdcaa;
   --c-string: #ce9178;
   --c-number: #b5cea8;
