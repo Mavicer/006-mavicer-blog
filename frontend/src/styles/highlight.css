@@ -13,3 +13,45 @@
   color: #6a737d;
   font-style: italic;
 }
+
+/* VS Code–style C syntax colors in both reading themes. */
+.markdown-body .language-c {
+  --c-keyword: #0000ff;
+  --c-function: #795e26;
+  --c-string: #a31515;
+  --c-number: #098658;
+  --c-comment: #008000;
+}
+
+.dark .markdown-body .language-c {
+  --c-keyword: #569cd6;
+  --c-function: #dcdcaa;
+  --c-string: #ce9178;
+  --c-number: #b5cea8;
+  --c-comment: #6a9955;
+}
+
+.markdown-body .language-c :is(.hljs-keyword, .hljs-type, .hljs-literal) {
+  color: var(--c-keyword);
+}
+
+.markdown-body .language-c :is(.hljs-built_in, .hljs-title.function_) {
+  color: var(--c-function);
+}
+
+.markdown-body .language-c .hljs-string {
+  color: var(--c-string);
+}
+
+.markdown-body .language-c .hljs-number {
+  color: var(--c-number);
+}
+
+.markdown-body .language-c .hljs-comment {
+  color: var(--c-comment);
+}
+
+.markdown-body .c-code-line code {
+  padding: 0;
+  background: transparent;
+}
