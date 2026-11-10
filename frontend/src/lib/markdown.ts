@@ -11,8 +11,7 @@ marked.setOptions({
 
 const renderer = new marked.Renderer();
 
-// Wrap code blocks with a mac-style header (language label + traffic dots),
-// and run highlight.js for syntax coloring.
+// Highlight snippets before choosing the compact or framed layout.
 renderer.code = ({ text, lang }: { text: string; lang?: string }) => {
   const language = (lang || "").trim();
   let highlighted = text;
@@ -23,6 +22,9 @@ renderer.code = ({ text, lang }: { text: string; lang?: string }) => {
         : hljs.highlightAuto(text).value;
   } catch {
     highlighted = escapeHtml(text);
+  }
+  if (language === "c" && !text.trimEnd().includes("\n")) {
+    return `<p class="c-code-line"><code class="language-c">${highlighted}</code></p>`;
   }
   const dots = `
     <div class="mac-dots">
