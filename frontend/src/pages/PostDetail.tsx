@@ -241,6 +241,7 @@ export default function PostDetail() {
 
               <div
                 aria-label="文章正文"
+                data-post={slug}
                 className="markdown-body lang-transition"
                 ref={bodyRef}
                 style={{

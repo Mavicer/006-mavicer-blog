@@ -58,3 +58,28 @@
   padding: 0;
   background: transparent;
 }
+
+/* Git学习小记 */
+[data-post="git-learning-notes"] .code-block pre { margin: 0; border-radius: 0; }
+[data-post="git-learning-notes"] .code-block-header { background: #26313b; color: #ced9df; border: 0; }
+[data-post="git-learning-notes"] .code-block pre code {
+  border-radius: 0; background: #19232c; color: #e4edf2; line-height: 1.75;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+[data-post="git-learning-notes"] .hljs-string { color: #acd9b0; }
+.git-inline { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.git-cmd { color: #245f88; }
+.git-verb { color: #704287; }
+.git-flag { color: #975217; }
+.git-arg { color: #216b57; }
+.dark .git-cmd { color: #92cdf3; }
+.dark .git-verb { color: #d7ade9; }
+.dark .git-flag { color: #f1bf85; }
+.dark .git-arg { color: #91d5bc; }
+.markdown-body .git-figure {
+  margin: 1.5rem auto; padding: 5px; border-radius: 17px;
+  border: 1px solid #8498a438; background: #8c9ba718;
+  backdrop-filter: blur(9px); box-shadow: 0 4px 16px #172b3a12;
+}
+.markdown-body .git-figure img { margin: 0; width: 100%; height: auto; border-radius: 12px; }
+.git-figure figcaption { text-align: center; font-size: .84em; margin: .6em; color: var(--second-text-color); }
