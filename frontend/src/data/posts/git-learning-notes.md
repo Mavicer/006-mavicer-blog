@@ -3,7 +3,7 @@ title: "Git学习小记"
 date: "2026-11-27"
 category: "经验分享"
 tags: ["Git", "GitHub", "版本控制"]
-excerpt: "从 Agent 问我的一句“是否合并推送”，到个人网站的第一次提交，再到 RoboMaster 团队里的分支协作，记下我理解 Git 的过程。"
+excerpt: "刚开始做网站时，Agent 常问我“是否合并推送”。那会儿我连 Git 和 GitHub 都分不清。"
 published: true
 sort_order: 90
 ---
