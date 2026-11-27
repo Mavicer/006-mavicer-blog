@@ -26,7 +26,7 @@ git push
 
 <figure class="git-figure" style="max-width:475px"><img src="/images/git-learning-notes/figure-1.webp" alt="本地 Git 仓库与 GitHub 之间的推送和拉取" width="1274" height="824" loading="lazy" data-viewer /></figure>
 
-前两条命令由 Git 在本地完成，最后一条命令将本地提交推送到 GitHub，这也是vibing时常和agent说的“commit and push”的由来。
+<p style="text-indent: 0">前两条命令由 Git 在本地完成，最后一条命令将本地提交推送到 GitHub，这也是vibing时常和agent说的“commit and push”的由来。</p>
 
 ## 从初始化到第一次提交
 
@@ -60,7 +60,7 @@ a8f621c 完成网站基础框架
 
 <figure class="git-figure" style="max-width:590px"><img src="/images/git-learning-notes/figure-3.webp" alt="动画功能分支从 main 分出后合并" width="1192" height="402" loading="lazy" data-viewer /></figure>
 
-在新分支上，我可以独立进行开发和提交，而不影响主分支的版本。待功能开发完成并通过测试后，再将其合并到主分支。
+<p style="text-indent: 0">在新分支上，我可以独立进行开发和提交，而不影响主分支的版本。待功能开发完成并通过测试后，再将其合并到主分支。</p>
 
 ```bash
 git add .
@@ -69,7 +69,7 @@ git switch main
 git merge new_animation
 ```
 
-这也解释了为什么在 Vibing 的过程中，Agent 经常询问我是否合并分支。
+<p style="text-indent: 0">这也解释了为什么在 Vibing 的过程中，Agent 经常询问我是否合并分支。</p>
 
 ## 撤销一次提交
 
@@ -84,7 +84,7 @@ git remote add origin 仓库地址
 git push -u origin main
 ```
 
-之后，每次更新代码，只需要执行熟悉的三条命令：
+<p style="text-indent: 0">之后，每次更新代码，只需要执行熟悉的三条命令：</p>
 
 ```bash
 git add .
@@ -92,7 +92,7 @@ git commit -m "新功能/debug"
 git push
 ```
 
-如果已经配置好了 Cloudflare Pages 的自动部署功能，那么 GitHub 上的代码更新还可以自动触发网站的构建与部署。从编写代码、管理版本、测试功能，到最终发布网站，一套完整的开发流程就此形成。
+<p style="text-indent: 0">如果已经配置好了 Cloudflare Pages 的自动部署功能，那么 GitHub 上的代码更新还可以自动触发网站的构建与部署。从编写代码、管理版本、测试功能，到最终发布网站，一套完整的开发流程就此形成。</p>
 
 当然，代码的传输并非单向的。假设我在另一台电脑上继续开发同一个项目，或者队友已经向远程仓库推送了新的代码，我便可以通过 <code class="git-inline"><span class="git-cmd">git</span> <span class="git-verb">pull</span></code> 将远程分支的更新获取并整合到本地分支。如果是第一次在这台电脑上开发该项目，则可以通过 <code class="git-inline"><span class="git-cmd">git</span> <span class="git-verb">clone</span></code> 将远程仓库克隆到本地。
 
@@ -102,13 +102,13 @@ git push
 
 <figure class="git-figure" style="max-width:680px"><img src="/images/git-learning-notes/figure-4.webp" alt="Git flow 中五种分支的关系" width="1032" height="366" loading="lazy" data-viewer /></figure>
 
-如图是经典的Git flow开发流程，例如，队友那边的a功能还没有开发完毕，但b功能突然出现严重 Bug。此时，你可以直接从 <code class="git-inline"><span class="git-arg">main</span></code> 创建一个 <code class="git-inline"><span class="git-arg">hotfix</span></code> 分支，修复 Bug 后立即发布，再将修复同步到 <code class="git-inline"><span class="git-arg">develop</span></code>，完全不需要等待a功能开发完成再统一合并发布。
+<p style="text-indent: 0">如图是经典的Git flow开发流程，例如，队友那边的a功能还没有开发完毕，但b功能突然出现严重 Bug。此时，你可以直接从 <code class="git-inline"><span class="git-arg">main</span></code> 创建一个 <code class="git-inline"><span class="git-arg">hotfix</span></code> 分支，修复 Bug 后立即发布，再将修复同步到 <code class="git-inline"><span class="git-arg">develop</span></code>，完全不需要等待a功能开发完成再统一合并发布。</p>
 
 日常开发时，使用简单的GitHub flow或者简化的Git flow便可以覆盖大部分场景
 
 <figure class="git-figure" style="max-width:600px"><img src="/images/git-learning-notes/figure-5.webp" alt="功能分支完成开发、提交和测试后合并上线" width="1278" height="570" loading="lazy" data-viewer /></figure>
 
-学长在教学中也提到了实际会遇到的冲突等问题，并讲解了普适性的解决方案，这里不再赘述。
+<p style="text-indent: 0">学长在教学中也提到了实际会遇到的冲突等问题，并讲解了普适性的解决方案，这里不再赘述。</p>
 
 <figure class="git-figure" style="max-width:680px"><img src="/images/git-learning-notes/figure-6.webp" alt="培训示例中两条分支分别修改曝光参数" width="1772" height="764" loading="lazy" data-viewer /><figcaption>图片来自长空御风 RM 视觉组培训 PPT</figcaption></figure>
 
