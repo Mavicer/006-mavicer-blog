@@ -3,7 +3,7 @@ title: "Git学习小记"
 date: "2026-11-27"
 category: "经验分享"
 tags: ["Git", "GitHub", "版本控制"]
-excerpt: "刚开始做网站时，Agent 常问我“是否合并推送”。那会儿我连 Git 和 GitHub 都分不清。"
+excerpt: "一直以来，我都不太清楚Git和GitHub的区别，也不太熟悉Git在终端里的具体操作，在系统地学习了Git的相关知识后，这些问题得到了解答。"
 published: true
 sort_order: 90
 ---
