@@ -60,13 +60,27 @@
 }
 
 /* Git学习小记 */
+[data-post="git-learning-notes"] {
+  --terminal-header: #e8e9e6;
+  --terminal-label: #50595b;
+  --terminal-body: #f5f5f2;
+  --terminal-text: #303a40;
+  --terminal-string: #336648;
+}
+.dark [data-post="git-learning-notes"] {
+  --terminal-header: #26313b;
+  --terminal-label: #ced9df;
+  --terminal-body: #19232c;
+  --terminal-text: #e4edf2;
+  --terminal-string: #acd9b0;
+}
 [data-post="git-learning-notes"] .code-block pre { margin: 0; border-radius: 0; }
-[data-post="git-learning-notes"] .code-block-header { background: #26313b; color: #ced9df; border: 0; }
+[data-post="git-learning-notes"] .code-block-header { background: var(--terminal-header); color: var(--terminal-label); border: 0; }
 [data-post="git-learning-notes"] .code-block pre code {
-  border-radius: 0; background: #19232c; color: #e4edf2; line-height: 1.75;
+  border-radius: 0; background: var(--terminal-body); color: var(--terminal-text); line-height: 1.75;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
-[data-post="git-learning-notes"] .hljs-string { color: #acd9b0; }
+[data-post="git-learning-notes"] .hljs-string { color: var(--terminal-string); }
 .git-inline { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .git-cmd { color: #245f88; }
 .git-verb { color: #704287; }
@@ -83,3 +97,7 @@
 }
 .markdown-body .git-figure img { margin: 0; width: 100%; height: auto; border-radius: 12px; }
 .git-figure figcaption { text-align: center; font-size: .84em; margin: .6em; color: var(--second-text-color); }
+
+.markdown-body .git-figure img.git-figure-dark,
+.dark .markdown-body .git-figure img.git-figure-light { display: none; }
+.dark .markdown-body .git-figure img.git-figure-dark { display: block; }
