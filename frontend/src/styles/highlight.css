@@ -97,7 +97,3 @@
 }
 .markdown-body .git-figure img { margin: 0; width: 100%; height: auto; border-radius: 12px; }
 .git-figure figcaption { text-align: center; font-size: .84em; margin: .6em; color: var(--second-text-color); }
-
-.markdown-body .git-figure img.git-figure-dark,
-.dark .markdown-body .git-figure img.git-figure-light { display: none; }
-.dark .markdown-body .git-figure img.git-figure-dark { display: block; }

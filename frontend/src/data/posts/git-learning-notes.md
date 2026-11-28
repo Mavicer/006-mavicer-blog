@@ -24,7 +24,7 @@ git commit -m "修复程序崩溃"
 git push
 ```
 
-<figure class="git-figure" style="max-width:475px"><img class="git-figure-light" src="/images/git-learning-notes/figure-1-light.webp" alt="本地 Git 仓库与 GitHub 之间的推送和拉取" width="1274" height="824" loading="lazy" data-viewer /><img class="git-figure-dark" src="/images/git-learning-notes/figure-1.webp" alt="本地 Git 仓库与 GitHub 之间的推送和拉取" width="1274" height="824" loading="lazy" data-viewer /></figure>
+<figure class="git-figure" style="max-width:475px"><img src="/images/git-learning-notes/figure-1.webp" alt="本地 Git 仓库与 GitHub 之间的推送和拉取" width="1274" height="824" loading="lazy" data-viewer /></figure>
 
 <p style="text-indent: 0">前两条命令由 Git 在本地完成，最后一条命令将本地提交推送到 GitHub，这也是vibing时常和agent说的“commit and push”的由来。</p>
 
@@ -40,7 +40,7 @@ git commit -m "完成网站基础框架"
 
 这里涉及 Git 中三个非常重要的概念：工作区、暂存区和本地仓库。
 
-<figure class="git-figure" style="max-width:600px"><img class="git-figure-light" src="/images/git-learning-notes/figure-2-light.webp" alt="工作区、暂存区和本地仓库之间的数据流向" width="835" height="238" loading="lazy" data-viewer /><img class="git-figure-dark" src="/images/git-learning-notes/figure-2.webp" alt="工作区、暂存区和本地仓库之间的数据流向" width="835" height="238" loading="lazy" data-viewer /></figure>
+<figure class="git-figure" style="max-width:600px"><img src="/images/git-learning-notes/figure-2.webp" alt="工作区、暂存区和本地仓库之间的数据流向" width="835" height="238" loading="lazy" data-viewer /></figure>
 
 <code class="git-inline"><span class="git-cmd">git</span> <span class="git-verb">add</span></code> 并不意味着代码已经被正式保存为一个历史版本，而是将改动放进暂存区，告诉Git哪些修改将被纳入下一次提交。只有执行 <code class="git-inline"><span class="git-cmd">git</span> <span class="git-verb">commit</span></code>，才会真正产生一条新的版本记录。
 
@@ -58,7 +58,7 @@ a8f621c 完成网站基础框架
 
 假设我现在想为网站添加一个全新的动画效果，但又担心修改过程中破坏原有功能，就可以使用分支来进行新功能的开发：<code class="git-inline"><span class="git-cmd">git</span> <span class="git-verb">switch</span> <span class="git-flag">-c</span> <span class="git-arg">new_animation</span></code>
 
-<figure class="git-figure" style="max-width:590px"><img class="git-figure-light" src="/images/git-learning-notes/figure-3-light.webp" alt="动画功能分支从 main 分出后合并" width="1192" height="402" loading="lazy" data-viewer /><img class="git-figure-dark" src="/images/git-learning-notes/figure-3.webp" alt="动画功能分支从 main 分出后合并" width="1192" height="402" loading="lazy" data-viewer /></figure>
+<figure class="git-figure" style="max-width:590px"><img src="/images/git-learning-notes/figure-3.webp" alt="动画功能分支从 main 分出后合并" width="1192" height="402" loading="lazy" data-viewer /></figure>
 
 <p style="text-indent: 0">在新分支上，我可以独立进行开发和提交，而不影响主分支的版本。待功能开发完成并通过测试后，再将其合并到主分支。</p>
 
@@ -100,16 +100,16 @@ git push
 
 至此，Git 不仅能够帮助我管理一台电脑上的代码版本，也能够实现多台设备之间的代码同步。而如果放在 RoboMaster 的团队背景下，Git 的优势还会被进一步放大。
 
-<figure class="git-figure" style="max-width:680px"><img class="git-figure-light" src="/images/git-learning-notes/figure-4-light.webp" alt="Git flow 中五种分支的关系" width="1032" height="366" loading="lazy" data-viewer /><img class="git-figure-dark" src="/images/git-learning-notes/figure-4.webp" alt="Git flow 中五种分支的关系" width="1032" height="366" loading="lazy" data-viewer /></figure>
+<figure class="git-figure" style="max-width:680px"><img src="/images/git-learning-notes/figure-4.webp" alt="Git flow 中五种分支的关系" width="1032" height="366" loading="lazy" data-viewer /></figure>
 
 <p style="text-indent: 0">如图是经典的Git flow开发流程，例如，队友那边的a功能还没有开发完毕，但b功能突然出现严重 Bug。此时，你可以直接从 <code class="git-inline"><span class="git-arg">main</span></code> 创建一个 <code class="git-inline"><span class="git-arg">hotfix</span></code> 分支，修复 Bug 后立即发布，再将修复同步到 <code class="git-inline"><span class="git-arg">develop</span></code>，完全不需要等待a功能开发完成再统一合并发布。</p>
 
 日常开发时，使用简单的GitHub flow或者简化的Git flow便可以覆盖大部分场景
 
-<figure class="git-figure" style="max-width:600px"><img class="git-figure-light" src="/images/git-learning-notes/figure-5-light.webp" alt="功能分支完成开发、提交和测试后合并上线" width="1278" height="570" loading="lazy" data-viewer /><img class="git-figure-dark" src="/images/git-learning-notes/figure-5.webp" alt="功能分支完成开发、提交和测试后合并上线" width="1278" height="570" loading="lazy" data-viewer /></figure>
+<figure class="git-figure" style="max-width:600px"><img src="/images/git-learning-notes/figure-5.webp" alt="功能分支完成开发、提交和测试后合并上线" width="1278" height="570" loading="lazy" data-viewer /></figure>
 
 <p style="text-indent: 0">学长在教学中也提到了实际会遇到的冲突等问题，并讲解了普适性的解决方案，这里不再赘述。</p>
 
-<figure class="git-figure" style="max-width:680px"><img class="git-figure-light" src="/images/git-learning-notes/figure-6-light.webp" alt="培训示例中两条分支分别修改曝光参数" width="1772" height="764" loading="lazy" data-viewer /><img class="git-figure-dark" src="/images/git-learning-notes/figure-6.webp" alt="培训示例中两条分支分别修改曝光参数" width="1772" height="764" loading="lazy" data-viewer /><figcaption>图片来自长空御风 RM 视觉组培训 PPT</figcaption></figure>
+<figure class="git-figure" style="max-width:680px"><img src="/images/git-learning-notes/figure-6.webp" alt="培训示例中两条分支分别修改曝光参数" width="1772" height="764" loading="lazy" data-viewer /><figcaption>图片来自长空御风 RM 视觉组培训 PPT</figcaption></figure>
 
 在接触 Vibe Coding 之初，我更多地将 Git 视为 Agent 的一个附属工具，甚至不需要理解其工作原理，只需要在合适的时候告诉 Agent “commit and push”。但在真正学习 Git 后，我发现 Git 的价值不仅仅在于保存历史代码，更在于让整个开发过程变得可追踪、可回退、可协作。
